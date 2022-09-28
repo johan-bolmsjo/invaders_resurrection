@@ -1,0 +1,12 @@
+#include <libgfx.h>
+#include "error.h"
+#include "image.h"
+#include "colours.h"
+#include "scale.h"
+#include "ff.h"
+#include "ff_targa.h"
+#include "clip.h"
+#include "crop.h"
+#include "scale.h"
+#include "def.h"
+#include "gfx_write.h"

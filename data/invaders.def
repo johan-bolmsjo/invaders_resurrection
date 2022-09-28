@@ -1,0 +1,111 @@
+#
+# Input file to gfxgen.
+#
+
+object		bomber_1
+frame		tga/bomber_1/bomber_1_01.tga.gz
+frame		tga/bomber_1/bomber_1_02.tga.gz
+frame		tga/bomber_1/bomber_1_03.tga.gz
+frame		tga/bomber_1/bomber_1_04.tga.gz
+frame		tga/bomber_1/bomber_1_05.tga.gz
+frame		tga/bomber_1/bomber_1_06.tga.gz
+frame		tga/bomber_1/bomber_1_07.tga.gz
+frame		tga/bomber_1/bomber_1_08.tga.gz
+frame		tga/bomber_1/bomber_1_09.tga.gz
+frame		tga/bomber_1/bomber_1_10.tga.gz
+frame		tga/bomber_1/bomber_1_11.tga.gz
+frame		tga/bomber_1/bomber_1_12.tga.gz
+frame		tga/bomber_1/bomber_1_13.tga.gz
+frame		tga/bomber_1/bomber_1_14.tga.gz
+frame		tga/bomber_1/bomber_1_15.tga.gz
+frame		tga/bomber_1/bomber_1_16.tga.gz
+rgb_to_alpha	000000
+autocrop_alpha
+scale_maxspect	32 32
+end		gfx cm !
+
+object		bomber_2
+frame		tga/bomber_2/bomber_2_1.tga.gz
+frame		tga/bomber_2/bomber_2_2.tga.gz
+frame		tga/bomber_2/bomber_2_3.tga.gz
+frame		tga/bomber_2/bomber_2_4.tga.gz
+frame		tga/bomber_2/bomber_2_5.tga.gz
+frame		tga/bomber_2/bomber_2_6.tga.gz
+frame		tga/bomber_2/bomber_2_7.tga.gz
+frame		tga/bomber_2/bomber_2_8.tga.gz
+rgb_to_alpha	000000
+autocrop_alpha
+scale_maxspect	24 24
+end		gfx cm !
+
+object		bomber_3
+frame		tga/bomber_3/bomber_3_1.tga.gz
+frame		tga/bomber_3/bomber_3_2.tga.gz
+frame		tga/bomber_3/bomber_3_3.tga.gz
+frame		tga/bomber_3/bomber_3_4.tga.gz
+frame		tga/bomber_3/bomber_3_5.tga.gz
+frame		tga/bomber_3/bomber_3_6.tga.gz
+frame		tga/bomber_3/bomber_3_7.tga.gz
+frame		tga/bomber_3/bomber_3_8.tga.gz
+rgb_to_alpha	000000
+autocrop_alpha
+scale_maxspect	32 32
+end		gfx cm !
+
+object		missile
+frame		tga/missile/missile1.tga.gz
+rgb_to_alpha	000000
+autocrop_alpha
+scale_maxspect	8 8
+end		gfx cm !
+
+object		player
+frame		tga/player/player01.tga.gz
+frame		tga/player/player02.tga.gz
+frame		tga/player/player03.tga.gz
+frame		tga/player/player04.tga.gz
+frame		tga/player/player05.tga.gz
+frame		tga/player/player06.tga.gz
+frame		tga/player/player07.tga.gz
+frame		tga/player/player08.tga.gz
+frame		tga/player/player09.tga.gz
+frame		tga/player/player10.tga.gz
+frame		tga/player/player11.tga.gz
+frame		tga/player/player12.tga.gz
+frame		tga/player/player13.tga.gz
+frame		tga/player/player14.tga.gz
+frame		tga/player/player15.tga.gz
+rgb_to_alpha	000000
+autocrop_alpha
+scale_maxspect	24 24
+end		gfx cm !
+
+object		score
+frame		tga/score/50.tga.gz
+frame		tga/score/100.tga.gz
+frame		tga/score/150.tga.gz
+rgb_to_alpha	000000
+autocrop_alpha
+scale_maxspect	100 20
+end		gfx !
+
+object		ufo
+frame		tga/ufo/ufo01.tga.gz
+frame		tga/ufo/ufo02.tga.gz
+frame		tga/ufo/ufo03.tga.gz
+frame		tga/ufo/ufo04.tga.gz
+frame		tga/ufo/ufo05.tga.gz
+frame		tga/ufo/ufo06.tga.gz
+frame		tga/ufo/ufo07.tga.gz
+frame		tga/ufo/ufo08.tga.gz
+frame		tga/ufo/ufo09.tga.gz
+frame		tga/ufo/ufo10.tga.gz
+frame		tga/ufo/ufo11.tga.gz
+frame		tga/ufo/ufo12.tga.gz
+frame		tga/ufo/ufo13.tga.gz
+frame		tga/ufo/ufo14.tga.gz
+frame		tga/ufo/ufo15.tga.gz
+rgb_to_alpha	000000
+autocrop_alpha
+scale_maxspect	40 40
+end		gfx cm !

@@ -1,0 +1,55 @@
+invaders-0.8
+------------
+2003.04.22
+	- Made the game self containing, no data files to load any more.
+
+invaders-0.7
+------------
+2001.3.19
+	- Fixed SDL frame rate limiter.
+	- Fixed joystick read out.
+	- Detecting true double buffer mode with SDL. Uses two virtual
+	surfaces if none present.
+
+invaders-0.6
+------------
+2001.3.17
+	- SDL support.
+	- Bigger holes in shields, shield code still suck though.
+	- Using 22kHz audio by default.
+
+invaders-0.5
+------------
+2001.2.13
+	- No changes, just ported to NEO-0.2.1.
+
+invaders-0.4
+------------
+2000.5.16
+	- Added missile drop delay and fixed shields.
+	- Game finished! Time to start something new.
+	
+2000.5.14
+	- Added shields.
+
+2000.5.13
+	- Improved sound effect when there are just 1 or 2 aliens left.
+	- Converted software synth to fix-point math.
+	
+2000.4.24
+	- Ported to use my new NEO library.
+	- Autoconfed and automaked now.
+
+2000.2.10
+	- Fixed 'fire button when dead skips title' bug.
+	- Fixed 'player appears in missile bug'.
+	- Brighted graphics a lot. It was made for LCD displays before.
+	- Better texture on space ship wings.
+
+2000.2.9
+	- Fixed frame buffer colour mode setup bug.
+	- Tested on a Matrox Millenium I card as well as on VESA now.
+
+2000.2.6
+	- Fixed a forgotten ALSA dependency in synth.c, hope it compiles
+	for more people now.
