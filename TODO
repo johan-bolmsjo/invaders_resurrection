@@ -1,5 +1,0 @@
-1) In space invaders the aliens just pause when the player dies.
-2) In space invaders you loose all lifes when the aliens hits the bottom.
-3) Use collision mask in collision detection code.
-4) Improve shield code.
-5) Add some sort of queue for the sound effects so they don't get cut off.

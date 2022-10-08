@@ -1,0 +1,41 @@
+#+title: Invaders Resurrection PLAN
+#+options: toc:nil num:0 H:4 author:nil timestamp:nil ^:nil
+#+todo: TODO(t) | DONE(d@) CANCELED(c@)
+
+* TODO Update build system
+Although the configure based build system still almost works 22 years later,
+replace it with a pure GNU Makefile based build system.
+
+* TODO Make invaders compile cleanly with modern compilers
+- [ ] Fix all warnings
+- [ ] Compile with =-std=gnu11=
+- [ ] Compile with =-Wextra=
+- [ ] Compile with =-pedantic=
+
+* TODO Fix bugs related to optimization of modern compilers
+May still need to use =-fno-strict-aliasing=, we'll see.
+
+* TODO Use SDL version 2
+
+* TODO Remove support for the NEO frame buffer library
+Remove support for the NEO frame buffer library as I have no intention of updating it.
+The last update was in 2003 and I suppose it's hopelessly obsolete.
+
+* TODO Remove double buffering
+When the game was made clearing the whole screen each frame was costly in terms of CPU cycles.
+There is no longer any reason to do this for such a low resolution game.
+Thus remove the double buffering to simplify the code.
+
+* TODO CRT shader effect
+Feed the rendered image through a CRT shader effect to reduce the blocky appearance of 640x480 resolution.
+
+* Fix old issues listed in TODO file [0/5]
+** TODO In space invaders the aliens just pause when the player dies.
+** TODO In space invaders you loose all lifes when the aliens hits the bottom.
+** TODO Use collision mask in collision detection code.
+** TODO Improve shield code.
+** TODO Add some sort of queue for the sound effects so they don't get cut off.
+
+* TODO Make a webassembly port using https://emscripten.org
+
+* Closed Issues
