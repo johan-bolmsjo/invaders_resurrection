@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct _Sprite
 {
   int vis;        /* Visible when true */

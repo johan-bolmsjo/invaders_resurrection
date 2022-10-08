@@ -4,7 +4,6 @@
  */
 
 #include <inttypes.h>
-#include "config.h"
 #include "error.h"
 #ifdef HAVE_LIBNEO
 #include <neo/neo.h>

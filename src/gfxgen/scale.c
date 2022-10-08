@@ -8,7 +8,7 @@
 
 
 static inline
-double round (double x)
+double xround (double x)
 {
   x += 0.5;
   return floor(x);
@@ -109,17 +109,17 @@ scale_rgba (Image *src, Image *dst)
 	  
 	  if (div_rgb)
 	    {
-	      r = round (ra / div_rgb);
-	      g = round (ga / div_rgb);
-	      b = round (ba / div_rgb);
+	      r = xround (ra / div_rgb);
+	      g = xround (ga / div_rgb);
+	      b = xround (ba / div_rgb);
 	    } else {
 	      /* To avoid gcc warnings */
 	      r = 0;
 	      g = 0;
 	      b = 0;
 	    }
-	  
-	  a = round (aa / div_a);
+
+	  a = xround (aa / div_a);
 	  if (a >= 16)
 	    {
 	      *d++ = 0;

@@ -1,4 +1,4 @@
-#include <libgfx.h>
+#include "libgfx/libgfx.h"
 #include "error.h"
 #include "image.h"
 #include "colours.h"

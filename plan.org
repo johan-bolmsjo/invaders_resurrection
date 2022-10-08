@@ -2,15 +2,42 @@
 #+options: toc:nil num:0 H:4 author:nil timestamp:nil ^:nil
 #+todo: TODO(t) | DONE(d@) CANCELED(c@)
 
-* TODO Update build system
-Although the configure based build system still almost works 22 years later,
-replace it with a pure GNU Makefile based build system.
+* TODO Compile graphics assets automatically
+** Background
+There are two data files =data/invaders.gfx.deflate= and
+=data/pearl_8x8.dat.deflate= that contain pre-compiled graphics data.
+These files are included into the compiled game by generating character
+arrays with their data.
+
+First of all both of these are in a deflate format that no standard
+tools can decompress. Some lesser used functions of zlib are used to
+compress and decompress data in this format.
+
+There are two tools in the source tree: =src/tools/compress.c= that
+compress a data file into the deflate format and =src/gfxgen= that
+assembles the graphics files into an asset bundle that is then
+compressed in standard gzip format.
+
+I have no recollection of why =gfxgen= emits a gzip file when the game
+wants it in deflate format as created by =compress=.
+
+When it comes to the font =pearl_8x8.dat.deflate=, there doesn't seem to
+be any source graphics data. We have to accept that that is lost to time.
+
+** Tasks
+- [ ] Make sure that the data file =invaders.gfx.deflate= is generated
+  automatically as part of the build.
+  Alternatives:
+  + Remove gzip compression from =gfxgen= and deflate compress with =compress=
+  + Use gzip compression instead of deflate.
+- [ ] Convert the font =pearl_8x8.dat.deflate= to gzip format if choosen
+  for the graphics data bundle.
 
 * TODO Make invaders compile cleanly with modern compilers
 - [ ] Fix all warnings
-- [ ] Compile with =-std=gnu11=
-- [ ] Compile with =-Wextra=
-- [ ] Compile with =-pedantic=
+- [X] Compile with =-std=gnu11=
+- [X] Compile with =-Wextra=
+- [X] Compile with =-pedantic=
 
 * TODO Fix bugs related to optimization of modern compilers
 May still need to use =-fno-strict-aliasing=, we'll see.
@@ -39,3 +66,10 @@ Feed the rendered image through a CRT shader effect to reduce the blocky appeara
 * TODO Make a webassembly port using https://emscripten.org
 
 * Closed Issues
+** DONE Update build system                                        :ARCHIVE:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2022-11-01 Tue 00:26]
+:END:
+Although the configure based build system still almost works 22 years later,
+replace it with a pure GNU Makefile based build system.
+

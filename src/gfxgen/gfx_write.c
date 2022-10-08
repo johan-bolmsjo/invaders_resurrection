@@ -2,7 +2,7 @@
 #include <string.h>
 #include <zlib.h>
 #include <inttypes.h>
-#include <libgfx.h>
+#include "libgfx/libgfx.h"
 #include "image.h"
 #include "error.h"
 

@@ -1,9 +1,7 @@
 /* Convert to and from MSB first.
  */
 
-#include <inttypes.h>
 #include "msb.h"
-
 
 inline int16_t
 msb_short (uint16_t v)

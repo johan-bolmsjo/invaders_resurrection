@@ -1,33 +1,30 @@
 # Invaders
 
-A space invaders game, insanely complicated done. One can either use
-my NEO Linux frame buffer library or SDL with it.
-
-These are the configure flags that can be used:
-  --enable-audio-44kHz    Use 44kHz audio mode
-  --enable-fullscreen     Use full screen video mode
-  --enable-debug          Compile with debug information
-  --with-libneo           Use libneo as media library
-  --with-libsdl           Use libSDL as media library
+A space invaders game, insanely complicated done.
 
 ## Building
 
-To build the game, first make sure that NEO or SDL is installed. You
-probably want to use SDL even if NEO works best with this game, at
-least at the moment. NEO provides solid 1 sync screen update, while
-SDL is a bit jerky.
+The build system is using plain GNU Make (developed using version 4.3).
 
-Get the NEO library at:
-http://johan.nocrew.org/software-neo/
+Make sure that SDL 1.2 is installed.
+Consult http://www.libsdl.org/ or your Linux distributions package manager.
 
-Get the SDL library at:
-http://www.libsdl.org/
+Build invaders as follows:
 
-Example:
+    make exe/invaders CPPFLAGS=-DFULLSCREEN
 
-    $ ./configure --with-libsdl --enable-fullscreen
-    $ make
-    $ su -c 'make install-strip'
+Currently there is no install target.
+Launch the game directly from the build directory.
+
+    _out/host/bin/invaders
+
+### Build Options
+
+The following build options are supported by the GNU make based build system.
+
+| Argument | Description                      |
+|----------|----------------------------------|
+| V=1      | Output full compilation commands |
 
 ## Input
 

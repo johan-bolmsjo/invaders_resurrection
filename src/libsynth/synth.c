@@ -14,13 +14,8 @@
 #include <inttypes.h>
 #include "libsynth.h"
 #include "synth.h"
-#include "config.h"
 
-#ifdef AUDIO_44KHZ
 #define FREQUENCY 44100
-#else
-#define FREQUENCY 22050
-#endif
 
 static int open_f = 0;
 static int samples_ms;   /* 24:8 format */
@@ -29,7 +24,6 @@ static Channel channels[SYNTH_NUM_CHANNELS];
 
 /* To get access to static variables in this file.
  */
-#include "synth_neo.c"
 #include "synth_sdl.c"
 
 
@@ -341,6 +335,8 @@ synth_waves_on_channel (int ch)
 void
 synth_lock ()
 {
+    // TODO: Check what this does or if a mutex can be used instead. SDL
+    //       callback called from thread? Also migrating to SDL2.
 #ifdef HAVE_LIBSDL
   SDL_LockAudio ();
 #endif

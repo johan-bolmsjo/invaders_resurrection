@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include <libgfx.h>
+#include "libgfx/libgfx.h"
 #include "image.h"
 #include "ff.h"
 #include "colours.h"

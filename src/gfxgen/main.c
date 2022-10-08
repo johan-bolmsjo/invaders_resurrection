@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <libgfx.h>
+#include "libgfx/libgfx.h"
 #include "image.h"
 #include "clip.h"
 #include "error.h"

@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct _Missile
 {
   Sprite s;
@@ -5,7 +7,7 @@ typedef struct _Missile
 } Missile;
 
 
-int g_missiles_alive;
+extern int g_missiles_alive;
 
 
 void

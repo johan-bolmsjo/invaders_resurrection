@@ -13,7 +13,6 @@
 #include <limits.h>
 #include "all.h"
 #include "gfx.h"
-#include "config.h"
 #ifdef HAVE_LIBNEO
 #include <neo/neo.h>
 #else

@@ -12,8 +12,6 @@
  * @author Johan Bolmsjo <johan@nocrew.org>
  */
 
-#ifdef HAVE_LIBSDL
-
 #include <SDL.h>
 
 static SDL_AudioSpec sdl_audio_spec;
@@ -41,11 +39,7 @@ synth_open ()
   sdl_audio_spec.freq = FREQUENCY;
   sdl_audio_spec.format = AUDIO_S16SYS;
   sdl_audio_spec.channels = 1;
-#ifdef AUDIO_44KHZ
-  sdl_audio_spec.samples = 4096;
-#else
-  sdl_audio_spec.samples = 2048;
-#endif
+  sdl_audio_spec.samples = 4096; // TODO: Optimize this for low latency
   sdl_audio_spec.callback = sdl_audio_callback;
   
   if (SDL_OpenAudio (&sdl_audio_spec, 0) < 0)
@@ -85,5 +79,3 @@ void
 synth_update ()
 {
 }
-
-#endif /* HAVE_LIBSDL */
