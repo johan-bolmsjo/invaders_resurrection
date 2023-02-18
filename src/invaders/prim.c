@@ -1,10 +1,11 @@
 /* Graphic primitives.
  */
 
+#include "prim.h"
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <inttypes.h>
-#include "all.h"
 
 static uint16_t ALPHA_RED[32 * 16];
 static uint16_t ALPHA_GREEN[64 * 16];

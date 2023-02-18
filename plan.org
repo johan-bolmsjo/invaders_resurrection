@@ -52,10 +52,6 @@ NEO sound API for which the code was originally written.
 - Implement robust sound playback using SDL 2
 - Ensure low latency
 
-* TODO Remove support for the NEO frame buffer library
-Remove support for the NEO frame buffer library as I have no intention of updating it.
-The last update was in 2003 and I suppose it's hopelessly obsolete.
-
 * TODO Remove double buffering
 When the game was made clearing the whole screen each frame was costly in terms of CPU cycles.
 There is no longer any reason to do this for such a low resolution game.
@@ -74,6 +70,13 @@ Feed the rendered image through a CRT shader effect to reduce the blocky appeara
 * TODO Make a webassembly port using https://emscripten.org
 
 * Closed Issues
+** DONE Remove support for the NEO frame buffer library            :ARCHIVE:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2023-02-18 Sat 18:27]
+:END:
+Remove support for the NEO frame buffer library as I have no intention of updating it.
+The last update was in 2003 and I suppose it's hopelessly obsolete.
+
 ** DONE Update build system                                        :ARCHIVE:
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2022-11-01 Tue 00:26]

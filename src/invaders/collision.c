@@ -1,10 +1,11 @@
 /* Collision detection
  */
 
-#include <stdio.h>
+#include "collision.h"
+
 #include <stdlib.h>
-#include <inttypes.h>
-#include "all.h"
+
+#include "error.h"
 
 static Collision* c_base = 0;  /* Linked list base */
 static Collision** c_list = 0; /* List sorted by x0 */

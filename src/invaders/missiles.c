@@ -1,10 +1,16 @@
 /* Missile handling.
  */
 
+#include "missiles.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#include "all.h"
+
+#include "armada.h"
+#include "gids.h"
+#include "runlevel.h"
+#include "shields.h"
 
 #define MISSILES_STEP 3  /* Missile speed */
 #define MISSILES_MAX  16 /* No more than this many missiles away \

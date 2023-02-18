@@ -4,8 +4,9 @@
  * on before a change can be made.
  */
 
+#include "runlevel.h"
+
 #include <inttypes.h>
-#include "all.h"
 
 static RunLevelFunc* base = 0;
 

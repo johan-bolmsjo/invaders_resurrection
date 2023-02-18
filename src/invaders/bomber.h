@@ -1,3 +1,8 @@
+#pragma once
+
+#include "sprite.h"
+#include "collision.h"
+
 typedef struct _Bomber {
     int count;
     int x, y; /* Used in armada.c */

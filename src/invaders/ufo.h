@@ -1,3 +1,8 @@
+#pragma once
+
+#include "collision.h"
+#include "sprite.h"
+
 typedef struct _Ufo {
     int count;
     int dir;

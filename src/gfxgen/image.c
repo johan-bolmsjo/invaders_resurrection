@@ -1,6 +1,6 @@
-#include <stdlib.h>
-#include <inttypes.h>
 #include "image.h"
+
+#include <stdlib.h>
 
 static int images = 0;
 static Image* image_base;

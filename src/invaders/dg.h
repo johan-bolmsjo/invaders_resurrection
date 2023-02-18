@@ -1,6 +1,9 @@
+#pragma once
 /* Before NEO a simple framebuffer hack was used.
  * This is the hack made to use NEO instead.
  */
+
+#include <inttypes.h>
 
 #define DG_XRES   640  /* Screen width in pixels */
 #define DG_YRES   480  /* Screen height in pixels */

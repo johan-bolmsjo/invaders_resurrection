@@ -1,3 +1,7 @@
+#pragma once
+
+#include "image.h"
+
 typedef struct _FileFormat FileFormat;
 
 struct _FileFormat {

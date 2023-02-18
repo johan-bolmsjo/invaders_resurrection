@@ -1,8 +1,10 @@
 /* All sound effects.
  */
 
-#include <inttypes.h>
-#include "all.h"
+#include "sfx.h"
+
+#include "libsynth/libsynth.h"
+
 
 /* Extra life sound.
  */

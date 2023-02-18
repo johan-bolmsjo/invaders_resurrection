@@ -1,9 +1,6 @@
-/* Crop image */
+#include "crop.h"
 
-#include <stdlib.h>
-#include <inttypes.h>
-#include "image.h"
-#include "clip.h"
+#include <stddef.h>
 
 Image*
 crop(Image* image, Clip* clip)

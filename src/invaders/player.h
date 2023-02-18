@@ -1,3 +1,10 @@
+#pragma once
+
+#include "collision.h"
+#include "dg.h"
+#include "joy.h"
+#include "sprite.h"
+
 typedef struct _Player {
     int count;
     Sprite s;

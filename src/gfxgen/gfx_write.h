@@ -1,3 +1,8 @@
+#pragma once
+
+#include "libgfx/libgfx.h"
+#include "image.h"
+
 int gfx_create_graphics(GfxFrame* f, Image* im);
 int gfx_create_alpha(GfxFrame* f, Image* im);
 int gfx_create_collision(GfxFrame* f, Image* im);

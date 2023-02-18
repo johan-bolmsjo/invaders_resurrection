@@ -1,3 +1,5 @@
+#pragma once
+
 /* Channels used for the differnt sound effects.
  * The synth have four channels.
  */

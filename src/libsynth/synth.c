@@ -8,23 +8,137 @@
  * @author Johan Bolmsjo <johan@nocrew.org>
  */
 
+#include "libsynth.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <inttypes.h>
-#include "libsynth.h"
-#include "synth.h"
+#include <SDL.h>
 
 #define FREQUENCY 44100
+
+#define NUM_WAVES       4 /* Normal waves per channel */
+#define NUM_WAVES_MOD   2 /* Modifier waves per channel */
+#define NUM_WAVES_TOTAL (NUM_WAVES + NUM_WAVES_MOD)
+
+#define WAVE_FREQ_MOD 4 /* Indexes */
+#define WAVE_PW_MOD   5
+
+#define ATTACK  0
+#define DECAY   1
+#define SUSTAIN 2
+#define RELEASE 3
+
+typedef struct _Wave {
+    int wf; /* Waveform */
+    int f;  /* Frequency (Hz) 24:8 format */
+    int aa; /* Attack amplitude (0.0 to 1.0) 8:24 format */
+    int pw; /* High pulse width (0.0 to 1.0) 8:24 format */
+
+    int ff; /* Frequency fraction to keep the right frequency,
+               updated every period 8:24 format */
+
+    /* ADSR.
+     */
+    int i;    /* Index to "d" and "s" */
+    int a;    /* Amplitude 8:24 format */
+    int d[4]; /* Delta values 8:24 format */
+    int s[4]; /* Length in samples */
+
+    /* Period.
+     */
+    int ip;    /* Index to "dp" and "sp" */
+    int ap;    /* Amplitude 8:24 format */
+    int dp[3]; /* Delta values 8:24 format */
+    int sp[3]; /* Length in samples */
+} Wave;
+
+typedef struct _Channel {
+    Wave w[NUM_WAVES_TOTAL]; /* Waves */
+} Channel;
 
 static int open_f = 0;
 static int samples_ms; /* 24:8 format */
 static int frequency;
 static Channel channels[SYNTH_NUM_CHANNELS];
 
-/* To get access to static variables in this file.
+static void mix_samples(int16_t* buffer, int samples);
+
+/**
+ * SDL specific parts of the synth.
+ *
+ * BUGS:
+ * The SDL way of handling sound update is different from what Invaders
+ * was written for in the beginning. Therefore the sound effects will
+ * not be played back properly. The problem is that SDL uses a callback
+ * routine that can be called anytime, while when Invaders was NEO only,
+ * it called synth_update when all sound effects was in a consistent
+ * state.
+ *
+ * @author Johan Bolmsjo <johan@nocrew.org>
  */
-#include "synth_sdl.c"
+
+/* Callback routine called by SDL when it wants more audio data.
+ */
+
+static void
+sdl_audio_callback(void* userdata, Uint8* stream, int len)
+{
+    (void)userdata;
+    mix_samples((int16_t*)stream, len / 2);
+}
+
+/* Open synth.
+ * Returns 0 on success and -1 on failure.
+ * Even if this function fails, it's okay to call the other functions.
+ * They will just don't do anything.
+ */
+
+int
+synth_open()
+{
+    static SDL_AudioSpec sdl_audio_spec;
+
+    sdl_audio_spec.freq = FREQUENCY;
+    sdl_audio_spec.format = AUDIO_S16SYS;
+    sdl_audio_spec.channels = 1;
+    sdl_audio_spec.samples = 4096; // TODO: Optimize this for low latency
+    sdl_audio_spec.callback = sdl_audio_callback;
+
+    if (SDL_OpenAudio(&sdl_audio_spec, 0) < 0)
+        return -1;
+
+    open_f = 1;
+    samples_ms = (sdl_audio_spec.freq << 8) / 1000;
+    frequency = sdl_audio_spec.freq;
+
+    memset(channels, 0, sizeof(Channel) * SYNTH_NUM_CHANNELS);
+
+    SDL_PauseAudio(0);
+
+    return 0;
+}
+
+/* Close synth.
+ */
+
+void
+synth_close()
+{
+    if (open_f) {
+        open_f = 0;
+        SDL_CloseAudio();
+    }
+}
+
+void
+synth_update()
+{
+    /* This doesn't do anything with SDL since we have the callback
+     * routine instead.
+     */
+}
 
 /* Maps a SynthWave to a Wave.
  * SynthWaves are used externaly while Waves are used internaly.
@@ -189,7 +303,7 @@ update_channel(int ch)
  */
 
 static void
-mix_samples(uint16_t* buffer, int samples)
+mix_samples(int16_t* buffer, int samples)
 {
     int i, j, ch_t[SYNTH_NUM_CHANNELS] = {0};
     int ch_mix, w_mix;
@@ -313,9 +427,7 @@ synth_lock()
 {
     // TODO: Check what this does or if a mutex can be used instead. SDL
     //       callback called from thread? Also migrating to SDL2.
-#ifdef HAVE_LIBSDL
     SDL_LockAudio();
-#endif
 }
 
 /* Use after having created a sound effect. SDL needs this.
@@ -324,7 +436,5 @@ synth_lock()
 void
 synth_unlock()
 {
-#ifdef HAVE_LIBSDL
     SDL_UnlockAudio();
-#endif
 }

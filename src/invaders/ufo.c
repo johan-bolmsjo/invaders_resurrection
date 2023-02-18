@@ -1,7 +1,8 @@
+#include "ufo.h"
+
 #include <stdio.h>
 #include <math.h>
 #include <inttypes.h>
-#include "all.h"
 
 static int count[15];
 static GfxObject* ufo_object;

@@ -1,12 +1,4 @@
-#ifndef _LIBGFX_H_
-#define _LIBGFX_H_
+#pragma once
 
-#ifndef _INTTYPES_H_
-#include <inttypes.h>
-#endif
-
-#include "msb.h"
-#include "gfx_common.h"
-#include "gfx_read.h"
-
-#endif /* _LIBGFX_H_ */
+#include "gfx_decode.h"
+#include "gfx_object.h"

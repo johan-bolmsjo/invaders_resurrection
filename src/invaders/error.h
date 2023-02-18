@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct _PanicCleanUp PanicCleanUp;
 
 struct _PanicCleanUp {

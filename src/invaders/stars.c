@@ -1,9 +1,10 @@
 /* Star field.. Whohaa.
  */
 
+#include "stars.h"
+
 #include <stdlib.h>
 #include <inttypes.h>
-#include "all.h"
 
 static int x_random[X_RANDOM];
 static int x_random_pos;
@@ -103,7 +104,7 @@ void
 stars_hide(DG* dg)
 {
     int i, buf_no;
-    int16_t* prev_plot;
+    uint16_t* prev_plot;
     Star* star;
 
     buf_no = dg->hid;

@@ -1,5 +1,4 @@
-#include <inttypes.h>
-#include "image.h"
+#include "colours.h"
 
 /* bgr to rgb, fix targa code later instead of this hack!
  */

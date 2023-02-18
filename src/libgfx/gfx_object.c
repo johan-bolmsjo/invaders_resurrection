@@ -1,9 +1,9 @@
+#include "gfx_object.h"
+
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
-#include "gfx_common.h"
 
-static GfxObject* object_base = 0;
+static GfxObject* object_list = 0;
 
 /* For other files.
  */
@@ -11,17 +11,17 @@ static GfxObject* object_base = 0;
 GfxObject*
 gfx_get_first_object()
 {
-    return object_base;
+    return object_list;
 }
 
 /* Find object with name 'name'.
  */
 
 GfxObject*
-gfx_object_find(uint8_t* name)
+gfx_object_find(const char* name)
 {
     int l, i;
-    GfxObject* o = object_base;
+    GfxObject* o = object_list;
 
     l = strlen(name);
     while (o) {
@@ -39,43 +39,36 @@ gfx_object_find(uint8_t* name)
 }
 
 GfxObject*
-gfx_object_create(uint8_t* name)
+gfx_object_create(const char* name)
 {
-    int len;
-    uint8_t* n;
-    GfxObject* o;
-
-    len = strlen(name);
-    if (len > 255)
+    const int name_len = strlen(name);
+    if (name_len > 255)
         return NULL;
 
-    n = malloc(len);
-    o = malloc(sizeof(GfxObject));
+    char* name_copy = strdup(name);
+    GfxObject* obj = malloc(sizeof(GfxObject));
 
-    if (!n || !o) {
-        if (!n)
-            free(n);
-        if (!o)
-            free(o);
+    if (!name_copy || !obj) {
+        free(name_copy);
+        free(obj);
         return NULL;
     }
 
-    memcpy(n, name, len);
-    o->name_len = len;
-    o->name = n;
-    o->frames = 0;
-    o->fpp = 0;
+    obj->name_len = name_len;
+    obj->name = name_copy;
+    obj->frames = 0;
+    obj->fpp = 0;
 
-    if (object_base) {
-        o->next = object_base;
-        o->next->prev = o;
+    if (object_list) {
+        obj->next = object_list;
+        obj->next->prev = obj;
     } else {
-        o->next = 0;
+        obj->next = 0;
     }
-    o->prev = 0;
-    object_base = o;
+    obj->prev = 0;
+    object_list = obj;
 
-    return o;
+    return obj;
 }
 
 void
@@ -86,7 +79,7 @@ gfx_object_destroy(GfxObject* o)
     if (o->prev)
         o->prev->next = o->next;
     else
-        object_base = o->next;
+        object_list = o->next;
     if (o->next)
         o->next->prev = o->prev;
 
@@ -102,8 +95,8 @@ gfx_object_destroy(GfxObject* o)
 void
 gfx_object_destroy_all()
 {
-    while (object_base)
-        gfx_object_destroy(object_base);
+    while (object_list)
+        gfx_object_destroy(object_list);
 }
 
 GfxFrame*

@@ -1,3 +1,9 @@
+#pragma once
+
+#include <inttypes.h>
+
+#include "image.h"
+
 /* Colour map types
  */
 #define TARGA_CMAP_NO  0

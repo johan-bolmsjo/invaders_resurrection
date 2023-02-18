@@ -1,8 +1,13 @@
+#include "shot.h"
+
 #include <stdlib.h>
 #include <inttypes.h>
-#include "all.h"
 
-static Shot* base = 0;
+#include "error.h"
+#include "gids.h"
+#include "shields.h"
+
+static Shot* shot_list = 0;
 
 int g_shot_obj = 0;
 
@@ -21,7 +26,7 @@ shot_destroy(Shot* s)
         if (s->prev)
             s->prev->next = s->next;
         else
-            base = s->next;
+            shot_list = s->next;
 
         if (s->next)
             s->next->prev = s->prev;
@@ -52,7 +57,7 @@ shot_callback(Collision* a, Collision* b)
  */
 
 Shot*
-shot_create(int x, int y, int x_vector, int y_vector, int16_t colour,
+shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
             int fatal, int gid, void (*cb)())
 {
     Collision* c = 0;
@@ -85,15 +90,15 @@ shot_create(int x, int y, int x_vector, int y_vector, int16_t colour,
     s->c = c;
     s->cb = cb;
 
-    if (base) {
-        s->next = base;
+    if (shot_list) {
+        s->next = shot_list;
         s->next->prev = s;
     } else {
         s->next = 0;
     }
 
     s->prev = 0;
-    base = s;
+    shot_list = s;
     g_shot_obj++;
 
     return s;
@@ -105,11 +110,9 @@ shot_create(int x, int y, int x_vector, int y_vector, int16_t colour,
 void
 shot_hide(DG* dg)
 {
-    int16_t* p;
-    Shot* s = base;
-
+    Shot* s = shot_list;
     while (s) {
-        p = s->adr[dg->hid];
+        uint16_t* p = s->adr[dg->hid];
         if (p) {
             p[0] = 0;
             p[1] = 0;
@@ -127,12 +130,10 @@ shot_hide(DG* dg)
 void
 shot_show(DG* dg)
 {
-    int16_t* p;
-    Shot* s = base;
-
+    Shot* s = shot_list;
     while (s) {
         if (!s->pend_rm) {
-            p = dg->adr[dg->hid] + s->x + s->y * DG_XRES;
+            uint16_t* p = dg->adr[dg->hid] + s->x + s->y * DG_XRES;
             s->adr[dg->hid] = p;
             p[0] = s->colour;
             p[1] = s->colour;
@@ -150,7 +151,7 @@ shot_show(DG* dg)
 void
 shot_update()
 {
-    Shot *s = base, *st;
+    Shot *s = shot_list, *st;
 
     while (s) {
         if (s->pend_rm) {

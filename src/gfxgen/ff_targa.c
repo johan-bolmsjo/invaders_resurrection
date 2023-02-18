@@ -1,11 +1,14 @@
 /* Partial targa decoder.
  */
 
+#include "ff_targa.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <zlib.h>
-#include "all.h"
+
+#include "error.h"
 
 #define HALF_BUF_SIZE 2048
 #define BUF_SIZE      4096

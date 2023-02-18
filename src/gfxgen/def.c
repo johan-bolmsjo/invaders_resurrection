@@ -35,12 +35,12 @@ skip_line()
  */
 
 static int
-read_file(char* path)
+read_file(const char* filename)
 {
     int fd, size;
     char* m;
 
-    fd = open(path, O_RDONLY);
+    fd = open(filename, O_RDONLY);
     if (fd == -1)
         return E_OPEN;
 
@@ -72,7 +72,7 @@ read_file(char* path)
  */
 
 static char*
-next_cmd()
+next_cmd(void)
 {
     char c;
     static char buf[DEF_MAX_CMD_SIZE];
@@ -419,11 +419,8 @@ cmd_end(DefObject* d_obj)
     return E_OK;
 }
 
-/* Executes all commands.
- */
-
 int
-def_run(char* path)
+def_run(const char* filename)
 {
     int r, i;
     char* cmd;
@@ -436,11 +433,11 @@ def_run(char* path)
                        {"end", cmd_end},
                        {0, 0}};
 
-    r = read_file(path);
+    r = read_file(filename);
     if (r)
         return r;
 
-    while ((cmd = next_cmd(&d_file))) {
+    while ((cmd = next_cmd())) {
         i = 0;
         while (funcs[i].magic) {
             if (!strcmp(cmd, funcs[i].magic)) {

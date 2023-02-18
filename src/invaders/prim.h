@@ -1,5 +1,8 @@
 #pragma once
 
+#include "dg.h"
+#include "libgfx/libgfx.h"
+
 typedef struct _Clip {
     int x; /* Position */
     int y;

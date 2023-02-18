@@ -1,13 +1,15 @@
 /* Shields.
  */
 
-#include <libgfx.h>
+#include "shields.h"
+
+#include "collision.h"
 #include "dg.h"
+#include "gids.h"
+#include "libgfx/libgfx.h"
 #include "prim.h"
 #include "runlevel.h"
 #include "sprite.h"
-#include "collision.h"
-#include "gids.h"
 
 #define WIDTH  (48 + 12) /* Use multiple of 2 */
 #define HEIGHT (32 + 12) /* Use multiple of 2 */

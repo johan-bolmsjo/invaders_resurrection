@@ -11,20 +11,32 @@
 #include <fcntl.h>
 #include <time.h>
 #include <limits.h>
-#include "all.h"
-#include "gfx.h"
-#ifdef HAVE_LIBNEO
-#include <neo/neo.h>
-#else
-#include <SDL.h>
-#endif
 
-#ifdef HAVE_LIBSDL
-int sdl_true_doublebuf;
+#include <SDL.h>
+
+#include "armada.h"
+#include "defs.h"
+#include "error.h"
+#include "gfx.h"
+#include "joy.h"
+#include "libsynth/libsynth.h"
+#include "missiles.h"
+#include "mystery.h"
+#include "player.h"
+#include "runlevel.h"
+#include "shields.h"
+#include "shot.h"
+#include "snap.h"
+#include "stars.h"
+#include "status.h"
+#include "text.h"
+#include "title.h"
+#include "ufo.h"
+
+int          sdl_true_doublebuf;
 SDL_Surface* sdl_screen;
 SDL_Surface* sdl_vscreen1;
 SDL_Surface* sdl_vscreen2;
-#endif
 
 #define RED_MASK   0xf800
 #define GREEN_MASK 0x07e0
@@ -34,29 +46,21 @@ SDL_Surface* sdl_vscreen2;
 int g_cheat = 0; /* Don't look :) */
 
 int
-main(int argc, char** argv)
+main(void)
 {
     int key_q = 0, key_z = 0, key_x = 0, x_upd = 0, key_prev = 0;
     char **cpp, *objects[8] = {"bomber_1", "bomber_2", "bomber_3",
                                "missile", "player", "score", "ufo", 0};
-#ifdef HAVE_LIBNEO
-    char key, key_value;
-    PanicCleanUp panic_neo = {neo_close};
-    NeoConsInfo cons_info;
-    NeoConsMode cons_mode = {NEO_CONS_RGB16, DG_XRES, DG_YRES, DG_XRES,
-                             DG_YRES * 2, 60};
-    NeoJoyEvent neo_joy_event;
-#else
-    PanicCleanUp panic_sdl = {SDL_Quit};
+    PanicCleanUp panic_sdl = {SDL_Quit, NULL, NULL};
     SDL_Event sdl_event;
-    SDL_Joystick* sdl_joystick;
+    // TODO(jb): Joystick support
+    // SDL_Joystick* sdl_joystick;
     Uint32 sdl_flags, sdl_ticks1, sdl_ticks2;
     int sdl_ticks_diff;
-#endif
     Joy joy = {0};
     DG dg;
 
-    if (gfx_decode2())
+    if (!decode_gfx_data())
         panic("Failed to decode graphics file.");
 
     cpp = objects;
@@ -72,26 +76,6 @@ main(int argc, char** argv)
 
     synth_open();
 
-#ifdef HAVE_LIBNEO
-    neo_joy_open();
-
-    if (!neo_cons_open(&cons_info)) {
-        panic_register_cleanup(&panic_neo);
-
-        if (!neo_cons_set_mode(&cons_mode)) {
-            dg.vfreq = cons_mode.vfreq;
-            dg.vis = 0;
-            dg.hid = 1;
-            (char*)dg.adr[0] = cons_info.mem_start;
-            (char*)dg.adr[1] = cons_info.mem_start +
-                               cons_mode.line_length * cons_mode.yres;
-        } else {
-            panic("Failed to open display.");
-        }
-    } else {
-        panic("Failed to open display.");
-    }
-#else
     if (SDL_Init(SDL_INIT_TIMER |
                  SDL_INIT_AUDIO |
                  SDL_INIT_VIDEO |
@@ -178,14 +162,14 @@ main(int argc, char** argv)
     SDL_ShowCursor(SDL_DISABLE);
     SDL_EnableKeyRepeat(0, 0);
 
+#if 0 // TODO(jb): Joystick support
     if (SDL_NumJoysticks()) {
         SDL_JoystickEventState(SDL_ENABLE);
         sdl_joystick = SDL_JoystickOpen(0);
     }
+#endif
 
     sdl_ticks1 = 0;
-
-#endif
 
     srandom(time(0));
     prim_tables();
@@ -199,64 +183,6 @@ main(int argc, char** argv)
     shield_tables();
 
     while (1) {
-
-#ifdef HAVE_LIBNEO
-        while (neo_cons_get_key(&key, &key_value)) {
-            switch (key) {
-            case NEO_KEY_ESCAPE:
-                if (key_value == 1)
-                    key_q = 1;
-                break;
-
-            case NEO_KEY_Z:
-                x_upd = 1;
-                if (key_value < 2)
-                    key_z = key_value;
-                break;
-
-            case NEO_KEY_X:
-                x_upd = 1;
-                if (key_value < 2)
-                    key_x = key_value;
-                break;
-
-            case NEO_KEY_SPACE:
-                if (key_value == 1)
-                    joy.button = 1;
-                break;
-
-            case NEO_KEY_P:
-                if (key_value == 1)
-                    snap_create(&dg, "invaders_snap.tga");
-                break;
-
-            default:
-                if (key_value == 1) {
-                    if (key_prev == NEO_KEY_4 &&
-                        key == NEO_KEY_2)
-                        g_cheat ^= 1;
-
-                    key_prev = key;
-                }
-            }
-        }
-
-        while (neo_joy_read(&neo_joy_event, 0)) {
-            switch (neo_joy_event.type) {
-            case NEO_JOY_EVENT_BUTTON:
-                if (neo_joy_event.value)
-                    joy.button = 1;
-                break;
-
-            case NEO_JOY_EVENT_AXIS:
-                if (!(neo_joy_event.number & 1)) {
-                    joy.x_axis = neo_joy_event.value / 16384;
-                    x_upd = 0;
-                }
-            }
-        }
-
-#else /* HAVE_LIBSDL */
 
         while (SDL_PollEvent(&sdl_event)) {
             switch (sdl_event.type) {
@@ -324,7 +250,6 @@ main(int argc, char** argv)
                 key_q = 1;
             }
         }
-#endif
 
         /* Make sure ship is controlled properly in X direction when
          * using keys.
@@ -378,7 +303,6 @@ main(int argc, char** argv)
 
         dg_flip(&dg);
 
-#ifdef HAVE_LIBSDL
         /* BUG: Should have thought about timing better. Lets make 80Hz the
          *      maximum frame rate.
          * Two scenarios:
@@ -397,16 +321,10 @@ main(int argc, char** argv)
 
             sdl_ticks1 += 16;
         }
-#endif
     }
 
     synth_close();
 
-#ifdef HAVE_LIBNEO
-    neo_close();
-#else
     SDL_Quit();
-#endif
-
     return E_OK;
 }

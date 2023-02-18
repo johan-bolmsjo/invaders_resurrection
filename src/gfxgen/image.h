@@ -1,3 +1,7 @@
+#pragma once
+
+#include <inttypes.h>
+
 #define CMAP 0 /* 8 bit colour mapped image */
 #define GREY 1 /* 8 bit grey scale image */
 #define RGB  2 /* 24 bit colour image */

@@ -1,7 +1,15 @@
+#include "player.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "all.h"
+
+#include "gids.h"
+#include "missiles.h"
+#include "runlevel.h"
+#include "sfx.h"
+#include "shot.h"
+#include "status.h"
 
 #define X_VECTORS 15
 #define Y_VECTORS 16
@@ -32,6 +40,8 @@ extern int g_cheat; /* Cheat flag from main.c */
 static int
 rl_play1_play2(RunLevelFunc* r)
 {
+    (void)r;
+
     if (!shots)
         return 1;
 
@@ -45,6 +55,8 @@ rl_play1_play2(RunLevelFunc* r)
 static int
 rl_play2_play0(RunLevelFunc* r)
 {
+    (void)r;
+
     if (!g_missiles_alive)
         return 1;
 
@@ -60,6 +72,8 @@ rl_play2_play0(RunLevelFunc* r)
 static int
 rl_play2_title0(RunLevelFunc* r)
 {
+    (void)r;
+
     static int pend = 0;
 
     if (!(g_collision_obj + g_shot_obj))
@@ -230,6 +244,9 @@ player_kill()
 static int
 collision_cb(Collision* a, Collision* b)
 {
+    (void)a;
+    (void)b;
+
     die();
     player.c = 0;
     return 1;

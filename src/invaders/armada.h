@@ -1,3 +1,10 @@
+#pragma once
+
+#include <inttypes.h>
+
+#include "bomber.h"
+#include "dg.h"
+
 /* Armada of aliens.
  */
 

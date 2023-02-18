@@ -1,13 +1,17 @@
+#pragma once
+
+#include <inttypes.h>
+
 /* GFX tags (don't change the values)
  */
 
-#define GFX_TAG_OBJECT    0
+#define GFX_TAG_OBJECT     0
 #define GFX_TAG_FRAME     16
-#define GFX_TAG_GRAPHICS  1
-#define GFX_TAG_ALPHA     2
-#define GFX_TAG_COLLISION 4
+#define GFX_TAG_GRAPHICS   1
+#define GFX_TAG_ALPHA      2
+#define GFX_TAG_COLLISION  4
 
-/* GFX file format. MSB byte order.
+/* GFX file format. Big endian byte order.
 Object
 ------
 uint8_t tag
@@ -31,7 +35,7 @@ typedef struct _GfxObject GfxObject;
 
 struct _GfxObject {
     uint8_t name_len;
-    uint8_t* name;
+    char* name;
     int frames;
     GfxFrame** fpp;
     GfxObject* prev;
@@ -50,8 +54,8 @@ struct _GfxFrame {
 };
 
 GfxObject* gfx_get_first_object();
-GfxObject* gfx_object_find(uint8_t* name);
-GfxObject* gfx_object_create(uint8_t* name);
+GfxObject* gfx_object_find(const char* name);
+GfxObject* gfx_object_create(const char* name);
 void       gfx_object_destroy(GfxObject* o);
 void       gfx_object_destroy_all();
 GfxFrame*  gfx_frame_create(int flags, int width, int height, int x_off, int y_off);

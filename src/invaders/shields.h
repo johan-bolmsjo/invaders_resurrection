@@ -1,3 +1,7 @@
+#pragma once
+
+#include "dg.h"
+
 void shield_tables();
 void shields_new();
 void shields_del();

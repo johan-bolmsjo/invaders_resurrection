@@ -6,8 +6,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <netinet/in.h>
 #include <zlib.h>
+
+#include "libutil/endian.h"
 
 int
 main(int argc, char** argv)

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "collision.h"
+#include "dg.h"
+#include "sprite.h"
+
 typedef struct _Missile {
     Sprite s;
     Collision* c;

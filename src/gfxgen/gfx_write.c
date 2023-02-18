@@ -1,10 +1,13 @@
+#include "gfx_write.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <zlib.h>
 #include <inttypes.h>
-#include "libgfx/libgfx.h"
-#include "image.h"
+
 #include "error.h"
+#include "image.h"
+#include "libutil/endian.h"
 
 /* Create frame graphics from image.
  */
@@ -12,27 +15,22 @@
 int
 gfx_create_graphics(GfxFrame* f, Image* im)
 {
-    uint8_t* s;
-    int16_t *d, v;
-    int32_t pixels;
-
     if (im->type != RGBA && im->type != RGB)
         return ERROR;
 
-    if (im->width != f->width ||
-        im->height != f->height ||
-        f->graphics == NULL)
+    if (im->width != f->width || im->height != f->height || f->graphics == NULL) {
         return ERROR;
+    }
 
-    s = im->image;
-    d = f->graphics;
-    pixels = f->width * f->height;
+    uint8_t* s = im->image;
+    uint16_t* d = f->graphics;
+    int pixels = f->width * f->height;
 
-    for (; pixels > 0; pixels--) {
-        v = ((int)s[0] >> 3) << 11;
+    for (int i = 0; i < pixels; i++) {
+        uint16_t v = ((int)s[0] >> 3) << 11;
         v |= ((int)s[1] >> 2) << 5;
         v |= (int)s[2] >> 3;
-        *d++ = v;
+        d[i] = v;
         s += im->depth;
     }
 
@@ -74,7 +72,7 @@ gfx_create_collision(GfxFrame* f, Image* im)
 {
     int i, j, shift;
     uint8_t* s;
-    int32_t block, *d;
+    uint32_t block, *d;
 
     if (im->type != RGBA ||
         im->width != f->width ||
@@ -140,10 +138,10 @@ gfx_write(GfxObject* o, char* path)
             if (fp->collision)
                 ftag |= GFX_TAG_COLLISION;
 
-            sa[0] = msb_short(fp->width);
-            sa[1] = msb_short(fp->height);
-            sa[2] = msb_short(fp->x_off);
-            sa[3] = msb_short(fp->y_off);
+            sa[0] = htons(fp->width);
+            sa[1] = htons(fp->height);
+            sa[2] = htons(fp->x_off);
+            sa[3] = htons(fp->y_off);
             w2 += 9;
             w += gzwrite(gz, &ftag, 1);
             w += gzwrite(gz, sa, 8);
@@ -153,7 +151,7 @@ gfx_write(GfxObject* o, char* path)
                 i = fp->width * fp->height;
                 w2 += i * 2;
                 for (; i > 0; i--) {
-                    s = msb_short(*sp++);
+                    s = htons(*sp++);
                     w += gzwrite(gz, &s, 2);
                 }
             }
@@ -169,7 +167,7 @@ gfx_write(GfxObject* o, char* path)
                 i = fp->c_longs * fp->height;
                 w2 += i * 4;
                 for (; i > 0; i--) {
-                    l = msb_long(*lp++);
+                    l = htonl(*lp++);
                     w += gzwrite(gz, &l, 4);
                 }
             }

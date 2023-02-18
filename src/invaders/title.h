@@ -1,3 +1,8 @@
+#pragma once
+
+#include "dg.h"
+#include "joy.h"
+
 void title_tables();
 void title_show(DG* dg);
 void title_hide(DG* dg);

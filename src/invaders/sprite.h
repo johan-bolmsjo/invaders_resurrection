@@ -1,5 +1,11 @@
 #pragma once
 
+#include <inttypes.h>
+
+#include "dg.h"
+#include "prim.h"
+#include "libgfx/libgfx.h"
+
 typedef struct _Sprite {
     int vis; /* Visible when true */
     int x;

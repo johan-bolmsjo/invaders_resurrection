@@ -1,3 +1,5 @@
 #pragma once
 
-int gfx_decode2();
+#include <stdbool.h>
+
+bool decode_gfx_data(void);

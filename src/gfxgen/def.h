@@ -1,3 +1,9 @@
+#pragma once
+
+#include "clip.h"
+#include "image.h"
+#include "libgfx/libgfx.h"
+
 #define DEF_MAX_CMD_SIZE 100
 
 typedef struct _DefFile {
@@ -20,4 +26,5 @@ typedef struct _DefFunc {
     int (*func)(DefObject*);
 } DefFunc;
 
-int def_run(char* path);
+// Execute commands from graphics definition file.
+int def_run(const char* filename);

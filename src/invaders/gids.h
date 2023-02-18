@@ -1,5 +1,9 @@
+#pragma once
+
 /* Object group IDs.
  */
+
+// TODO(jb): Convert to enum
 
 #define GID_PLAYER      0
 #define GID_PLAYER_SHOT 1

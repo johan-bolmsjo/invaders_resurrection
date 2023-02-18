@@ -1,3 +1,5 @@
+#pragma once
+
 #define RUNLEVEL_TITLE0 0 /* Draw title */
 #define RUNLEVEL_TITLE1 1 /* Clear title */
 

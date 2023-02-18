@@ -1,7 +1,15 @@
 /* Title screen.
  */
 
-#include "all.h"
+#include "title.h"
+
+#include "armada.h"
+#include "bomber.h"
+#include "runlevel.h"
+#include "sprite.h"
+#include "status.h"
+#include "text.h"
+#include "ufo.h"
 
 static Ufo ufo;
 static Bomber bombers[3];
@@ -16,9 +24,9 @@ void
 title_tables()
 {
     int i;
-    static uint8_t* strings[6] = {"  I N V A D E R S\n\na NoCrew production",
-                                  "Mystery", " 30 pts", " 20 pts", " 10 pts",
-                                  "Press fire to begin"};
+    static const char* strings[6] = {"  I N V A D E R S\n\na NoCrew production",
+                                     "Mystery", " 30 pts", " 20 pts", " 10 pts",
+                                     "Press fire to begin"};
 
     ufo_init(&ufo, 34 * 8, 22 * 8, 0);
     sprite_init(&bombers[0].s, gfx_object_find("bomber_3"), 0, 34 * 8, 26 * 8, 0);
@@ -38,7 +46,7 @@ title_tables()
         text_print_str_fancy_init(&texts[i + 1], strings[i + 1], 41, 41, 22 + i * 4);
     text_print_str_fancy_init(&texts[5], strings[5], 30, 30, 38);
 
-    text.s = 0;
+    text.str = 0;
 }
 
 /* Draw title objects.
@@ -65,7 +73,7 @@ void
 title_hide(DG* dg)
 {
     int i;
-    Clip clip = {240, 120, 160, 192};
+    Clip clip = {240, 120, 160, 192, 0, 0};
 
     if (g_runlevel == RUNLEVEL_TITLE0) {
         for (i = 0; i < 4; i++)
@@ -83,6 +91,8 @@ title_hide(DG* dg)
 int
 title_update(DG* dg, Joy* j, int key_q)
 {
+    (void)dg;
+
     int i;
     static int count = 0;
 
@@ -96,7 +106,7 @@ title_update(DG* dg, Joy* j, int key_q)
             g_next_runlevel = RUNLEVEL_TITLE1;
         } else {
 
-            if (!text.s && count < 6) {
+            if (!text.str && count < 6) {
                 if (count >= 1 && count <= 4)
                     sprites[count - 1]->vis = 1;
 
@@ -114,7 +124,7 @@ title_update(DG* dg, Joy* j, int key_q)
             count++;
         } else {
             count = 0;
-            text.s = 0;
+            text.str = 0;
             for (i = 0; i < 4; i++)
                 sprites[i]->vis = 0;
 

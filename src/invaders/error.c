@@ -1,8 +1,8 @@
+#include "error.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <inttypes.h>
-#include "all.h"
 
 static PanicCleanUp* base = 0;
 

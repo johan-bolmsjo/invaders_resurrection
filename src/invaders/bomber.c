@@ -1,7 +1,4 @@
-#include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-#include "all.h"
+#include "bomber.h"
 
 /* Initialise bomber.
  */

@@ -23,8 +23,6 @@ $(call define-host-srcs, invaders, \
 	src/invaders/ufo.c \
 )
 
-$(OBJS_HOST_invaders): HOST_CPPFLAGS += -Isrc/libgfx -Isrc/libsynth
-
 $(call define-host-exe, invaders, invaders libgfx libsynth)
 $(TARGET_HOST_EXE_invaders): $(TARGET_HOST_LIB_gfx) $(TARGET_HOST_LIB_synth)
 

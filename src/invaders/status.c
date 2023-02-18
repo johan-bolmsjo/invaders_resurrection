@@ -1,9 +1,15 @@
 /* Displayed status
  */
 
+#include "status.h"
+
 #include <string.h>
 #include <inttypes.h>
-#include "all.h"
+
+#include "prim.h"
+#include "runlevel.h"
+#include "sfx.h"
+#include "text.h"
 
 #define EXTRA_LIFE_SCORE 1500
 
@@ -45,7 +51,7 @@ status_reset()
 void
 status_hide(DG* dg)
 {
-    Clip c = {0, 0, 42 * 8, 8};
+    Clip c = {0, 0, 42 * 8, 8, 0, 0};
 
     if (g_runlevel < RUNLEVEL_PLAY0)
         blit_clipped_colour_box(dg, &c, 0);

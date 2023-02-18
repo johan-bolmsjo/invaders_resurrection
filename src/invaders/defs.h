@@ -1,3 +1,8 @@
+#pragma once
+
+// TODO(jb): Review use of these defines. Convert to enum if the need
+// persist. Seems like they belong in error.h rather than here!
+
 /* Error codes
  */
 

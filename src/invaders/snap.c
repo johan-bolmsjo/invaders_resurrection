@@ -1,14 +1,17 @@
 /* Create RGB targa snap-shot of the visible screen.
  */
 
+#include "snap.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <inttypes.h>
-#include "all.h"
+
+#include "defs.h"
 
 int
-snap_create(DG* dg, char* path)
+snap_create(DG* dg, const char* path)
 {
     int fd, i;
     uint16_t *s, sv;

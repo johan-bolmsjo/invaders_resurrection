@@ -1,11 +1,19 @@
 /* Invaders armada.
  */
 
-#include <stdio.h>
+#include "armada.h"
+
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
-#include "all.h"
+
+#include "gids.h"
+#include "libgfx/libgfx.h"
+#include "player.h"
+#include "runlevel.h"
+#include "sfx.h"
+#include "shields.h"
+#include "shot.h"
+#include "status.h"
 
 #define X_MIN 18
 #define X_MAX (DG_XRES - 18)

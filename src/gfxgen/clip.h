@@ -1,5 +1,7 @@
 #pragma once
 
+#include "image.h"
+
 typedef struct _Clip {
     int x0;
     int y0;

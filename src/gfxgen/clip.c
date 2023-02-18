@@ -1,9 +1,11 @@
 /* Clip windows.
  */
 
-#include <inttypes.h>
-#include "image.h"
 #include "clip.h"
+
+#include <inttypes.h>
+
+#include "image.h"
 
 static uint8_t
 pixel_get_alpha(Image* image, int x, int y)

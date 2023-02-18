@@ -2,9 +2,18 @@
  * region of the screen.
  */
 
+#include "mystery.h"
+
 #include <stdlib.h>
 #include <inttypes.h>
-#include "all.h"
+
+#include "gids.h"
+#include "libsynth/libsynth.h"
+#include "player.h"
+#include "runlevel.h"
+#include "sfx.h"
+#include "status.h"
+#include "ufo.h"
 
 #define MYSTERY_TIMER (30.0 * DG_VFREQ) /* Mystery max delay in VBLs */
 #define SCORE_TIMER   (3 * DG_VFREQ)    /* Time to display the score */
@@ -20,6 +29,8 @@ static Sprite score_sprite = {0};
 static int
 rl_play1_play2(RunLevelFunc* r)
 {
+    (void)r;
+
     if (g_player_alive && (ufo.c || score_timer))
         return 0;
 
@@ -32,6 +43,8 @@ rl_play1_play2(RunLevelFunc* r)
 static int
 rl_play2_title0(RunLevelFunc* r)
 {
+    (void)r;
+
     if (ufo.c || score_timer)
         return 0;
 
@@ -44,6 +57,9 @@ rl_play2_title0(RunLevelFunc* r)
 static int
 c_cb(Collision* a, Collision* b)
 {
+    (void)a;
+    (void)b;
+
     int score;
 
     if (b->gid != GID_PLAYER_SHOT)

@@ -1,13 +1,16 @@
 /* Text routines
  */
 
+#include "text.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <inttypes.h>
-#include <netinet/in.h>
 #include <zlib.h>
-#include "all.h"
+
+#include "libutil/endian.h"
+
 #include "font_data.c"
 
 static uint8_t font[2048];
@@ -31,12 +34,12 @@ text_decode_font()
  */
 
 void
-text_print_char_adr(uint8_t c, uint16_t colour, uint16_t* dst)
+text_print_char_adr(char chr, uint16_t colour, uint16_t* dst)
 {
     int h, w;
     uint8_t *cp, v;
 
-    cp = font + (int)c * 8;
+    cp = font + (int)chr * 8;
 
     for (h = 8; h > 0; h--) {
         v = *cp++;
@@ -51,17 +54,16 @@ text_print_char_adr(uint8_t c, uint16_t colour, uint16_t* dst)
     }
 }
 
-/* Print string "s" at address "dst".
+/* Print string "str" at address "dst".
  * No clipping.
  */
 
 void
-text_print_str_adr(uint8_t* s, uint16_t colour, uint16_t* dst)
+text_print_str_adr(const char* str, uint16_t colour, uint16_t* dst)
 {
-    uint8_t c;
-
-    while ((c = *s++)) {
-        text_print_char_adr(c, colour, dst);
+    char chr;
+    while ((chr = *str++)) {
+        text_print_char_adr(chr, colour, dst);
         dst += 8;
     }
 }
@@ -70,9 +72,9 @@ text_print_str_adr(uint8_t* s, uint16_t colour, uint16_t* dst)
  */
 
 void
-text_print_str_fancy_init(Text* t, uint8_t* s, int x_off, int x, int y)
+text_print_str_fancy_init(Text* t, const char* str, int x_off, int x, int y)
 {
-    t->s = s;
+    t->str = str;
     t->colour = 0;
     t->x_off = x_off;
     t->x = x;
@@ -82,18 +84,18 @@ text_print_str_fancy_init(Text* t, uint8_t* s, int x_off, int x, int y)
 void
 text_print_str_fancy(DG* dg, Text* t)
 {
-    if (t->s) {
+    if (t->str) {
         if (!t->colour) {
-            t->c = *t->s++;
-            switch (t->c) {
+            t->chr = *t->str++;
+            switch (t->chr) {
             case 0:
-                t->s = 0;
+                t->str = 0;
                 return;
 
             case 10:
                 t->x = t->x_off;
                 t->y++;
-                t->c = ' ';
+                t->chr = ' ';
                 break;
 
             default:
@@ -104,7 +106,7 @@ text_print_str_fancy(DG* dg, Text* t)
                 t->y++;
             }
             if (t->y >= (DG_YRES / 8)) {
-                t->s = 0;
+                t->str = 0;
                 return;
             }
 
@@ -112,11 +114,11 @@ text_print_str_fancy(DG* dg, Text* t)
         }
 
         if (t->colour < 3) {
-            text_print_char_adr(t->c, palette[t->colour],
+            text_print_char_adr(t->chr, palette[t->colour],
                                 dg->adr[dg->hid] + t->offset);
             t->colour++;
         } else {
-            text_print_char_adr(t->c, palette[2],
+            text_print_char_adr(t->chr, palette[2],
                                 dg->adr[dg->hid] + t->offset);
             t->colour = 0;
             text_print_str_fancy(dg, t);

@@ -20,9 +20,8 @@ include $(TARGET_CHECK_sdl.mk)
 CFLAGS   += -std=gnu11 -Wall -Wextra -pedantic -pthread
 LDFLAGS  += -pthread
 
-# TODO: Remove DHAVE_LIBSDL once Neo support has been purged.
 HOST_CFLAGS += $(CFLAGS_SDL)
-HOST_CPPFLAGS += -iquote $(CURDIR)/src -iquote $(OUTDIR_SRCS) -DHAVE_LIBSDL
+HOST_CPPFLAGS += -iquote $(CURDIR)/src -iquote $(OUTDIR_SRCS)
 HOST_LDFLAGS += -L$(OUTDIR_HOST_LIB) $(LDFLAGS_SDL) -lz
 
 BUILD_CPPFLAGS += -iquote $(CURDIR)/src

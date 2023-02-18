@@ -1,7 +1,8 @@
+#include "sprite.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include "all.h"
 
 void
 sprite_init(Sprite* sprite, GfxObject* go, int frame, int x, int y, int vis)

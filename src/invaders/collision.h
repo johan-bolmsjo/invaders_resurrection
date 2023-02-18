@@ -1,3 +1,9 @@
+#pragma once
+
+#include <inttypes.h>
+
+#include "sprite.h"
+
 typedef struct _Collision Collision;
 
 struct _Collision {
@@ -22,7 +28,7 @@ struct _Collision {
     /* Used if blocks != 0.
      */
     int blocks;    /* Width of mask in int32_ts */
-    int32_t* mask; /* One bit collision mask */
+    uint32_t* mask; /* One bit collision mask */
 
     Collision* prev;
     Collision* next;
