@@ -41,8 +41,16 @@ be any source graphics data. We have to accept that that is lost to time.
 
 * TODO Fix bugs related to optimization of modern compilers
 May still need to use =-fno-strict-aliasing=, we'll see.
+- [ ] Compile with optimization (-O2).
 
 * TODO Use SDL version 2
+
+* TODO Revise sound mixing
+The sound is generally glitchy with SDL 1.x. It worked better with the
+NEO sound API for which the code was originally written.
+
+- Implement robust sound playback using SDL 2
+- Ensure low latency
 
 * TODO Remove support for the NEO frame buffer library
 Remove support for the NEO frame buffer library as I have no intention of updating it.

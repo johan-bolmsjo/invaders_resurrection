@@ -1,6 +1,8 @@
-# Invaders
+# Invaders Resurrection
 
-A space invaders game, insanely complicated done.
+Bringing life back to a space invaders game from 1999.
+
+Overall TODO list is kept in [plan.org](plan.org).
 
 ## Building
 
