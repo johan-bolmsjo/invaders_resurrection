@@ -1,7 +1,7 @@
 #include <libgfx.h>
 #include <libsynth.h>
-#include "dg.h"        /* Rewritten to use the NEO library */
-#include "joy.h"       /* Ditto.. */
+#include "dg.h"  /* Rewritten to use the NEO library */
+#include "joy.h" /* Ditto.. */
 #include "defs.h"
 #include "prim.h"
 #include "stars.h"

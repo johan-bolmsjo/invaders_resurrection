@@ -1,2 +1,1 @@
-Image *
-crop (Image *image, Clip *clip);
+Image* crop(Image* image, Clip* clip);

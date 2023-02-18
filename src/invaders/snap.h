@@ -1,2 +1,1 @@
-int
-snap_create (DG *dg, char *path);
+int snap_create(DG* dg, char* path);

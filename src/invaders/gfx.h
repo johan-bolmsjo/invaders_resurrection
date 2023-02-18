@@ -1,4 +1,3 @@
 #pragma once
 
-int
-gfx_decode2 ();
+int gfx_decode2();
