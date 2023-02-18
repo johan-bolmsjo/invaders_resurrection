@@ -21,7 +21,7 @@ struct _RunLevelFunc {
 extern int g_runlevel;
 extern int g_next_runlevel;
 
-void runlevel_update();
+void runlevel_update(void);
 
 void runlevel_register_func(RunLevelFunc* r, int from, int to,
                             int (*handler)(RunLevelFunc*));

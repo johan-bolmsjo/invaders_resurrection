@@ -96,7 +96,7 @@ sdl_audio_callback(void* userdata, Uint8* stream, int len)
  */
 
 int
-synth_open()
+synth_open(void)
 {
     static SDL_AudioSpec sdl_audio_spec;
 
@@ -124,7 +124,7 @@ synth_open()
  */
 
 void
-synth_close()
+synth_close(void)
 {
     if (open_f) {
         open_f = 0;
@@ -133,7 +133,7 @@ synth_close()
 }
 
 void
-synth_update()
+synth_update(void)
 {
     /* This doesn't do anything with SDL since we have the callback
      * routine instead.
@@ -423,7 +423,7 @@ synth_waves_on_channel(int ch)
  */
 
 void
-synth_lock()
+synth_lock(void)
 {
     // TODO: Check what this does or if a mutex can be used instead. SDL
     //       callback called from thread? Also migrating to SDL2.
@@ -434,7 +434,7 @@ synth_lock()
  */
 
 void
-synth_unlock()
+synth_unlock(void)
 {
     SDL_UnlockAudio();
 }

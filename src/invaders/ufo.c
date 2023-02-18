@@ -8,7 +8,7 @@ static int count[15];
 static GfxObject* ufo_object;
 
 void
-ufo_tables()
+ufo_tables(void)
 {
     int i;
     double step = 1.5708 / 7, pos = -1.5708;

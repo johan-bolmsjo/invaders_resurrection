@@ -15,10 +15,10 @@
 #define CH_UFO_MOVE 3
 #define CH_UFO_DIE  3
 
-void sfx_extra_life();
-void sfx_player_shot();
-void sfx_player_explode();
-void sfx_bomber_move();
-void sfx_bomber_explode();
-void sfx_mystery_move();
-void sfx_mystery_explode();
+void sfx_extra_life(void);
+void sfx_player_shot(void);
+void sfx_player_explode(void);
+void sfx_bomber_move(void);
+void sfx_bomber_explode(void);
+void sfx_mystery_move(void);
+void sfx_mystery_explode(void);

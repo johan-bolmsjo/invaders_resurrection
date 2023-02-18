@@ -33,7 +33,7 @@ unsigned int g_hi_score = 0;
  */
 
 void
-status_reset()
+status_reset(void)
 {
     prev_score = 0;
     extra_life_counter = 0;

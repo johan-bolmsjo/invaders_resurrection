@@ -12,7 +12,7 @@ typedef struct _Clip {
     int sy_off; /* Source Y offset */
 } Clip;
 
-void prim_tables();
+void prim_tables(void);
 
 int clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y);
 

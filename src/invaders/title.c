@@ -21,7 +21,7 @@ static Text texts[6];
  */
 
 void
-title_tables()
+title_tables(void)
 {
     int i;
     static const char* strings[6] = {"  I N V A D E R S\n\na NoCrew production",

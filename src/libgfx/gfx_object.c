@@ -9,7 +9,7 @@ static GfxObject* object_list = 0;
  */
 
 GfxObject*
-gfx_get_first_object()
+gfx_get_first_object(void)
 {
     return object_list;
 }
@@ -93,7 +93,7 @@ gfx_object_destroy(GfxObject* o)
 }
 
 void
-gfx_object_destroy_all()
+gfx_object_destroy_all(void)
 {
     while (object_list)
         gfx_object_destroy(object_list);

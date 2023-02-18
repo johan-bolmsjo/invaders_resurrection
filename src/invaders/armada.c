@@ -122,7 +122,7 @@ collision_cb(Collision* a, Collision* b)
  */
 
 static void
-animate()
+animate(void)
 {
     int i;
     Bomber* b = armada.b[0];
@@ -139,7 +139,7 @@ animate()
  */
 
 static void
-move_armada_to_start()
+move_armada_to_start(void)
 {
     int i, j, x, y;
 
@@ -166,7 +166,7 @@ move_armada_to_start()
  */
 
 static void
-move_armada()
+move_armada(void)
 {
     int i, x = 0, y = 0;
     static int sfx_counter = 0;
@@ -230,7 +230,7 @@ move_armada()
 
         if (x || y) {
             if (armada.row == armada.bm && sfx_counter >= 2) {
-                sfx_bomber_move(armada.alive);
+                sfx_bomber_move();
                 sfx_counter = 0;
             }
 
@@ -248,7 +248,7 @@ move_armada()
  */
 
 void
-armada_tables()
+armada_tables(void)
 {
     int i, j, type;
 
@@ -292,7 +292,7 @@ armada_tables()
  */
 
 static void
-armada_new()
+armada_new(void)
 {
     int i;
     Bomber* b = armada.b[0];
@@ -336,7 +336,7 @@ armada_new()
  */
 
 void
-armada_reset()
+armada_reset(void)
 {
     armada.y_off = -1; /* armada_new () is called after this function */
     armada.missiles_max = 3;
@@ -374,7 +374,7 @@ armada_show(DG* dg)
  */
 
 void
-armada_update()
+armada_update(void)
 {
     int i;
     Bomber* b;

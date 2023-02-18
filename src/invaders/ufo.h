@@ -10,6 +10,6 @@ typedef struct _Ufo {
     Collision* c;
 } Ufo;
 
-void ufo_tables();
+void ufo_tables(void);
 void ufo_init(Ufo* u, int x, int y, int vis);
 void ufo_anim(Ufo* u);

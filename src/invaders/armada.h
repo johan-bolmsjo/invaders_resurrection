@@ -43,8 +43,8 @@ typedef struct _Armada {
 
 extern Armada armada; /* Used in missiles.c as well */
 
-void armada_tables();
-void armada_reset();
+void armada_tables(void);
+void armada_reset(void);
 void armada_hide(DG* dg);
 void armada_show(DG* dg);
-void armada_update();
+void armada_update(void);

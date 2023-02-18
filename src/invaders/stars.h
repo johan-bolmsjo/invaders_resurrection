@@ -22,6 +22,6 @@ typedef struct _Star {
 
 extern int16_t stars_cmap[COLOURS];
 
-void stars_tables();
+void stars_tables(void);
 void stars_hide(DG* dg);
 void stars_show(DG* dg);

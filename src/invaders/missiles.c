@@ -55,7 +55,7 @@ collision_cb(Collision* a, Collision* b)
  */
 
 void
-missiles_tables()
+missiles_tables(void)
 {
     int i;
     GfxObject* gfx_obj;
@@ -106,7 +106,7 @@ missiles_hide(DG* dg)
  */
 
 void
-missiles_update()
+missiles_update(void)
 {
     static char counters[ARMADA_X] = {0};
     static int x = 0, delay_i = 0;

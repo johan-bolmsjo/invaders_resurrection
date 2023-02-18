@@ -84,7 +84,7 @@ c_cb(Collision* a, Collision* b)
  */
 
 void
-mystery_tables()
+mystery_tables(void)
 {
     static RunLevelFunc rl0, rl1;
 
@@ -124,7 +124,7 @@ mystery_show(DG* dg)
  */
 
 void
-mystery_update()
+mystery_update(void)
 {
     static int init = 0, dir = 0, x_start, x_stop, x_vector, timer;
 

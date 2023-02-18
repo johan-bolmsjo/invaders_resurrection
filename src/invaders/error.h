@@ -3,7 +3,7 @@
 typedef struct _PanicCleanUp PanicCleanUp;
 
 struct _PanicCleanUp {
-    void (*handler)();
+    void (*handler)(void);
     PanicCleanUp* prev;
     PanicCleanUp* next;
 };

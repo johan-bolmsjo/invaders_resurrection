@@ -10,7 +10,7 @@
  */
 
 void
-sfx_extra_life()
+sfx_extra_life(void)
 {
     static SynthWave w0 = {SYNTH_WF_TRIANGLE,
                            1000,
@@ -29,7 +29,7 @@ sfx_extra_life()
  */
 
 void
-sfx_player_shot()
+sfx_player_shot(void)
 {
     static SynthWave w0 = {SYNTH_WF_PULSE,
                            400,
@@ -62,7 +62,7 @@ sfx_player_shot()
  */
 
 void
-sfx_player_explode()
+sfx_player_explode(void)
 {
     static SynthWave w0 = {SYNTH_WF_PULSE,
                            50,
@@ -130,7 +130,7 @@ bomber_move(int channel, int count)
  */
 
 void
-sfx_bomber_move()
+sfx_bomber_move(void)
 {
     static int count = 0;
 
@@ -148,7 +148,7 @@ sfx_bomber_move()
  */
 
 void
-sfx_bomber_explode()
+sfx_bomber_explode(void)
 {
     static SynthWave w0 = {SYNTH_WF_PULSE,
                            50,
@@ -174,7 +174,7 @@ sfx_bomber_explode()
  */
 
 void
-sfx_mystery_move()
+sfx_mystery_move(void)
 {
     static SynthWave w0 = {SYNTH_WF_PULSE,
                            200,
@@ -200,7 +200,7 @@ sfx_mystery_move()
  */
 
 void
-sfx_mystery_explode()
+sfx_mystery_explode(void)
 {
     static SynthWave w0 = {SYNTH_WF_PULSE,
                            300,

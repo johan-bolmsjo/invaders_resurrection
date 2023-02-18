@@ -11,7 +11,7 @@ typedef struct _Missile {
 
 extern int g_missiles_alive;
 
-void missiles_tables();
+void missiles_tables(void);
 void missiles_show(DG* dg);
 void missiles_hide(DG* dg);
-void missiles_update();
+void missiles_update(void);

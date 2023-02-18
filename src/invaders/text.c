@@ -20,7 +20,7 @@ static uint16_t palette[3] = {65535, 40314, 17141};
  */
 
 int
-text_decode_font()
+text_decode_font(void)
 {
     uLong src_len, dst_len;
 

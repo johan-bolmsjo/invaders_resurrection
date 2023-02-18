@@ -50,7 +50,7 @@ create_star(Star* star)
 }
 
 static void
-create_stars()
+create_stars(void)
 {
     int i;
 
@@ -62,7 +62,7 @@ create_stars()
  */
 
 void
-stars_tables()
+stars_tables(void)
 {
     int i;
     int16_t* cm;

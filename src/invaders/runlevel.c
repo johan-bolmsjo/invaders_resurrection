@@ -17,7 +17,7 @@ int g_next_runlevel = RUNLEVEL_TITLE0; /* Next runlevel */
  */
 
 void
-runlevel_update()
+runlevel_update(void)
 {
     int change = 1;
     RunLevelFunc* r;

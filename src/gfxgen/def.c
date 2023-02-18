@@ -23,7 +23,7 @@ static DefFile d_file; /* En liten fuuuling:) */
  */
 
 static void
-skip_line()
+skip_line(void)
 {
     for (; d_file.pos < d_file.size; d_file.pos++) {
         if (d_file.mem[d_file.pos] == 10)

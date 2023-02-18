@@ -22,13 +22,13 @@ typedef struct _SynthWave {
     int adsr[4]; /* Attack, decay, sustain and release times (ms) */
 } SynthWave;
 
-int  synth_open();
-void synth_close();
-void synth_update();
+int  synth_open(void);
+void synth_close(void);
+void synth_update(void);
 void synth_wave(SynthWave* sw, int ch);
 void synth_fm(SynthWave* sw, int ch);
 void synth_pwm(SynthWave* sw, int ch);
 void synth_channel_kill(int ch);
 int  synth_waves_on_channel(int ch);
-void synth_lock();
-void synth_unlock();
+void synth_lock(void);
+void synth_unlock(void);

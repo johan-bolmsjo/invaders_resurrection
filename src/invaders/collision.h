@@ -41,4 +41,4 @@ Collision* collision_create(int id, void* id_p, int gid,
 
 void collision_destroy(Collision* c);
 void collision_update_from_sprite(Collision* c, Sprite* s);
-void collision_detection();
+void collision_detection(void);

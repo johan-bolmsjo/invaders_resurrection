@@ -21,9 +21,9 @@ struct _Image {
     Image* next;
 };
 
-Image* image_get_first();
+Image* image_get_first(void);
 Image* image_create(int type, int colours, int width, int height);
 void   image_destroy(Image* image);
-void   image_destroy_all();
+void   image_destroy_all(void);
 void   image_flip_x(Image* im);
 void   image_flip_y(Image* im);

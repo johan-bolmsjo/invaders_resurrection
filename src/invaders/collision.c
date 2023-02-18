@@ -119,7 +119,7 @@ sort_list(Collision** list, int n)
  */
 
 void
-collision_detection()
+collision_detection(void)
 {
     int i, j;
     Collision *c, *c_tmp, fubar = {0};

@@ -9,7 +9,7 @@ static Image* image_base;
  */
 
 Image*
-image_get_first()
+image_get_first(void)
 {
     return image_base;
 }
@@ -122,7 +122,7 @@ image_destroy(Image* image)
  */
 
 void
-image_destroy_all()
+image_destroy_all(void)
 {
     while (image_base)
         image_destroy(image_base);

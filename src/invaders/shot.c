@@ -58,7 +58,7 @@ shot_callback(Collision* a, Collision* b)
 
 Shot*
 shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
-            int fatal, int gid, void (*cb)())
+            int fatal, int gid, void (*cb)(void))
 {
     Collision* c = 0;
     Shot* s;
@@ -149,7 +149,7 @@ shot_show(DG* dg)
  */
 
 void
-shot_update()
+shot_update(void)
 {
     Shot *s = shot_list, *st;
 

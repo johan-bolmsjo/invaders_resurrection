@@ -53,11 +53,11 @@ struct _GfxFrame {
     uint32_t* collision;
 };
 
-GfxObject* gfx_get_first_object();
+GfxObject* gfx_get_first_object(void);
 GfxObject* gfx_object_find(const char* name);
 GfxObject* gfx_object_create(const char* name);
 void       gfx_object_destroy(GfxObject* o);
-void       gfx_object_destroy_all();
+void       gfx_object_destroy_all(void);
 GfxFrame*  gfx_frame_create(int flags, int width, int height, int x_off, int y_off);
 void       gfx_frame_destroy(GfxFrame* f);
 int        gfx_add_frame_to_object(GfxFrame* f, GfxObject* o);

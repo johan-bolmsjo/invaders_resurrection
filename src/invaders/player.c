@@ -186,7 +186,7 @@ move(Player* p)
  */
 
 static void
-shot_cb()
+shot_cb(void)
 {
     shots--;
 }
@@ -195,7 +195,7 @@ shot_cb()
  */
 
 static void
-die()
+die(void)
 {
     int i, xv, yv, x, y;
 
@@ -229,7 +229,7 @@ die()
  */
 
 void
-player_kill()
+player_kill(void)
 {
     if (player.c) {
         die();
@@ -275,7 +275,7 @@ player_show(DG* dg)
  */
 
 static void
-player_new()
+player_new(void)
 {
     if (!player.c) {
         sprite_init(&player.s, player_obj, 7, DG_XRES / 2, DG_YRES - 16, 1);
@@ -290,7 +290,7 @@ player_new()
  */
 
 static void
-suicide()
+suicide(void)
 {
     if (player.c) {
         collision_destroy(player.c);

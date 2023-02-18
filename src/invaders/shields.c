@@ -58,7 +58,7 @@ collision_cb(Collision* a, Collision* b)
  */
 
 void
-shield_tables()
+shield_tables(void)
 {
     int x0, x1, i, j, v, g, b;
     uint16_t *p1, *p2, *p3;
@@ -112,7 +112,7 @@ shield_tables()
  */
 
 void
-shields_new()
+shields_new(void)
 {
     int i, j;
     uint32_t *src, *dst;
@@ -141,7 +141,7 @@ shields_new()
  */
 
 void
-shields_del()
+shields_del(void)
 {
     int i;
 

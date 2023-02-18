@@ -16,7 +16,7 @@ static uint16_t ALPHA_BLUE[32 * 16];
  */
 
 void
-prim_tables()
+prim_tables(void)
 {
     int i, j, atom, v;
 
