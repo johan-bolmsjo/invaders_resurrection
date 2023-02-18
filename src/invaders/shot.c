@@ -33,9 +33,9 @@ shot_destroy(Shot* s)
 
         free(s);
         g_shot_obj--;
+    } else {
+        s->pend_rm++;
     }
-
-    s->pend_rm++;
 }
 
 /* Collision callback function.
