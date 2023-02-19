@@ -80,7 +80,7 @@ collision_update_from_sprite(Collision* c, Sprite* s)
 }
 
 /* Sort all collition objects in list by x0.
- * XXX: The function goes out of its sorting range by one.
+ * TODO(jb): The function goes out of its sorting range by one.
  */
 
 static void
@@ -137,7 +137,7 @@ collision_detection(void)
         c = c->next;
     }
 
-    /* XXX: The sort function goes out of its sorting range by one.
+    /* TODO(jb): The sort function goes out of its sorting range by one.
      */
 
     c_list[i] = &fubar;

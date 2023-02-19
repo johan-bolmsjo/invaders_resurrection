@@ -1,10 +1,27 @@
 OUTDIR := _out
 OUTDIR := $(abspath $(OUTDIR))
+
+VARIANT := debug
+
+DEBUG_INFO := -g -fno-omit-frame-pointer
+
+CFLAGS_debug       := -O0 $(DEBUG_INFO)
+CFLAGS_debug-asan  := -O0 $(DEBUG_INFO) -fsanitize=address
+LDFLAGS_debug-asan := -fsanitize=address
+CFLAGS_release     := -O2 $(DEBUG_INFO)
+
+CFLAGS  := $(CFLAGS_$(VARIANT))
+LDFLAGS := $(LDFLAGS_$(VARIANT))
+
+ifeq ($(CFLAGS),)
+$(error Unsupported variant $(VARIANT))
+endif
+
 include mk/prologue.mk
 
 ###############################################################################
 # Check for presence of SDL library.
-# TODO: This needs to be adjusted to support cross compilation.
+# TODO(jb): This needs to be adjusted to support cross compilation.
 TARGET_CHECK_sdl.mk := $(OUTDIR_CHECK)/sdl.mk
 $(TARGET_CHECK_sdl.mk):
 	$(Q)$(RM) $@.tmp

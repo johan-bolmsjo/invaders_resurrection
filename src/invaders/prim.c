@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <inttypes.h>
 
+// TODO(jb): Use struct rgb565; extend color.h as appropriate
 static uint16_t ALPHA_RED[32 * 16];
 static uint16_t ALPHA_GREEN[64 * 16];
 static uint16_t ALPHA_BLUE[32 * 16];
@@ -91,7 +92,7 @@ blit_clipped_gfx_frame_with_alpha(DG* dg, Clip* clip, GfxFrame* gf)
 {
     int w, h, s_stride, d_stride, sa, da, sp, dp;
     uint8_t* alpha;
-    uint16_t *src, *dst;
+    uint16_t *src, *dst; // TODO(jb): Use struct rgb565
 
     s_stride = gf->width - clip->w;
     d_stride = DG_XRES - clip->w;
@@ -145,7 +146,7 @@ static void
 blit_clipped_gfx_frame_without_alpha(DG* dg, Clip* clip, GfxFrame* gf)
 {
     int w, h, s_stride, d_stride;
-    uint16_t *src, *dst, v;
+    uint16_t *src, *dst, v; // TODO(jb): Use struct rgb565
 
     s_stride = gf->width - clip->w;
     d_stride = DG_XRES - clip->w;
@@ -180,12 +181,12 @@ blit_clipped_gfx_frame(DG* dg, Clip* clip, GfxFrame* gf)
 /* Blit clipped single coloured box,
  * used to clear sprites.
  */
-
+// TODO(jb): Use struct rgb565 for colour
 void
 blit_clipped_colour_box(DG* dg, Clip* clip, uint16_t colour)
 {
     int w, h, d_stride;
-    uint16_t* dst;
+    uint16_t* dst; // TODO(jb): Use struct rgb565
 
     d_stride = DG_XRES - clip->w;
     dst = dg->adr[dg->hid] + clip->x + clip->y * DG_XRES;
@@ -200,12 +201,12 @@ blit_clipped_colour_box(DG* dg, Clip* clip, uint16_t colour)
 
 /* Blit rectangular block.
  */
-
+// TODO(jb): Use struct rgb565 for src
 void
 blit_clipped_gfx_box(DG* dg, Clip* clip, uint16_t* src)
 {
     int w, h, d_stride;
-    uint16_t* dst;
+    uint16_t* dst; // TODO(jb): Use struct rgb565
 
     d_stride = DG_XRES - clip->w;
     dst = dg->adr[dg->hid] + clip->x + clip->y * DG_XRES;

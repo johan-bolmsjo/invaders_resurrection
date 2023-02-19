@@ -102,7 +102,7 @@ missiles_hide(DG* dg)
 
 /* Updates old missiles and creates new ones.
  *
- * XXX: Dependant on armada.c stuff.. Uggly:(
+ * TODO(jb): Dependant on armada.c stuff.. Uggly:(
  */
 
 void

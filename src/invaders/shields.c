@@ -3,269 +3,284 @@
 
 #include "shields.h"
 
+#include <string.h>
+
 #include "collision.h"
 #include "dg.h"
 #include "gids.h"
 #include "libgfx/libgfx.h"
+#include "libutil/clamp.h"
+#include "libutil/color.h"
 #include "prim.h"
 #include "runlevel.h"
 #include "sprite.h"
 
-#define WIDTH  (48 + 12) /* Use multiple of 2 */
-#define HEIGHT (32 + 12) /* Use multiple of 2 */
+enum {
+    shield_count = 4,
+    shield_x_dim = 60,
+    shield_y_dim = 44,
 
-static uint32_t g_shield_orig1[WIDTH / 2 * HEIGHT];
-static uint32_t g_shield_orig2[WIDTH / 2 * HEIGHT];
-static uint32_t g_shield_orig3[WIDTH / 2 * HEIGHT];
-static uint32_t* g_shields_flash[2] = {g_shield_orig1, g_shield_orig2};
+    // Black border around shield before convolution matrix is applied.
+    // The convolution matrix will grow the shield nearer its perimeter.
+    shield_border = 4,
 
-static uint32_t g_shield1[WIDTH / 2 * HEIGHT];
-static uint32_t g_shield2[WIDTH / 2 * HEIGHT];
-static uint32_t g_shield3[WIDTH / 2 * HEIGHT];
-static uint32_t g_shield4[WIDTH / 2 * HEIGHT];
-static uint32_t* g_shields[4] = {g_shield1, g_shield2, g_shield3, g_shield4};
+    // Number of shield flashing animation frames.
+    shield_flash_frames = 2,
+};
 
-static Collision* g_collisions[4] = {0};
+typedef struct rgb565 shield_type[shield_y_dim][shield_x_dim];
 
-static Clip g_clip1 = {128 - WIDTH / 2, DG_YRES - 80 - HEIGHT / 2,
-                       WIDTH, HEIGHT, 0, 0};
-static Clip g_clip2 = {256 - WIDTH / 2, DG_YRES - 80 - HEIGHT / 2,
-                       WIDTH, HEIGHT, 0, 0};
-static Clip g_clip3 = {384 - WIDTH / 2, DG_YRES - 80 - HEIGHT / 2,
-                       WIDTH, HEIGHT, 0, 0};
-static Clip g_clip4 = {512 - WIDTH / 2, DG_YRES - 80 - HEIGHT / 2,
-                       WIDTH, HEIGHT, 0, 0};
+// Shields for flashing animation
+static shield_type g_shield_orig1;
+static shield_type g_shield_orig2;
+static shield_type* g_shields_flash[shield_flash_frames] = {&g_shield_orig1, &g_shield_orig2};
 
-static Clip* g_clips[4] = {&g_clip1, &g_clip2, &g_clip3, &g_clip4};
+// Pristine shield
+static shield_type g_shield_orig3;
 
-static uint8_t g_draw[4] = {0}, g_count[4] = {2, 2, 2, 2};
+// Shields subject to erosion
+static shield_type g_shield1;
+static shield_type g_shield2;
+static shield_type g_shield3;
+static shield_type g_shield4;
+static shield_type* g_shields[shield_count] = {&g_shield1, &g_shield2, &g_shield3, &g_shield4};
 
-/* Collision callback routine.
- */
+static Collision* g_collisions[shield_count] = {0};
 
+static Clip g_clip1 = {128 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+                       shield_x_dim, shield_y_dim, 0, 0};
+static Clip g_clip2 = {256 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+                       shield_x_dim, shield_y_dim, 0, 0};
+static Clip g_clip3 = {384 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+                       shield_x_dim, shield_y_dim, 0, 0};
+static Clip g_clip4 = {512 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+                       shield_x_dim, shield_y_dim, 0, 0};
+
+static Clip* g_clips[shield_count] = {&g_clip1, &g_clip2, &g_clip3, &g_clip4};
+
+static bool g_draw[shield_count]  = {false};
+
+// Used for the flashing animation.
+static uint8_t g_flash_count[shield_count] = {
+    shield_flash_frames, shield_flash_frames, shield_flash_frames, shield_flash_frames
+};
+
+// Collision callback routine.
 static int
 collision_cb(Collision* a, Collision* b)
 {
     if (b->gid == GID_BOMBER) {
-        g_draw[a->id] = 0;
-        g_count[a->id] = 0;
+        g_draw[a->id] = false;
+        g_flash_count[a->id] = 0;
     }
 
     return 0;
 }
 
-/* Create shield data and other initialisations.
- */
-
 void
 shield_tables(void)
 {
-    int x0, x1, i, j, v, g, b;
-    uint16_t *p1, *p2, *p3;
-    unsigned char shield[HEIGHT][WIDTH] = {{0}};
+    uint8_t shield_tmpl[shield_y_dim][shield_x_dim] = {{0}};
 
-    x0 = 8 + 4;
-    x1 = WIDTH - x0;
-    for (i = 4; i < HEIGHT - 4; i++) {
-        for (j = x0; j < x1; j++)
-            shield[i][j] = 160;
+    // Create a shield template with value 160 for '*':
+    //
+    //     **********
+    //    ************
+    //    ************
+    //    ************
+    //
+    int x0 = 8 + shield_border;
+    int x1 = shield_x_dim - x0;
+    for (int y = shield_border; y < shield_y_dim - shield_border; y++) {
+        for (int x = x0; x < x1; x++) {
+            shield_tmpl[y][x] = 160;
+        }
 
-        if (x0 > 4) {
+        if (x0 > shield_border) {
             x0--;
             x1++;
         }
     }
 
-    p1 = (uint16_t*)g_shield_orig1 + 1;
-    p2 = (uint16_t*)g_shield_orig2 + 1;
-    p3 = (uint16_t*)g_shield_orig3 + 1;
+    shield_type* s1 = &g_shield_orig1;
+    shield_type* s2 = &g_shield_orig2;
+    shield_type* s3 = &g_shield_orig3;
 
-    for (i = 1; i < HEIGHT - 1; i++) {
-        for (j = 1; j < WIDTH - 1; j++) {
-            v = shield[i - 1][j - 1] * 4;
-            v += shield[i - 1][j] * 16;
-            v += shield[i - 1][j + 1] * 4;
-            v += shield[i][j - 1] * 16;
-            v += shield[i][j] * 176;
-            v += shield[i][j + 1] * 16;
-            v += shield[i + 1][j - 1] * 4;
-            v += shield[i + 1][j] * 16;
-            v += shield[i + 1][j + 1] * 4;
-            g = v >> 12;
-            b = v >> 11;
+    for (int y = 1; y < shield_y_dim - 1; y++) {
+        for (int x = 1; x < shield_x_dim - 1; x++) {
+            // A 3x3 convolution matrix that is applied to the shield template to
+            // produce anti-aliased edges. The weights sum to 256 so the max value
+            // for v is (160 * 256).
+            //
+            //     4  16  4
+            //    16 176 16
+            //     4  16  4
+            //
+            const int v =
+                shield_tmpl[y - 1][x - 1] *   4 +
+                shield_tmpl[y - 1][x    ] *  16 +
+                shield_tmpl[y - 1][x + 1] *   4 +
+                shield_tmpl[y    ][x - 1] *  16 +
+                shield_tmpl[y    ][x    ] * 176 +
+                shield_tmpl[y    ][x + 1] *  16 +
+                shield_tmpl[y + 1][x - 1] *   4 +
+                shield_tmpl[y + 1][x    ] *  16 +
+                shield_tmpl[y + 1][x + 1] *   4;
+
+            const int g = v >> 12; // max value: 10
+            const int b = v >> 11; // max value: 20
+
+            // Bulid shields used for the flashing animation
             if (g || b) {
-                *p1++ = 65535;
-                *p2++ = (15) << 11 | ((g + 63) / 2) << 5 | (b + 31) / 2;
+                (*s1)[y][x] = pack_rgb565(rgb_white());
+                (*s2)[y][x] = pack_rgb565((struct rgb){15, (g + max_g) / 2, (b + max_b) / 2});
             } else {
-                *p1++ = 0;
-                *p2++ = 0;
+                (*s1)[y][x] = pack_rgb565(rgb_black());
+                (*s2)[y][x] = pack_rgb565(rgb_black());
             }
-            *p3++ = (g << 5) | b;
+
+            // Build regular shield
+            (*s3)[y][x] = pack_rgb565((struct rgb){.g = g, .b = b});
         }
-        p1 += 2;
-        p2 += 2;
-        p3 += 2;
     }
 }
-
-/* Create new shields.
- */
 
 void
 shields_new(void)
 {
-    int i, j;
-    uint32_t *src, *dst;
-
-    for (i = 0; i < 4; i++) {
-        g_draw[i] = 1;
-        g_count[i] = 0; /* Used for flash animation */
+    for (int i = 0; i < shield_count; i++) {
+        g_draw[i] = true;
+        g_flash_count[i] = 0;
 
         if (!g_collisions[i]) {
             g_collisions[i] = collision_create(i, 0, GID_SHIELD, collision_cb);
-            g_collisions[i]->x0 = (i + 1) * 128 - WIDTH / 2;
-            g_collisions[i]->x1 = (i + 1) * 128 + WIDTH / 2 - 1;
-            g_collisions[i]->y0 = DG_YRES - 80 - HEIGHT / 2;
-            g_collisions[i]->y1 = DG_YRES - 80 + HEIGHT / 2 - 1;
+            g_collisions[i]->x0 = (i + 1) * 128 - shield_x_dim / 2;
+            g_collisions[i]->x1 = (i + 1) * 128 + shield_x_dim / 2 - 1;
+            g_collisions[i]->y0 = DG_YRES - 80 - shield_y_dim / 2;
+            g_collisions[i]->y1 = DG_YRES - 80 + shield_y_dim / 2 - 1;
         }
 
-        src = g_shield_orig3;
-        dst = g_shields[i];
-
-        for (j = 0; j < WIDTH / 2 * HEIGHT; j++)
-            *dst++ = *src++;
+        memcpy(g_shields[i], g_shield_orig3, sizeof(g_shield_orig3));
     }
 }
-
-/* Delete shields.
- */
 
 void
 shields_del(void)
 {
-    int i;
-
-    for (i = 0; i < 4; i++) {
-        g_draw[i] = 0;
-        g_count[i] = 0; /* Used to clear two times. */
+    for (int i = 0; i < shield_count; i++) {
+        g_draw[i] = false;
+        g_flash_count[i] = 0; /* Used to clear two times. */
     }
 }
 
+static inline bool
+shield_xy_in_bounds(int x, int y) {
+    // Silly needless optimization; negative values become large positive values that
+    // are still out of bounds.
+    return (unsigned)x < shield_x_dim && (unsigned)y < shield_y_dim;
+}
+
+static inline struct rgb565
+shield_xy_get(shield_type shield, int x, int y) {
+    if (shield_xy_in_bounds(x, y)) {
+        return shield[y][x];
+    }
+    return pack_rgb565(rgb_black());
+}
+
+static inline void
+shield_xy_put(shield_type shield, int x, int y, struct rgb565 c) {
+    if (shield_xy_in_bounds(x, y)) {
+        shield[y][x] = c;
+    }
+}
+
+// Make hole in shield from missile or bomb.
 static void
-make_hole(uint16_t* dst)
+make_hole(shield_type shield, int x, int y)
 {
-    int x, y, g, b, alpha;
-    uint8_t* src;
-    static uint8_t hole[9 * 9] = {16, 8, 8, 8, 8, 8, 8, 8, 16,
-                                  8, 4, 0, 0, 0, 0, 0, 4, 8,
-                                  8, 0, 0, 0, 0, 0, 0, 0, 8,
-                                  8, 0, 0, 0, 0, 0, 0, 0, 8,
-                                  8, 0, 0, 0, 0, 0, 0, 0, 8,
-                                  8, 0, 0, 0, 0, 0, 0, 0, 8,
-                                  8, 0, 0, 0, 0, 0, 0, 0, 8,
-                                  8, 4, 0, 0, 0, 0, 0, 4, 8,
-                                  16, 8, 8, 8, 8, 8, 8, 8, 16};
+    enum {
+        x_dim  = 9,
+        y_dim = 9,
+    };
 
-    dst -= (WIDTH * 4 + 4);
-    src = hole;
-    for (y = 9; y > 0; y--) {
-        for (x = 9; x > 0; x--) {
-            b = *dst;
-            alpha = *src++;
-            g = ((b >> 5) * alpha) >> 4;
-            b = ((b & 31) * alpha) >> 4;
+    // Alpha values:
+    //    0 = opaque
+    //   16 = transparent
+    static uint8_t hole_alpha[y_dim][x_dim] =
+        {{16, 8, 8, 8, 8, 8, 8, 8, 16},
+         { 8, 4, 0, 0, 0, 0, 0, 4,  8},
+         { 8, 0, 0, 0, 0, 0, 0, 0,  8},
+         { 8, 0, 0, 0, 0, 0, 0, 0,  8},
+         { 8, 0, 0, 0, 0, 0, 0, 0,  8},
+         { 8, 0, 0, 0, 0, 0, 0, 0,  8},
+         { 8, 0, 0, 0, 0, 0, 0, 0,  8},
+         { 8, 4, 0, 0, 0, 0, 0, 4,  8},
+         {16, 8, 8, 8, 8, 8, 8, 8, 16}};
 
-            *dst++ = (g << 5) | b;
+    // Adjust xy to center hole
+    x -= 4;
+    y -= 4;
+
+    for (int hy = 0; hy < y_dim; hy++) {
+        for (int hx = 0; hx < x_dim; hx++) {
+            const int a = hole_alpha[hy][hx];
+            const struct rgb c = unpack_rgb565(shield_xy_get(shield, x + hx, y + hy));
+            shield_xy_put(shield, x + hx, y + hy, pack_rgb565((struct rgb){
+                        .r = (c.r * a) >> 4,
+                        .g = (c.g * a) >> 4,
+                        .b = (c.b * a) >> 4,
+                    }));
         }
-
-        dst += (WIDTH - 9);
     }
 }
 
-/* Makes hole in shield and returns 1 if it was hit otherwise 0 is
- * returned.
- *
- * y_vec = 1 means that the shot comes from above.
- * y_vec = -1 means that the shot comes from below.
- */
-
-int
-shields_hit(int x_pos, int y_pos, int y_vec, int shield)
+bool
+shields_hit(int x, int y, int y_vec, int shield_id)
 {
-    int num, stride;
-    uint16_t* p = (uint16_t*)g_shields[shield];
+    x = clamp_int(x - g_collisions[shield_id]->x0, 0, shield_x_dim - 1);
+    y = clamp_int(y - g_collisions[shield_id]->y0, 0, shield_y_dim -1);
 
-    x_pos -= g_collisions[shield]->x0;
-    if (x_pos < 0)
-        x_pos = 0;
-    if (x_pos >= WIDTH)
-        x_pos = WIDTH - 1;
-    y_pos -= g_collisions[shield]->y0;
-    if (y_pos < 0)
-        y_pos = 0;
-    if (y_pos >= HEIGHT)
-        y_pos = HEIGHT - 1;
+    shield_type* shield = g_shields[shield_id];
 
-    if (y_vec < 0) {
-        p += ((HEIGHT - 1) * WIDTH + x_pos);
-        stride = -WIDTH;
-        num = HEIGHT - y_pos;
-    } else {
-        p += x_pos;
-        stride = WIDTH;
-        num = y_pos + 1;
-    }
-
-    for (; num > 0; num--) {
-        if (*p) {
-            make_hole(p);
-            return 1;
+    // Drill through until a non-black pixel is found.
+    while (shield_xy_in_bounds(x, y)) {
+        if (shield_xy_get(*shield, x, y).v) {
+            make_hole(*shield, x, y);
+            return true;
         }
-        p += stride;
+        y += y_vec;
     }
-
-    return 0;
+    return false;
 }
-
-/* Copy shields to the screen.
- */
 
 void
 shields_show(DG* dg)
 {
-    int i;
-
-    for (i = 0; i < 4; i++) {
+    for (int i = 0; i < shield_count; i++) {
         if (g_draw[i]) {
-            if (g_count[i] < 2) {
-                blit_clipped_gfx_box(dg, g_clips[i],
-                                     (uint16_t*)g_shields_flash[g_count[i]]);
-                g_count[i]++;
+            if (g_flash_count[i] < shield_flash_frames) {
+                blit_clipped_gfx_box(dg, g_clips[i], &(*g_shields_flash[g_flash_count[i]])[0][0].v);
+                g_flash_count[i]++;
             } else {
-                blit_clipped_gfx_box(dg, g_clips[i],
-                                     (uint16_t*)g_shields[i]);
+                blit_clipped_gfx_box(dg, g_clips[i], &(*g_shields[i])[0][0].v);
             }
         }
     }
 }
 
-/* Delete shields from the screen.
- */
-
 void
 shields_hide(DG* dg)
 {
-    int i;
-
-    for (i = 0; i < 4; i++) {
-        if (!g_draw[i] && g_count[i] < 2) {
+    for (int i = 0; i < shield_count; i++) {
+        if (!g_draw[i] && g_flash_count[i] < shield_flash_frames) {
             if (g_collisions[i]) {
                 collision_destroy(g_collisions[i]);
                 g_collisions[i] = 0;
             }
 
             blit_clipped_colour_box(dg, g_clips[i], 0);
-            g_count[i]++;
+            g_flash_count[i]++;
         }
     }
 }

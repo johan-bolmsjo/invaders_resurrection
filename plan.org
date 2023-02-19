@@ -39,10 +39,6 @@ be any source graphics data. We have to accept that that is lost to time.
 - [X] Compile with =-Wextra=
 - [X] Compile with =-pedantic=
 
-* TODO Fix bugs related to optimization of modern compilers
-May still need to use =-fno-strict-aliasing=, we'll see.
-- [ ] Compile with optimization (-O2).
-
 * TODO Use SDL version 2
 
 * TODO Revise sound mixing
@@ -70,6 +66,15 @@ Feed the rendered image through a CRT shader effect to reduce the blocky appeara
 * TODO Make a webassembly port using https://emscripten.org
 
 * Closed Issues
+** DONE Fix bugs related to optimization of modern compilers       :ARCHIVE:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2023-02-19 Sun 19:40] \\
+  Crashes where caused by one use after free bug related to player shots
+  and one buffer overflow bug in the shield handling code.
+:END:
+May still need to use =-fno-strict-aliasing=, we'll see.
+- [X] Compile with optimization (-O2).
+
 ** DONE Remove support for the NEO frame buffer library            :ARCHIVE:
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2023-02-18 Sat 18:27]

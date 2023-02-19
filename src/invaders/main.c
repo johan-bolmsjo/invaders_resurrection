@@ -303,8 +303,8 @@ main(void)
 
         dg_flip(&dg);
 
-        /* BUG: Should have thought about timing better. Lets make 80Hz the
-         *      maximum frame rate.
+        /* TODO(jb): Should have thought about timing better. Lets make 80Hz the
+         *           maximum frame rate.
          * Two scenarios:
          * 1) Vsync, but to high refresh rate.
          * 2) No vsync.

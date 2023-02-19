@@ -2,8 +2,10 @@
  * Simple software synth ala oscillator model.
  * Inspired by the SID chip.
  *
- * BUGS:
- * Very CPU hungry.
+ * TODO(jb): Convert to floating point arithmetic's.
+ *           The first version of this code used floats; it was only
+ *           converted to fix point math to run on my old Netwinder with
+ *           a 275 MHz SA-110 CPU.
  *
  * @author Johan Bolmsjo <johan@nocrew.org>
  */
@@ -103,7 +105,7 @@ synth_open(void)
     sdl_audio_spec.freq = FREQUENCY;
     sdl_audio_spec.format = AUDIO_S16SYS;
     sdl_audio_spec.channels = 1;
-    sdl_audio_spec.samples = 4096; // TODO: Optimize this for low latency
+    sdl_audio_spec.samples = 4096; // TODO(jb): Optimize this for low latency
     sdl_audio_spec.callback = sdl_audio_callback;
 
     if (SDL_OpenAudio(&sdl_audio_spec, 0) < 0)
@@ -187,7 +189,8 @@ update_channel(int ch)
         if (wp->wf == SYNTH_WF_NONE)
             continue;
 
-        /* BUG: One sample ahead!!
+        /* TODO(jb): BUG: One sample ahead!!
+         *           (Future me has no idea what this means)
          */
         for (; wp->i < 4; wp->i++) {
             if (wp->s[wp->i]) {
@@ -425,8 +428,8 @@ synth_waves_on_channel(int ch)
 void
 synth_lock(void)
 {
-    // TODO: Check what this does or if a mutex can be used instead. SDL
-    //       callback called from thread? Also migrating to SDL2.
+    // TODO(jb): Check what this does or if a mutex can be used instead. SDL
+    //           callback called from thread? Also migrating to SDL2.
     SDL_LockAudio();
 }
 

@@ -129,7 +129,7 @@ image_destroy_all(void)
 }
 
 /* Flip image around X-axis
- * XXX: Write this one when needed.
+ * TODO(jb): Write this one when needed.
  */
 
 void

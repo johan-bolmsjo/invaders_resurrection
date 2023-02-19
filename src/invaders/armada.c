@@ -287,8 +287,8 @@ armada_tables(void)
 
 /* Create new armada.
  *
- * XXX: Doesn't update the collision positions so be sure to run animate()
- *      before collision_detection() is run.
+ * TODO(jb): Doesn't update the collision positions so be sure to run animate()
+ *           before collision_detection() is run.
  */
 
 static void
