@@ -35,10 +35,14 @@ The following build options are supported by the GNU make based build system.
 
 Keys to use in the game:
 
-SPACE  Fire
-ESCAPE Quit
-Z      Turn left
-X      Turn right
-P      Create snapshot (invaders_snap.tga)
+| Key    | Action                              |
+|--------|-------------------------------------|
+| SPACE  | Fire                                |
+| ESCAPE | Quit                                |
+| Z      | Turn left                           |
+| X      | Turn right                          |
+| P      | Create snapshot (invaders_snap.tga) |
 
-There is joystick support as well.
+There is joystick support as well...
+Well no, there was joystick support.
+This needs to be fixed.

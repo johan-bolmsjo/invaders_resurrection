@@ -53,6 +53,9 @@ When the game was made clearing the whole screen each frame was costly in terms 
 There is no longer any reason to do this for such a low resolution game.
 Thus remove the double buffering to simplify the code.
 
+* TODO Fix joystick support
+Bring back joystick support (with SDL 2).
+
 * TODO CRT shader effect
 Feed the rendered image through a CRT shader effect to reduce the blocky appearance of 640x480 resolution.
 
