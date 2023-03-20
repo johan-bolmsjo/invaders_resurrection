@@ -26,7 +26,7 @@ The following build options are supported by the GNU make based build system.
 
 | Argument           | Description                              |
 |--------------------|------------------------------------------|
-| V=1                | Output full compilation commands         |
+| V=1 or VERBOSE=1   | Output full compilation commands         |
 | VARIANT=release    | Optimization                             |
 | VARIANT=debug      | No optimization and debug info (default) |
 | VARIANT=debug-asan | Debug with address sanitizer             |

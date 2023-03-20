@@ -34,5 +34,9 @@ $(foreach target,$(call expand-targets-all) $(call expand-objs-all),$(eval $(tar
 $(sort $(dir $(call expand-targets-all) $(call expand-objs-all))):
 	$(Q)mkdir -p $@
 
-# Read dependency info for *existing* .o files
+# Read dependency info for *existing* .o files.
+# The `help' guard is not perfect but prevents rebuilding generated sources that
+# dependency files depend on when the help command is invoked.
+ifneq ($(filter-out help,$(MAKECMDGOALS)),)
 -include $(patsubst %.o,%.d, $(call expand-objs-all))
+endif

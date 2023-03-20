@@ -162,10 +162,10 @@ CP := cp
 MV := mv
 
 ###############################################################################
-# Command verbosity support.
+# Command verbosity support, make with V=1 or VERBOSE=1
 # Commands can be prefixed with $(Q) to make them honor the verbosity level.
 
-ifeq ($(V),1)
+ifeq ($(or $(V),$(VERBOSE)),1)
 	Q         :=
 	Q_compile :=
 	Q_link    :=
