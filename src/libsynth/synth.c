@@ -2,68 +2,87 @@
  * Simple software synth ala oscillator model.
  * Inspired by the SID chip.
  *
- * TODO(jb): Convert to floating point arithmetic's.
- *           The first version of this code used floats; it was only
- *           converted to fix point math to run on my old Netwinder with
- *           a 275 MHz SA-110 CPU.
+ * History:
+ *
+ * The first version of this code used floats; it was only converted to
+ * fix point arithmetic to run on my old Netwinder with a 275 MHz SA-110
+ * CPU.
+ *
+ * The original code has been lost to time and only the fix point
+ * version remains.
  *
  * @author Johan Bolmsjo <johan@nocrew.org>
  */
 
 #include "libsynth.h"
 
+#include <SDL.h>
+#include <inttypes.h>
+#include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <inttypes.h>
-#include <SDL.h>
 
-#define FREQUENCY 44100
+enum {
+    Frequency = 44100,
+};
 
-#define NUM_WAVES       4 /* Normal waves per channel */
-#define NUM_WAVES_MOD   2 /* Modifier waves per channel */
-#define NUM_WAVES_TOTAL (NUM_WAVES + NUM_WAVES_MOD)
+// Channel envelopes
+enum {
+    NumberOfRegularChannelEnvelopes = 4,
+    NumberOfModifierChannelEnvelopes = 2,
+    NumberOfChannelEnvelopes = NumberOfRegularChannelEnvelopes + NumberOfModifierChannelEnvelopes,
+    FMModifierChannelEnvelopeIndex = NumberOfChannelEnvelopes - 2,
+    PWModifierChannelEnvelopeIndex = NumberOfChannelEnvelopes - 1,
+};
 
-#define WAVE_FREQ_MOD 4 /* Indexes */
-#define WAVE_PW_MOD   5
+enum {
+    NumberOfPeriodStages = 3,
+    PeriodStageInactive = NumberOfPeriodStages,
+};
 
-#define ATTACK  0
-#define DECAY   1
-#define SUSTAIN 2
-#define RELEASE 3
+// Stages of an ADSR envelope.
+enum EnvelopeStage {
+    Attack,
+    Decay,
+    Sustain,
+    Release,
+    NumberOfEnvelopeStages,
+};
 
-typedef struct _Wave {
-    int wf; /* Waveform */
-    int f;  /* Frequency (Hz) 24:8 format */
-    int aa; /* Attack amplitude (0.0 to 1.0) 8:24 format */
-    int pw; /* High pulse width (0.0 to 1.0) 8:24 format */
+struct Envelope {
+    enum SynthWaveform waveform;
+    int hz;  // 24:8 format
+    int attack_amplitude; // [0, 1]  8:24 format
+    int pulse_width;      // [0, 1] — High pulse width  8:24 format */
 
-    int ff; /* Frequency fraction to keep the right frequency,
-               updated every period 8:24 format */
+    // Frequency fraction to keep the right frequency, updated every period.
+    // 8:24 format
+    int hz_adjust;
 
-    /* ADSR.
-     */
-    int i;    /* Index to "d" and "s" */
-    int a;    /* Amplitude 8:24 format */
-    int d[4]; /* Delta values 8:24 format */
-    int s[4]; /* Length in samples */
+    // ADSR parameters
+    enum EnvelopeStage stage;
+    int amplitude;                       // (8:24 format)
+    int delta[NumberOfEnvelopeStages];   // Delta values (8:24 format)
+    int samples[NumberOfEnvelopeStages]; // Length in samples
 
-    /* Period.
-     */
-    int ip;    /* Index to "dp" and "sp" */
-    int ap;    /* Amplitude 8:24 format */
-    int dp[3]; /* Delta values 8:24 format */
-    int sp[3]; /* Length in samples */
-} Wave;
+    // Period state
+    int period_stage;
+    int period_amplitude;                     // (8:24 format)
+    int period_delta[NumberOfPeriodStages];   // Delta values (8:24 format)
+    int period_samples[NumberOfPeriodStages]; // Length in samples
+};
 
-typedef struct _Channel {
-    Wave w[NUM_WAVES_TOTAL]; /* Waves */
-} Channel;
+struct Channel {
+    struct Envelope envelopes[NumberOfChannelEnvelopes];
+};
 
-static int open_f = 0;
-static int samples_ms; /* 24:8 format */
-static int frequency;
-static Channel channels[SYNTH_NUM_CHANNELS];
+static struct {
+    bool is_open;
+    int  samples_ms; // 24:8 format
+    int  hz;
+    struct Channel channels[NumberOfSynthChannels];
+} synth;
 
 static void mix_samples(int16_t* buffer, int samples);
 
@@ -81,9 +100,7 @@ static void mix_samples(int16_t* buffer, int samples);
  * @author Johan Bolmsjo <johan@nocrew.org>
  */
 
-/* Callback routine called by SDL when it wants more audio data.
- */
-
+// Callback routine called by SDL when it wants more audio data.
 static void
 sdl_audio_callback(void* userdata, Uint8* stream, int len)
 {
@@ -91,18 +108,12 @@ sdl_audio_callback(void* userdata, Uint8* stream, int len)
     mix_samples((int16_t*)stream, len / 2);
 }
 
-/* Open synth.
- * Returns 0 on success and -1 on failure.
- * Even if this function fails, it's okay to call the other functions.
- * They will just don't do anything.
- */
-
 int
 synth_open(void)
 {
     static SDL_AudioSpec sdl_audio_spec;
 
-    sdl_audio_spec.freq = FREQUENCY;
+    sdl_audio_spec.freq = Frequency;
     sdl_audio_spec.format = AUDIO_S16SYS;
     sdl_audio_spec.channels = 1;
     sdl_audio_spec.samples = 4096; // TODO(jb): Optimize this for low latency
@@ -111,25 +122,22 @@ synth_open(void)
     if (SDL_OpenAudio(&sdl_audio_spec, 0) < 0)
         return -1;
 
-    open_f = 1;
-    samples_ms = (sdl_audio_spec.freq << 8) / 1000;
-    frequency = sdl_audio_spec.freq;
+    synth.is_open = true;
+    synth.samples_ms = (sdl_audio_spec.freq << 8) / 1000;
+    synth.hz = sdl_audio_spec.freq;
 
-    memset(channels, 0, sizeof(Channel) * SYNTH_NUM_CHANNELS);
+    memset(&synth.channels, 0, sizeof(synth.channels));
 
     SDL_PauseAudio(0);
 
     return 0;
 }
 
-/* Close synth.
- */
-
 void
 synth_close(void)
 {
-    if (open_f) {
-        open_f = 0;
+    if (synth.is_open) {
+        synth.is_open = false;
         SDL_CloseAudio();
     }
 }
@@ -142,201 +150,201 @@ synth_update(void)
      */
 }
 
-/* Maps a SynthWave to a Wave.
- * SynthWaves are used externaly while Waves are used internaly.
- */
-
+// Maps an external SynthEnvelope to an internal Envelope.
 static void
-map_wave(SynthWave* sw, Wave* w)
+map_envelope(struct SynthEnvelope* src, struct Envelope* dst)
 {
-    int i;
+    dst->waveform = src->waveform;
+    dst->hz = src->hz * (1 << 8);
+    dst->attack_amplitude = src->attack_amplitude * (1 << 24);
+    dst->pulse_width = src->pulse_width * (1 << 24);
+    dst->hz_adjust = 0;
 
-    w->wf = sw->wf;
-    w->f = sw->f * (1 << 8);
-    w->aa = sw->aa * (1 << 24);
-    w->pw = sw->pw * (1 << 24);
-    w->ff = 0;
+    // ADSR
+    dst->stage = Attack;
+    dst->amplitude = 0;
+    for (int i = 0; i < 4; i++) {
+        dst->samples[i] = src->adsr_ms[i] * synth.samples_ms >> 8;
+    }
+    dst->delta[Attack] = (1 << 24) * (1.0 / dst->samples[Attack]);
+    dst->delta[Decay] = (1 << 24) * (-(1.0 - src->sustain_ratio) / dst->samples[Decay]);
+    dst->delta[Sustain] = 0;
+    dst->delta[Release] = (1 << 24) * (-src->sustain_ratio / dst->samples[Release]);
 
-    /* ADSR
-     */
-    w->i = 0;
-    w->a = 0;
-    for (i = 0; i < 4; i++)
-        w->s[i] = sw->adsr[i] * samples_ms >> 8;
-    w->d[ATTACK] = (1 << 24) * (1.0 / w->s[ATTACK]);
-    w->d[DECAY] = (1 << 24) * (-(1.0 - sw->sl) / w->s[DECAY]);
-    w->d[SUSTAIN] = 0;
-    w->d[RELEASE] = (1 << 24) * (-sw->sl / w->s[RELEASE]);
-
-    /* Period
-     */
-    w->ip = 3;
+    // Period
+    dst->period_stage = PeriodStageInactive;
 }
 
-/* Updates all waves on a channel.
- */
-
+// Updates all envelopes on channel.
 static inline void
 update_channel(int ch)
 {
-    int w, hi, mi, lo, samples, fm_pwm_init = 0;
-    int f;                   /* 24:8 format */
-    int fm = 0, pwm = 0, pw; /* 8:24 format */
-    Wave *wp, *wp2;
+    bool fm_pwm_init = false;
+    int fm = 0, pwm = 0;
 
-    for (w = NUM_WAVES_TOTAL - 1; w >= 0; w--) {
-        wp = &channels[ch].w[w];
-        if (wp->wf == SYNTH_WF_NONE)
+    for (int w = NumberOfChannelEnvelopes - 1; w >= 0; w--) {
+        struct Envelope *e = &synth.channels[ch].envelopes[w];
+        if (e->waveform == SynthWaveformNone)
             continue;
 
         /* TODO(jb): BUG: One sample ahead!!
          *           (Future me has no idea what this means)
          */
-        for (; wp->i < 4; wp->i++) {
-            if (wp->s[wp->i]) {
-                wp->a += wp->d[wp->i];
-                wp->s[wp->i]--;
+        for (; e->stage < NumberOfEnvelopeStages; e->stage++) {
+            if (e->samples[e->stage]) {
+                e->amplitude += e->delta[e->stage];
+                e->samples[e->stage]--;
                 break;
             }
         }
 
-        if (wp->i == 4) {
-            wp->wf = SYNTH_WF_NONE;
-            wp->aa = 0;
+        if (e->stage == NumberOfEnvelopeStages) {
+            // Envelope has played out; mark it as such!
+            e->waveform = SynthWaveformNone;
+            e->attack_amplitude = 0;
             continue;
         }
 
-        for (; wp->ip < 3; wp->ip++) {
-            if (wp->sp[wp->ip]) {
-                wp->ap += wp->dp[wp->ip];
-                wp->sp[wp->ip]--;
+        for (; e->period_stage < NumberOfPeriodStages; e->period_stage++) {
+            if (e->period_samples[e->period_stage]) {
+                e->period_amplitude += e->period_delta[e->period_stage];
+                e->period_samples[e->period_stage]--;
                 break;
             }
         }
 
-        if (wp->ip == 3) {
-            if (w < NUM_WAVES) {
+        if (e->period_stage == NumberOfPeriodStages) {
+            // Period has played out. Calculate next period parameters.
+
+            int hz; // 24:8 format
+            if (w < NumberOfRegularChannelEnvelopes) {
                 if (!fm_pwm_init) {
-                    wp2 = &channels[ch].w[WAVE_FREQ_MOD];
-                    fm = ((int64_t)wp2->a * wp2->ap >> 24) * wp2->aa >> 24;
-                    wp2 = &channels[ch].w[WAVE_PW_MOD];
-                    pwm = ((int64_t)wp2->a * wp2->ap >> 24) * wp2->aa >> 24;
-                    fm_pwm_init = 1;
+                    struct Envelope* e = &synth.channels[ch].envelopes[FMModifierChannelEnvelopeIndex];
+                    fm = ((int64_t)e->amplitude * e->period_amplitude >> 24) * e->attack_amplitude >> 24;
+                    e = &synth.channels[ch].envelopes[PWModifierChannelEnvelopeIndex];
+                    pwm = ((int64_t)e->amplitude * e->period_amplitude >> 24) * e->attack_amplitude >> 24;
+                    fm_pwm_init = true;
                 }
-                f = wp->f + (int)(wp->f * (int64_t)fm >> 24);
+                hz = e->hz + (int)(e->hz * (int64_t)fm >> 24);
             } else {
-                f = wp->f;
+                hz = e->hz;
             }
 
-            if (!f)
-                f = 1;
+            if (!hz) {
+                hz = 1;
+            }
 
-            samples = (frequency << 8) / f;
-            if (samples < 6)
+            int samples = (synth.hz << 8) / hz;
+            if (samples < 6) {
                 samples = 6;
-            wp->ff += (((frequency << 8) / f) - samples);
+            }
+            e->hz_adjust += (((synth.hz << 8) / hz) - samples);
 
-            if (wp->ff >= (1 << 24)) {
-                wp->ff -= (1 << 24);
+            if (e->hz_adjust >= (1 << 24)) {
+                e->hz_adjust -= (1 << 24);
                 samples++;
             }
 
-            switch (wp->wf) {
-            case SYNTH_WF_PULSE:
-                pw = wp->pw + pwm;
-                if (pw < 0)
+            switch (e->waveform) {
+            case SynthWaveformPulse: {
+                int pw = e->pulse_width + pwm; // (8:24 format)
+                if (pw < 0) {
                     pw = 0;
-                if (pw > (1 << 24))
+                }
+                if (pw > (1 << 24)) {
                     pw = 1 << 24;
-                hi = (int64_t)samples * pw >> 24;
-                lo = samples - hi;
-                wp->ip = 0;
-                wp->sp[1] = 0;
-                wp->sp[2] = 0;
+                }
+                const int hi = (int64_t)samples * pw >> 24;
+                const int lo = samples - hi;
+                e->period_stage = 0;
+                e->period_samples[1] = 0;
+                e->period_samples[2] = 0;
 
-                if (hi)
-                    wp->ap = 1 << 24;
-                else
-                    wp->ap = -1 << 24;
+                if (hi) {
+                    e->period_amplitude = 1 << 24;
+                } else {
+                    e->period_amplitude = -1 << 24;
+                }
 
                 if (hi && lo) {
-                    wp->dp[0] = 0;
-                    wp->sp[0] = hi - 1;
-                    wp->dp[1] = -2 << 24;
-                    wp->sp[1] = 1;
-                    wp->dp[2] = 0;
-                    wp->sp[2] = lo - 1;
+                    e->period_delta[0]   = 0;
+                    e->period_samples[0] = hi - 1;
+                    e->period_delta[1]   = -2 << 24;
+                    e->period_samples[1] = 1;
+                    e->period_delta[2]   = 0;
+                    e->period_samples[2] = lo - 1;
                 } else {
-                    wp->dp[0] = 0;
-                    wp->sp[0] = samples - 1;
+                    e->period_delta[0]   = 0;
+                    e->period_samples[0] = samples - 1;
                 }
                 break;
+            }
 
-            case SYNTH_WF_TRIANGLE:
-                hi = samples >> 2;
-                mi = hi << 1;
-                lo = samples - hi - mi;
-                wp->ip = 0;
-                wp->ap = 0;
-                wp->dp[0] = (1 << 24) / (hi - 1);
-                wp->sp[0] = hi - 1;
-                wp->dp[1] = (-2 << 24) / (mi - 1);
-                wp->sp[1] = mi - 1;
-                wp->dp[2] = (1 << 24) / (lo - 1);
-                wp->sp[2] = lo - 1;
+            case SynthWaveformTriangle: {
+                const int hi = samples >> 2;
+                const int mi = hi << 1;
+                const int lo = samples - hi - mi;
+                e->period_stage      = 0;
+                e->period_amplitude  = 0;
+                e->period_delta[0]   = (1 << 24) / (hi - 1);
+                e->period_samples[0] = hi - 1;
+                e->period_delta[1]   = (-2 << 24) / (mi - 1);
+                e->period_samples[1] = mi - 1;
+                e->period_delta[2]   = (1 << 24) / (lo - 1);
+                e->period_samples[2] = lo - 1;
                 break;
+            }
 
-            case SYNTH_WF_SAW:
-                hi = samples >> 1;
-                lo = samples - hi;
-                wp->ip = 0;
-                wp->ap = 0;
-                wp->dp[0] = (1 << 24) / (hi - 1);
-                wp->sp[0] = hi - 1;
-                wp->dp[1] = -2 << 24;
-                wp->sp[1] = 1;
-                wp->dp[2] = (1 << 24) / (lo - 1);
-                wp->sp[2] = lo - 1;
+            case SynthWaveformSaw: {
+                const int hi = samples >> 1;
+                const int lo = samples - hi;
+                e->period_stage      = 0;
+                e->period_amplitude  = 0;
+                e->period_delta[0]   = (1 << 24) / (hi - 1);
+                e->period_samples[0] = hi - 1;
+                e->period_delta[1]   = -2 << 24;
+                e->period_samples[1] = 1;
+                e->period_delta[2]   = (1 << 24) / (lo - 1);
+                e->period_samples[2] = lo - 1;
+                break;
+            }
+
+            default:
+                break;
             }
         }
     }
 }
 
-/* Generate samples to write to audio device.
- */
-
+// Generate samples to write to audio device.
 static void
 mix_samples(int16_t* buffer, int samples)
 {
-    int i, j, ch_t[SYNTH_NUM_CHANNELS] = {0};
+    int i, j, ch_t[NumberOfSynthChannels] = {0};
     int ch_mix, w_mix;
-    Wave* wp;
+    struct Envelope* env;
 
-    for (i = SYNTH_NUM_CHANNELS - 1; i >= 0; i--) {
-        for (j = 0; j < NUM_WAVES_TOTAL; j++) {
-            if (channels[i].w[j].wf)
+    for (i = NumberOfSynthChannels - 1; i >= 0; i--) {
+        for (j = 0; j < NumberOfChannelEnvelopes; j++) {
+            if (synth.channels[i].envelopes[j].waveform)
                 ch_t[i] = 1;
         }
     }
 
     for (i = 0; i < samples; i++) {
         ch_mix = 0;
-        for (j = 0; j < SYNTH_NUM_CHANNELS; j++) {
+        for (j = 0; j < NumberOfSynthChannels; j++) {
             if (ch_t[j]) {
                 update_channel(j);
-                wp = channels[j].w;
-                w_mix = (((int64_t)wp[0].a * wp[0].ap >> 24) *
-                             wp[0].aa >>
-                         24);
-                w_mix += (((int64_t)wp[1].a * wp[1].ap >> 24) *
-                              wp[1].aa >>
-                          24);
-                w_mix += (((int64_t)wp[2].a * wp[2].ap >> 24) *
-                              wp[2].aa >>
-                          24);
-                w_mix += (((int64_t)wp[3].a * wp[3].ap >> 24) *
-                              wp[3].aa >>
-                          24);
+                env = synth.channels[j].envelopes;
+                w_mix = (((int64_t)env[0].amplitude * env[0].period_amplitude >> 24) *
+                             env[0].attack_amplitude >> 24);
+                w_mix += (((int64_t)env[1].amplitude * env[1].period_amplitude >> 24) *
+                              env[1].attack_amplitude >> 24);
+                w_mix += (((int64_t)env[2].amplitude * env[2].period_amplitude >> 24) *
+                              env[2].attack_amplitude >> 24);
+                w_mix += (((int64_t)env[3].amplitude * env[3].period_amplitude >> 24) *
+                              env[3].attack_amplitude >> 24);
                 if (w_mix < (-1 << 24))
                     w_mix = -1 << 24;
                 if (w_mix > (1 << 24) - 1)
@@ -349,81 +357,62 @@ mix_samples(int16_t* buffer, int samples)
     }
 }
 
-/* Plays a wave on a channel.
- */
-
 void
-synth_wave(SynthWave* sw, int ch)
+synth_envelope(struct SynthEnvelope* sw, int ch)
 {
     int i;
 
-    if (ch < SYNTH_NUM_CHANNELS && open_f) {
-        for (i = 0; i < NUM_WAVES; i++) {
-            if (channels[ch].w[i].wf == SYNTH_WF_NONE)
+    if (ch < NumberOfSynthChannels && synth.is_open) {
+        for (i = 0; i < NumberOfRegularChannelEnvelopes; i++) {
+            if (synth.channels[ch].envelopes[i].waveform == SynthWaveformNone)
                 break;
         }
-        if (i < NUM_WAVES)
-            map_wave(sw, &channels[ch].w[i]);
+        if (i < NumberOfRegularChannelEnvelopes)
+            map_envelope(sw, &synth.channels[ch].envelopes[i]);
     }
 }
 
-/* Modifies all frequencies on a channel.
- */
-
 void
-synth_fm(SynthWave* sw, int ch)
+synth_envelope_fm(struct SynthEnvelope* sw, int ch)
 {
-    if (ch < SYNTH_NUM_CHANNELS && open_f)
-        map_wave(sw, &channels[ch].w[WAVE_FREQ_MOD]);
+    if (ch < NumberOfSynthChannels && synth.is_open)
+        map_envelope(sw, &synth.channels[ch].envelopes[FMModifierChannelEnvelopeIndex]);
 }
 
-/* Modifies all pulse widths on a channel.
- */
-
 void
-synth_pwm(SynthWave* sw, int ch)
+synth_envelope_pwm(struct SynthEnvelope* sw, int ch)
 {
-    if (ch < SYNTH_NUM_CHANNELS && open_f)
-        map_wave(sw, &channels[ch].w[WAVE_PW_MOD]);
+    if (ch < NumberOfSynthChannels && synth.is_open)
+        map_envelope(sw, &synth.channels[ch].envelopes[PWModifierChannelEnvelopeIndex]);
 }
-
-/* Kills all sounds on a channel.
- */
 
 void
 synth_channel_kill(int ch)
 {
     int w;
 
-    if (ch < SYNTH_NUM_CHANNELS && open_f) {
-        for (w = 0; w < NUM_WAVES_TOTAL; w++) {
-            channels[ch].w[w].wf = SYNTH_WF_NONE;
-            channels[ch].w[w].aa = 0;
+    if (ch < NumberOfSynthChannels && synth.is_open) {
+        for (w = 0; w < NumberOfChannelEnvelopes; w++) {
+            synth.channels[ch].envelopes[w].waveform = SynthWaveformNone;
+            synth.channels[ch].envelopes[w].attack_amplitude = 0;
         }
     }
 }
 
-/* Returns the number of waves currently playing on a channel not
- * counting modifiers.
- */
-
 int
-synth_waves_on_channel(int ch)
+synth_channel_envelopes(int ch)
 {
     int waves = 0, w;
 
-    if (ch < SYNTH_NUM_CHANNELS && open_f) {
-        for (w = 0; w < NUM_WAVES; w++) {
-            if (channels[ch].w[w].wf != SYNTH_WF_NONE)
+    if (ch < NumberOfSynthChannels && synth.is_open) {
+        for (w = 0; w < NumberOfRegularChannelEnvelopes; w++) {
+            if (synth.channels[ch].envelopes[w].waveform != SynthWaveformNone)
                 waves++;
         }
     }
 
     return waves;
 }
-
-/* Use before creating a sound effect. SDL needs this.
- */
 
 void
 synth_lock(void)
@@ -432,9 +421,6 @@ synth_lock(void)
     //           callback called from thread? Also migrating to SDL2.
     SDL_LockAudio();
 }
-
-/* Use after having created a sound effect. SDL needs this.
- */
 
 void
 synth_unlock(void)

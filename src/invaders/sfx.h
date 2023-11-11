@@ -4,6 +4,8 @@
  * The synth have four channels.
  */
 
+// TODO(jb): make enum of constants
+
 #define CH_PLAYER_SHOT 0
 #define CH_PLAYER_DIE  0
 
