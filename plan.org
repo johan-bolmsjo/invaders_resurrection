@@ -21,6 +21,9 @@ compressed in standard gzip format.
 I have no recollection of why =gfxgen= emits a gzip file when the game
 wants it in deflate format as created by =compress=.
 
+Update [2023-11-12]: I now believe this was done as part of embedding
+the assets into the executable file.
+
 When it comes to the font =pearl_8x8.dat.deflate=, there doesn't seem to
 be any source graphics data. We have to accept that that is lost to time.
 
@@ -32,12 +35,6 @@ be any source graphics data. We have to accept that that is lost to time.
   + Use gzip compression instead of deflate.
 - [ ] Convert the font =pearl_8x8.dat.deflate= to gzip format if choosen
   for the graphics data bundle.
-
-* TODO Make invaders compile cleanly with modern compilers
-- [ ] Fix all warnings
-- [X] Compile with =-std=gnu11=
-- [X] Compile with =-Wextra=
-- [X] Compile with =-pedantic=
 
 * TODO Use SDL version 2
 
@@ -69,6 +66,14 @@ Feed the rendered image through a CRT shader effect to reduce the blocky appeara
 * TODO Make a webassembly port using https://emscripten.org
 
 * Closed Issues
+** DONE Make invaders compile cleanly with modern compilers        :ARCHIVE:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2023-11-12 Sun 16:53]
+:END:
+- [X] Fix all warnings
+- [X] Compile with =-std=gnu11=
+- [X] Compile with =-Wextra=
+- [X] Compile with =-pedantic=
 ** DONE Fix bugs related to optimization of modern compilers       :ARCHIVE:
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2023-02-19 Sun 19:40] \\

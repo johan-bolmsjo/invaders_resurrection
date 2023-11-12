@@ -38,7 +38,6 @@ enum {
 
 enum {
     NumberOfPeriodStages = 3,
-    PeriodStageInactive = NumberOfPeriodStages,
 };
 
 // Stages of an ADSR envelope.
@@ -50,27 +49,31 @@ enum EnvelopeStage {
     NumberOfEnvelopeStages,
 };
 
+// Data for one period of a sound.
+struct Period {
+    int stage;                         // [0, NumberOfPeriodStages]
+    int amplitude;                     // [-1, 1] — Current sample amplitude (8:24 format)
+    int slope[NumberOfPeriodStages];   // Period stage slopes (8:24 format)
+    int samples[NumberOfPeriodStages]; // Period stage lengths in samples
+};
+
 struct Envelope {
     enum SynthWaveform waveform;
-    int hz;  // 24:8 format
-    int attack_amplitude; // [0, 1]  8:24 format
-    int pulse_width;      // [0, 1] — High pulse width  8:24 format */
+    int hz;               // (24:8 format)
+    int attack_amplitude; // [0, 1] — (8:24 format)
+    int pulse_width;      // [0, 1] — High pulse width (8:24 format) */
 
-    // Frequency fraction to keep the right frequency, updated every period.
-    // 8:24 format
+    // Frequency fraction to keep the right frequency, updated every period (8:24 format).
     int hz_adjust;
 
     // ADSR parameters
     enum EnvelopeStage stage;
-    int amplitude;                       // (8:24 format)
-    int delta[NumberOfEnvelopeStages];   // Delta values (8:24 format)
-    int samples[NumberOfEnvelopeStages]; // Length in samples
+    int amplitude;                       // [0, 1] — Current sample amplitude (8:24 format)
+    int slope[NumberOfEnvelopeStages];   // Envelope stage slopes (8:24 format)
+    int samples[NumberOfEnvelopeStages]; // Envelope stage lengths in samples
 
-    // Period state
-    int period_stage;
-    int period_amplitude;                     // (8:24 format)
-    int period_delta[NumberOfPeriodStages];   // Delta values (8:24 format)
-    int period_samples[NumberOfPeriodStages]; // Length in samples
+    // Data for the current sound period.
+    struct Period period;
 };
 
 struct Channel {
@@ -166,13 +169,13 @@ map_envelope(struct SynthEnvelope* src, struct Envelope* dst)
     for (int i = 0; i < 4; i++) {
         dst->samples[i] = src->adsr_ms[i] * synth.samples_ms >> 8;
     }
-    dst->delta[Attack] = (1 << 24) * (1.0 / dst->samples[Attack]);
-    dst->delta[Decay] = (1 << 24) * (-(1.0 - src->sustain_ratio) / dst->samples[Decay]);
-    dst->delta[Sustain] = 0;
-    dst->delta[Release] = (1 << 24) * (-src->sustain_ratio / dst->samples[Release]);
+    dst->slope[Attack] = (1 << 24) * (1.0 / dst->samples[Attack]);
+    dst->slope[Decay] = (1 << 24) * (-(1.0 - src->sustain_ratio) / dst->samples[Decay]);
+    dst->slope[Sustain] = 0;
+    dst->slope[Release] = (1 << 24) * (-src->sustain_ratio / dst->samples[Release]);
 
     // Period
-    dst->period_stage = PeriodStageInactive;
+    dst->period.stage = NumberOfPeriodStages; // mark as inactive
 }
 
 // Updates all envelopes on channel.
@@ -182,8 +185,8 @@ update_channel(int ch)
     bool fm_pwm_init = false;
     int fm = 0, pwm = 0;
 
-    for (int w = NumberOfChannelEnvelopes - 1; w >= 0; w--) {
-        struct Envelope *e = &synth.channels[ch].envelopes[w];
+    for (int ei = NumberOfChannelEnvelopes - 1; ei >= 0; ei--) {
+        struct Envelope* e = &synth.channels[ch].envelopes[ei];
         if (e->waveform == SynthWaveformNone)
             continue;
 
@@ -191,8 +194,8 @@ update_channel(int ch)
          *           (Future me has no idea what this means)
          */
         for (; e->stage < NumberOfEnvelopeStages; e->stage++) {
-            if (e->samples[e->stage]) {
-                e->amplitude += e->delta[e->stage];
+            if (e->samples[e->stage] > 0) {
+                e->amplitude += e->slope[e->stage];
                 e->samples[e->stage]--;
                 break;
             }
@@ -205,24 +208,26 @@ update_channel(int ch)
             continue;
         }
 
-        for (; e->period_stage < NumberOfPeriodStages; e->period_stage++) {
-            if (e->period_samples[e->period_stage]) {
-                e->period_amplitude += e->period_delta[e->period_stage];
-                e->period_samples[e->period_stage]--;
+        struct Period* p = &e->period;
+
+        for (; p->stage < NumberOfPeriodStages; p->stage++) {
+            if (p->samples[p->stage]) {
+                p->amplitude += p->slope[p->stage];
+                p->samples[p->stage]--;
                 break;
             }
         }
 
-        if (e->period_stage == NumberOfPeriodStages) {
+        if (p->stage == NumberOfPeriodStages) {
             // Period has played out. Calculate next period parameters.
 
             int hz; // 24:8 format
-            if (w < NumberOfRegularChannelEnvelopes) {
+            if (ei < NumberOfRegularChannelEnvelopes) {
                 if (!fm_pwm_init) {
-                    struct Envelope* e = &synth.channels[ch].envelopes[FMModifierChannelEnvelopeIndex];
-                    fm = ((int64_t)e->amplitude * e->period_amplitude >> 24) * e->attack_amplitude >> 24;
-                    e = &synth.channels[ch].envelopes[PWModifierChannelEnvelopeIndex];
-                    pwm = ((int64_t)e->amplitude * e->period_amplitude >> 24) * e->attack_amplitude >> 24;
+                    struct Envelope* e2 = &synth.channels[ch].envelopes[FMModifierChannelEnvelopeIndex];
+                    fm = ((int64_t)e2->amplitude * e2->period.amplitude >> 24) * e2->attack_amplitude >> 24;
+                    e2 = &synth.channels[ch].envelopes[PWModifierChannelEnvelopeIndex];
+                    pwm = ((int64_t)e2->amplitude * e2->period.amplitude >> 24) * e2->attack_amplitude >> 24;
                     fm_pwm_init = true;
                 }
                 hz = e->hz + (int)(e->hz * (int64_t)fm >> 24);
@@ -256,26 +261,26 @@ update_channel(int ch)
                 }
                 const int hi = (int64_t)samples * pw >> 24;
                 const int lo = samples - hi;
-                e->period_stage = 0;
-                e->period_samples[1] = 0;
-                e->period_samples[2] = 0;
+                p->stage = 0;
+                p->samples[1] = 0;
+                p->samples[2] = 0;
 
                 if (hi) {
-                    e->period_amplitude = 1 << 24;
+                    p->amplitude = 1 * (1<<24);
                 } else {
-                    e->period_amplitude = -1 << 24;
+                    p->amplitude = -1 * (1<<24);
                 }
 
                 if (hi && lo) {
-                    e->period_delta[0]   = 0;
-                    e->period_samples[0] = hi - 1;
-                    e->period_delta[1]   = -2 << 24;
-                    e->period_samples[1] = 1;
-                    e->period_delta[2]   = 0;
-                    e->period_samples[2] = lo - 1;
+                    p->slope[0]   = 0;
+                    p->samples[0] = hi - 1;
+                    p->slope[1]   = -2 * (1<<24);
+                    p->samples[1] = 1;
+                    p->slope[2]   = 0;
+                    p->samples[2] = lo - 1;
                 } else {
-                    e->period_delta[0]   = 0;
-                    e->period_samples[0] = samples - 1;
+                    p->slope[0]   = 0;
+                    p->samples[0] = samples - 1;
                 }
                 break;
             }
@@ -284,28 +289,28 @@ update_channel(int ch)
                 const int hi = samples >> 2;
                 const int mi = hi << 1;
                 const int lo = samples - hi - mi;
-                e->period_stage      = 0;
-                e->period_amplitude  = 0;
-                e->period_delta[0]   = (1 << 24) / (hi - 1);
-                e->period_samples[0] = hi - 1;
-                e->period_delta[1]   = (-2 << 24) / (mi - 1);
-                e->period_samples[1] = mi - 1;
-                e->period_delta[2]   = (1 << 24) / (lo - 1);
-                e->period_samples[2] = lo - 1;
+                p->stage      = 0;
+                p->amplitude  = 0;
+                p->slope[0]   = (1 * (1<<24)) / (hi - 1);
+                p->samples[0] = hi - 1;
+                p->slope[1]   = (-2 * (1<<24)) / (mi - 1);
+                p->samples[1] = mi - 1;
+                p->slope[2]   = (1 * (1<<24)) / (lo - 1);
+                p->samples[2] = lo - 1;
                 break;
             }
 
             case SynthWaveformSaw: {
                 const int hi = samples >> 1;
                 const int lo = samples - hi;
-                e->period_stage      = 0;
-                e->period_amplitude  = 0;
-                e->period_delta[0]   = (1 << 24) / (hi - 1);
-                e->period_samples[0] = hi - 1;
-                e->period_delta[1]   = -2 << 24;
-                e->period_samples[1] = 1;
-                e->period_delta[2]   = (1 << 24) / (lo - 1);
-                e->period_samples[2] = lo - 1;
+                p->stage      = 0;
+                p->amplitude  = 0;
+                p->slope[0]   = (1 * (1<<24)) / (hi - 1);
+                p->samples[0] = hi - 1;
+                p->slope[1]   = -2 * (1<<24);
+                p->samples[1] = 1;
+                p->slope[2]   = (1 * (1<<24)) / (lo - 1);
+                p->samples[2] = lo - 1;
                 break;
             }
 
@@ -320,35 +325,37 @@ update_channel(int ch)
 static void
 mix_samples(int16_t* buffer, int samples)
 {
-    int i, j, ch_t[NumberOfSynthChannels] = {0};
-    int ch_mix, w_mix;
-    struct Envelope* env;
+    bool ch_on[NumberOfSynthChannels] = {false};
 
-    for (i = NumberOfSynthChannels - 1; i >= 0; i--) {
-        for (j = 0; j < NumberOfChannelEnvelopes; j++) {
-            if (synth.channels[i].envelopes[j].waveform)
-                ch_t[i] = 1;
+    for (int i = NumberOfSynthChannels - 1; i >= 0; i--) {
+        for (int j = 0; j < NumberOfChannelEnvelopes; j++) {
+            if (synth.channels[i].envelopes[j].waveform != SynthWaveformNone) {
+                ch_on[i] = true;
+                break;
+            }
         }
     }
 
-    for (i = 0; i < samples; i++) {
-        ch_mix = 0;
-        for (j = 0; j < NumberOfSynthChannels; j++) {
-            if (ch_t[j]) {
+    for (int i = 0; i < samples; i++) {
+        int ch_mix = 0;
+        for (int j = 0; j < NumberOfSynthChannels; j++) {
+            if (ch_on[j]) {
                 update_channel(j);
-                env = synth.channels[j].envelopes;
-                w_mix = (((int64_t)env[0].amplitude * env[0].period_amplitude >> 24) *
-                             env[0].attack_amplitude >> 24);
-                w_mix += (((int64_t)env[1].amplitude * env[1].period_amplitude >> 24) *
-                              env[1].attack_amplitude >> 24);
-                w_mix += (((int64_t)env[2].amplitude * env[2].period_amplitude >> 24) *
-                              env[2].attack_amplitude >> 24);
-                w_mix += (((int64_t)env[3].amplitude * env[3].period_amplitude >> 24) *
-                              env[3].attack_amplitude >> 24);
-                if (w_mix < (-1 << 24))
-                    w_mix = -1 << 24;
-                if (w_mix > (1 << 24) - 1)
+                struct Envelope* e = synth.channels[j].envelopes;
+                int w_mix = (((int64_t)e[0].amplitude * e[0].period.amplitude >> 24) *
+                             e[0].attack_amplitude >> 24);
+                w_mix += (((int64_t)e[1].amplitude * e[1].period.amplitude >> 24) *
+                              e[1].attack_amplitude >> 24);
+                w_mix += (((int64_t)e[2].amplitude * e[2].period.amplitude >> 24) *
+                              e[2].attack_amplitude >> 24);
+                w_mix += (((int64_t)e[3].amplitude * e[3].period.amplitude >> 24) *
+                              e[3].attack_amplitude >> 24);
+                if (w_mix < (-1 * (1<<24))) {
+                    w_mix = -1 * (1<<24);
+                }
+                if (w_mix > (1 << 24) - 1) {
                     w_mix = (1 << 24) - 1;
+                }
                 ch_mix += w_mix;
             }
         }
