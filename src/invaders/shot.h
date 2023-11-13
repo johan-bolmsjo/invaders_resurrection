@@ -1,4 +1,8 @@
 #pragma once
+/// \file shot.h
+///
+/// Player shots and collision particles.
+///
 
 #include <inttypes.h>
 
@@ -22,9 +26,16 @@ struct _Shot {
 
 extern int g_shot_obj;
 
+/// Create shot.
 Shot* shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
                   int fatal, int gid, void (*cb)(void));
 
-void shot_hide(DG* dg);
-void shot_show(DG* dg);
+
+/// Hide all shots.
+void shot_hide(const DG* dg);
+
+/// Show all shots.
+void shot_show(const DG* dg);
+
+/// Update all shots.
 void shot_update(void);

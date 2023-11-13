@@ -1,16 +1,10 @@
 #include "bomber.h"
 
-/* Initialise bomber.
- */
-
 void
 bomber_init(Bomber* b)
 {
     b->count = 0;
 }
-
-/* Animate bomber.
- */
 
 void
 bomber_anim(Bomber* b)

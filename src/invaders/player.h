@@ -1,22 +1,29 @@
 #pragma once
 
 #include "collision.h"
-#include "dg.h"
-#include "joy.h"
+#include "libmedia/libmedia.h"
 #include "sprite.h"
 
 typedef struct _Player {
-    int count;
-    Sprite s;
+    int        count;
+    Sprite     s;
     Collision* c;
 } Player;
 
-extern int g_player_alive;
+/// Initialize module.
+void player_module_init(struct MLInput* input);
 
-void player_tables(Joy* joy);
+/// Kill pilot and destroy its collision object.
 void player_kill(void);
-void player_anim(Player* p, Joy* j);
-void player_move(Player* p);
-void player_hide(DG* dg);
-void player_show(DG* dg);
-void player_update(Joy* j, int* key_q);
+
+/// Hide player.
+void player_hide(const DG* dg);
+
+/// Show player.
+void player_show(const DG* dg);
+
+/// Update player based on input.
+void player_update(struct MLInput* input);
+
+/// Report whether player is currently alive.
+bool player_is_alive(void);

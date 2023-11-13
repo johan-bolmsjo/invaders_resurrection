@@ -17,7 +17,7 @@ sprite_init(Sprite* sprite, GfxObject* go, int frame, int x, int y, int vis)
 }
 
 void
-sprite_hide(DG* dg, Sprite* sprite)
+sprite_hide(const DG* dg, Sprite* sprite)
 {
     if (sprite->blit[dg->hid]) {
         blit_clipped_colour_box(dg, &sprite->clip[dg->hid], 0);
@@ -26,7 +26,7 @@ sprite_hide(DG* dg, Sprite* sprite)
 }
 
 void
-sprite_show(DG* dg, Sprite* sprite)
+sprite_show(const DG* dg, Sprite* sprite)
 {
     Clip* clip = &sprite->clip[dg->hid];
     GfxFrame* gf = sprite->go->fpp[sprite->frame];

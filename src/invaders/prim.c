@@ -1,6 +1,3 @@
-/* Graphic primitives.
- */
-
 #include "prim.h"
 
 #include <stdio.h>
@@ -8,16 +5,15 @@
 #include <inttypes.h>
 
 // TODO(jb): Use struct rgb565; extend color.h as appropriate
+//
+// Alpha tables used for mixing the edges of an object with the background.
+// - 0 is opaque, 16 is totaly transparent.
 static uint16_t ALPHA_RED[32 * 16];
 static uint16_t ALPHA_GREEN[64 * 16];
 static uint16_t ALPHA_BLUE[32 * 16];
 
-/* Alpha tables used for mixing the edges of an object with the
- * background. 0 is opaque, 16 is totaly transparent.
- */
-
 void
-prim_tables(void)
+prim_module_init(void)
 {
     int i, j, atom, v;
 
@@ -42,9 +38,6 @@ prim_tables(void)
     }
 }
 
-/* Returns 0 if cliped or 1 if outside screen.
- */
-
 int
 clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y)
 {
@@ -55,8 +48,9 @@ clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y)
     x2 = x + gf->width - 1;
     y2 = y + gf->height - 1;
 
-    if (x >= DG_XRES || x2 < 0 || y >= DG_YRES || y2 < 0)
+    if (x >= MLDisplayWidth || x2 < 0 || y >= MLDisplayHeight || y2 < 0) {
         return 1;
+    }
 
     if (x < 0) {
         clip->sx_off = -x;
@@ -64,8 +58,9 @@ clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y)
     } else {
         clip->sx_off = 0;
     }
-    if (x2 >= DG_XRES)
-        x2 = DG_XRES - 1;
+    if (x2 >= MLDisplayWidth) {
+        x2 = MLDisplayWidth - 1;
+    }
 
     if (y < 0) {
         clip->sy_off = -y;
@@ -73,8 +68,9 @@ clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y)
     } else {
         clip->sy_off = 0;
     }
-    if (y2 >= DG_YRES)
-        y2 = DG_YRES - 1;
+    if (y2 >= MLDisplayHeight) {
+        y2 = MLDisplayHeight - 1;
+    }
 
     clip->x = x;
     clip->y = y;
@@ -84,22 +80,20 @@ clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y)
     return 0;
 }
 
-/* For frames with alpha channel.
- */
-
+// For frames with alpha channel.
 static void
-blit_clipped_gfx_frame_with_alpha(DG* dg, Clip* clip, GfxFrame* gf)
+blit_clipped_gfx_frame_with_alpha(const DG* dg, Clip* clip, GfxFrame* gf)
 {
     int w, h, s_stride, d_stride, sa, da, sp, dp;
     uint8_t* alpha;
     uint16_t *src, *dst; // TODO(jb): Use struct rgb565
 
     s_stride = gf->width - clip->w;
-    d_stride = DG_XRES - clip->w;
+    d_stride = MLDisplayWidth - clip->w;
 
     alpha = gf->alpha + clip->sx_off + clip->sy_off * gf->width;
     src = gf->graphics + clip->sx_off + clip->sy_off * gf->width;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * DG_XRES;
+    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
 
     for (h = clip->h; h > 0; h--) {
         for (w = clip->w; w > 0; w--) {
@@ -139,19 +133,17 @@ blit_clipped_gfx_frame_with_alpha(DG* dg, Clip* clip, GfxFrame* gf)
     }
 }
 
-/* For frames without alpha channel.
- */
-
+// For frames without alpha channel.
 static void
-blit_clipped_gfx_frame_without_alpha(DG* dg, Clip* clip, GfxFrame* gf)
+blit_clipped_gfx_frame_without_alpha(const DG* dg, Clip* clip, GfxFrame* gf)
 {
     int w, h, s_stride, d_stride;
     uint16_t *src, *dst, v; // TODO(jb): Use struct rgb565
 
     s_stride = gf->width - clip->w;
-    d_stride = DG_XRES - clip->w;
+    d_stride = MLDisplayWidth - clip->w;
     src = gf->graphics + clip->sx_off + clip->sy_off * gf->width;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * DG_XRES;
+    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
 
     for (h = clip->h; h > 0; h--) {
         for (w = clip->w; w > 0; w--) {
@@ -166,11 +158,8 @@ blit_clipped_gfx_frame_without_alpha(DG* dg, Clip* clip, GfxFrame* gf)
     }
 }
 
-/* Blit graphics frame clipped by clip.
- */
-
 void
-blit_clipped_gfx_frame(DG* dg, Clip* clip, GfxFrame* gf)
+blit_clipped_gfx_frame(const DG* dg, Clip* clip, GfxFrame* gf)
 {
     if (gf->alpha)
         blit_clipped_gfx_frame_with_alpha(dg, clip, gf);
@@ -178,18 +167,14 @@ blit_clipped_gfx_frame(DG* dg, Clip* clip, GfxFrame* gf)
         blit_clipped_gfx_frame_without_alpha(dg, clip, gf);
 }
 
-/* Blit clipped single coloured box,
- * used to clear sprites.
- */
-// TODO(jb): Use struct rgb565 for colour
 void
-blit_clipped_colour_box(DG* dg, Clip* clip, uint16_t colour)
+blit_clipped_colour_box(const DG* dg, Clip* clip, uint16_t colour)
 {
     int w, h, d_stride;
     uint16_t* dst; // TODO(jb): Use struct rgb565
 
-    d_stride = DG_XRES - clip->w;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * DG_XRES;
+    d_stride = MLDisplayWidth - clip->w;
+    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
 
     for (h = clip->h; h > 0; h--) {
         for (w = clip->w; w > 0; w--)
@@ -199,17 +184,14 @@ blit_clipped_colour_box(DG* dg, Clip* clip, uint16_t colour)
     }
 }
 
-/* Blit rectangular block.
- */
-// TODO(jb): Use struct rgb565 for src
 void
-blit_clipped_gfx_box(DG* dg, Clip* clip, uint16_t* src)
+blit_clipped_gfx_box(const DG* dg, Clip* clip, uint16_t* src)
 {
     int w, h, d_stride;
     uint16_t* dst; // TODO(jb): Use struct rgb565
 
-    d_stride = DG_XRES - clip->w;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * DG_XRES;
+    d_stride = MLDisplayWidth - clip->w;
+    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
 
     for (h = clip->h; h > 0; h--) {
         for (w = clip->w; w > 0; w--)

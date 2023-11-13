@@ -25,9 +25,6 @@ static Missile missiles[MISSILES_MAX];
 
 static char g_delays[MISSILES_MAX]; /* Missile drop delays */
 
-/* Collision callback.
- */
-
 static int
 collision_cb(Collision* a, Collision* b)
 {
@@ -51,11 +48,8 @@ collision_cb(Collision* a, Collision* b)
     return 0;
 }
 
-/* Create tables.
- */
-
 void
-missiles_tables(void)
+missiles_module_init(void)
 {
     int i;
     GfxObject* gfx_obj;
@@ -75,24 +69,20 @@ missiles_tables(void)
         g_delays[i] = (int)(15.0 * random() / (RAND_MAX + 1.0)) + 4;
 }
 
-/* Draw missiles on screen.
- */
-
 void
-missiles_show(DG* dg)
+missiles_show(const DG* dg)
 {
     int i;
 
-    for (i = 0; i < MISSILES_MAX; i++)
-        if (missiles[i].c)
+    for (i = 0; i < MISSILES_MAX; i++) {
+        if (missiles[i].c) {
             sprite_show(dg, &missiles[i].s);
+        }
+    }
 }
 
-/* Remove missiles from screen.
- */
-
 void
-missiles_hide(DG* dg)
+missiles_hide(const DG* dg)
 {
     int i;
 
@@ -100,11 +90,7 @@ missiles_hide(DG* dg)
         sprite_hide(dg, &missiles[i].s);
 }
 
-/* Updates old missiles and creates new ones.
- *
- * TODO(jb): Dependant on armada.c stuff.. Uggly:(
- */
-
+//  TODO(jb): Dependant on armada.c stuff.. Uggly:(
 void
 missiles_update(void)
 {
@@ -115,7 +101,7 @@ missiles_update(void)
     for (mi = 0; mi < MISSILES_MAX; mi++) {
         if (missiles[mi].c) {
             missiles[mi].s.y += MISSILES_STEP;
-            if (missiles[mi].s.y > (DG_YRES + 4)) {
+            if (missiles[mi].s.y > (MLDisplayWidth + 4)) {
                 collision_destroy(missiles[mi].c);
                 missiles[mi].c = 0;
                 g_missiles_alive--;

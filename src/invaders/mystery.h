@@ -1,8 +1,19 @@
 #pragma once
+/// \file mystery.h
+///
+/// The mystery is the UFO that goes forth and back in the upper region
+/// of the screen.
 
-#include "dg.h"
+#include "libmedia/libmedia.h"
 
-void mystery_tables(void);
-void mystery_hide(DG* dg);
-void mystery_show(DG* dg);
+/// Initialize module.
+void mystery_module_init(void);
+
+/// Hide mystery.
+void mystery_hide(const DG* dg);
+
+/// Show mystery.
+void mystery_show(const DG* dg);
+
+/// Updates and creates "mysteries" during game play.
 void mystery_update(void);

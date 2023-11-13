@@ -1,6 +1,3 @@
-/* Displayed status
- */
-
 #include "status.h"
 
 #include <string.h>
@@ -29,9 +26,6 @@ unsigned int g_pilots;
 unsigned int g_score;
 unsigned int g_hi_score = 0;
 
-/* Reset status.
- */
-
 void
 status_reset(void)
 {
@@ -45,11 +39,8 @@ status_reset(void)
     memset(score_atr, 0, 6);
 }
 
-/* Clear status list.
- */
-
 void
-status_hide(DG* dg)
+status_hide(const DG* dg)
 {
     Clip c = {0, 0, 42 * 8, 8, 0, 0};
 
@@ -57,11 +48,8 @@ status_hide(DG* dg)
         blit_clipped_colour_box(dg, &c, 0);
 }
 
-/* Update and draw status list.
- */
-
 void
-status_show(DG* dg)
+status_show(const DG* dg)
 {
     int i, j, k, c;
     uint16_t* dst = dg->adr[dg->hid];

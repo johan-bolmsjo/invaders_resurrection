@@ -1,7 +1,5 @@
-/* Star field.. Whohaa.
- */
-
 #include "stars.h"
+#include "libmedia/libmedia.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
@@ -34,11 +32,11 @@ create_star(Star* star)
         z = z_random[z_random_pos++];
 
         x = x_random[x_random_pos++];
-        x = ((int32_t)256 * x) / z + (DG_XRES / 2);
-    } while ((unsigned int)x >= DG_XRES);
+        x = ((int32_t)256 * x) / z + (MLDisplayWidth / 2);
+    } while ((unsigned int)x >= MLDisplayWidth);
 
-    a = (int32_t)((float)(256 * 65536 * y) / z + (DG_YRES / 2));
-    b = (int32_t)((float)(256 * 65536 * (y + SPEED)) / z + (DG_YRES / 2));
+    a = (int32_t)((double)(256 * 65536 * y) / z + ((double)MLDisplayHeight / 2));
+    b = (int32_t)((double)(256 * 65536 * (y + SPEED)) / z + ((double)MLDisplayHeight / 2));
 
     star->colour = stars_cmap[z >> 9];
     star->y_fix = a;
@@ -58,11 +56,9 @@ create_stars(void)
         create_star(&stars[i]);
 }
 
-/* Create tables and initialize star field.
- */
-
+// Create tables and initialize star field.
 void
-stars_tables(void)
+stars_module_init(void)
 {
     int i;
     int16_t* cm;
@@ -97,11 +93,8 @@ stars_tables(void)
         *cm++ = i << 11 | i << 6 | i;
 }
 
-/* Remove stars from display.
- */
-
 void
-stars_hide(DG* dg)
+stars_hide(const DG* dg)
 {
     int i, buf_no;
     uint16_t* prev_plot;
@@ -123,11 +116,8 @@ stars_hide(DG* dg)
     }
 }
 
-/* Plot stars.
- */
-
 void
-stars_show(DG* dg)
+stars_show(const DG* dg)
 {
     int buf_no, i, y;
     uint16_t *this_plot, *screen;
@@ -144,11 +134,11 @@ stars_show(DG* dg)
 
         if (y < 0)
             continue;
-        if (y >= DG_YRES) {
+        if (y >= MLDisplayHeight) {
             star->pend_rm = 1;
             continue;
         }
-        this_plot = screen + y * DG_XRES + star->x_off;
+        this_plot = screen + y * MLDisplayWidth + star->x_off;
         if (*this_plot == 0) {
             star->adr[buf_no] = this_plot;
             *this_plot = star->colour;

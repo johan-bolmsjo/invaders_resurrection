@@ -1,6 +1,3 @@
-/* Text routines
- */
-
 #include "text.h"
 
 #include <stdio.h>
@@ -16,9 +13,6 @@
 static uint8_t font[2048];
 static uint16_t palette[3] = {65535, 40314, 17141};
 
-/* Load 8x8 font.
- */
-
 int
 text_decode_font(void)
 {
@@ -29,9 +23,6 @@ text_decode_font(void)
 
     return uncompress(font, &dst_len, font_data + 8, src_len);
 }
-
-/* Print character "c" at address "dst".
- */
 
 void
 text_print_char_adr(char chr, uint16_t colour, uint16_t* dst)
@@ -50,13 +41,9 @@ text_print_char_adr(char chr, uint16_t colour, uint16_t* dst)
                 *dst++ = 0;
             v <<= 1;
         }
-        dst += DG_XRES - 8;
+        dst += MLDisplayWidth - 8;
     }
 }
-
-/* Print string "str" at address "dst".
- * No clipping.
- */
 
 void
 text_print_str_adr(const char* str, uint16_t colour, uint16_t* dst)
@@ -67,9 +54,6 @@ text_print_str_adr(const char* str, uint16_t colour, uint16_t* dst)
         dst += 8;
     }
 }
-
-/* x and y is character coordinates.
- */
 
 void
 text_print_str_fancy_init(Text* t, const char* str, int x_off, int x, int y)
@@ -82,7 +66,7 @@ text_print_str_fancy_init(Text* t, const char* str, int x_off, int x, int y)
 }
 
 void
-text_print_str_fancy(DG* dg, Text* t)
+text_print_str_fancy(const DG* dg, Text* t)
 {
     if (t->str) {
         if (!t->colour) {
@@ -101,16 +85,16 @@ text_print_str_fancy(DG* dg, Text* t)
             default:
                 t->x++;
             }
-            if (t->x >= (DG_XRES / 8)) {
+            if (t->x >= (MLDisplayWidth / 8)) {
                 t->x = t->x_off;
                 t->y++;
             }
-            if (t->y >= (DG_YRES / 8)) {
+            if (t->y >= (MLDisplayHeight / 8)) {
                 t->str = 0;
                 return;
             }
 
-            t->offset = t->x * 8 + DG_XRES * t->y * 8;
+            t->offset = t->x * 8 + MLDisplayWidth * t->y * 8;
         }
 
         if (t->colour < 3) {

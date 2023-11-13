@@ -1,18 +1,11 @@
-/* All sound effects.
- */
-
 #include "sfx.h"
 
 #include "libsynth/libsynth.h"
 
-
-/* Extra life sound.
- */
-
 void
 sfx_extra_life(void)
 {
-    static struct SynthEnvelope w0 = {
+    static const struct SynthEnvelope e0 = {
         SynthWaveformTriangle,
         1000,
         1,
@@ -21,19 +14,14 @@ sfx_extra_life(void)
         {25, 50, 0, 25}
     };
 
-    synth_lock();
     synth_channel_kill(CH_EXTRA_LIFE);
-    synth_envelope(&w0, CH_EXTRA_LIFE);
-    synth_unlock();
+    synth_envelope(&e0, CH_EXTRA_LIFE);
 }
-
-/* Used when the player shoots.
- */
 
 void
 sfx_player_shot(void)
 {
-    static struct SynthEnvelope w0 = {
+    static const struct SynthEnvelope e0 = {
         SynthWaveformPulse,
         400,
         .5,
@@ -41,7 +29,7 @@ sfx_player_shot(void)
         .3,
         {75, 100, 0, 25}
     };
-    static struct SynthEnvelope fm = {
+    static const struct SynthEnvelope fm = {
         SynthWaveformPulse,
         0,
         .5,
@@ -49,7 +37,7 @@ sfx_player_shot(void)
         1,
         {50, 150, 0, 0}
     };
-    static struct SynthEnvelope pwm = {
+    static const struct SynthEnvelope pwm = {
         SynthWaveformPulse,
         0,
         .25,
@@ -58,21 +46,16 @@ sfx_player_shot(void)
         {50, 150, 0, 0}
     };
 
-    synth_lock();
     synth_channel_kill(CH_PLAYER_SHOT);
-    synth_envelope(&w0, CH_PLAYER_SHOT);
+    synth_envelope(&e0, CH_PLAYER_SHOT);
     synth_envelope_fm(&fm, CH_PLAYER_SHOT);
     synth_envelope_pwm(&pwm, CH_PLAYER_SHOT);
-    synth_unlock();
 }
-
-/* Used when the player explodes.
- */
 
 void
 sfx_player_explode(void)
 {
-    static struct SynthEnvelope w0 = {
+    static const struct SynthEnvelope e0 = {
         SynthWaveformPulse,
         50,
         .5,
@@ -80,7 +63,7 @@ sfx_player_explode(void)
         .3,
         {50, 200, 0, 50}
     };
-    static struct SynthEnvelope fm = {
+    static const struct SynthEnvelope fm = {
         SynthWaveformTriangle,
         5,
         .5,
@@ -89,17 +72,15 @@ sfx_player_explode(void)
         {1, 299, 0, 0}
     };
 
-    synth_lock();
     synth_channel_kill(CH_PLAYER_DIE);
-    synth_envelope(&w0, CH_PLAYER_DIE);
+    synth_envelope(&e0, CH_PLAYER_DIE);
     synth_envelope_fm(&fm, CH_PLAYER_DIE);
-    synth_unlock();
 }
 
 static void
-bomber_move(int channel, int count)
+bomber_move(int channel, int sfx_index)
 {
-    static struct SynthEnvelope w0 = {
+    static const struct SynthEnvelope e0 = {
         SynthWaveformPulse,
         100,
         .3,
@@ -107,7 +88,7 @@ bomber_move(int channel, int count)
         .5,
         {5, 10, 0, 5}
     };
-    static struct SynthEnvelope w1 = {
+    static const struct SynthEnvelope e1 = {
         SynthWaveformPulse,
         97,
         .3,
@@ -115,7 +96,7 @@ bomber_move(int channel, int count)
         .5,
         {5, 10, 0, 5}
     };
-    static struct SynthEnvelope w2 = {
+    static const struct SynthEnvelope e2 = {
         SynthWaveformPulse,
         96,
         .3,
@@ -123,7 +104,7 @@ bomber_move(int channel, int count)
         .5,
         {5, 10, 0, 5}
     };
-    static struct SynthEnvelope w3 = {
+    static const struct SynthEnvelope e3 = {
         SynthWaveformPulse,
         95,
         .3,
@@ -131,7 +112,7 @@ bomber_move(int channel, int count)
         .5,
         {5, 10, 0, 5}
     };
-    static struct SynthEnvelope fm = {
+    static const struct SynthEnvelope fm = {
         SynthWaveformPulse,
         1,
         .05,
@@ -139,13 +120,11 @@ bomber_move(int channel, int count)
         1,
         {1, 30, 0, 0}
     };
-    static struct SynthEnvelope* w[4] = {&w0, &w1, &w2, &w3};
+    static const struct SynthEnvelope* w[4] = {&e0, &e1, &e2, &e3};
 
-    synth_lock();
     synth_channel_kill(channel);
-    synth_envelope(w[count], channel);
+    synth_envelope(w[sfx_index], channel);
     synth_envelope_fm(&fm, channel);
-    synth_unlock();
 }
 
 /* Used when the bombers move.
@@ -154,25 +133,24 @@ bomber_move(int channel, int count)
 void
 sfx_bomber_move(void)
 {
-    static int count = 0;
+    static int sfx_index = 0;
 
-    if (!synth_channel_envelopes(CH_BOMBER_MOVE))
-        bomber_move(CH_BOMBER_MOVE, count);
-    else if (!synth_channel_envelopes(CH_BOMBER_DIE))
-        bomber_move(CH_BOMBER_DIE, count);
+    // Play sound on available channel to avoid cut of sound effects.
+    if (!synth_channel_envelopes(CH_BOMBER_MOVE)) {
+        bomber_move(CH_BOMBER_MOVE, sfx_index);
+    } else if (!synth_channel_envelopes(CH_BOMBER_DIE)) {
+        bomber_move(CH_BOMBER_DIE, sfx_index);
+    }
 
-    count++;
-    if (count > 3)
-        count = 0;
+    if (++sfx_index > 3) {
+        sfx_index = 0;
+    }
 }
-
-/* Used when the bomber explodes.
- */
 
 void
 sfx_bomber_explode(void)
 {
-    static struct SynthEnvelope w0 = {
+    static const struct SynthEnvelope e0 = {
         SynthWaveformPulse,
         50,
         .5,
@@ -180,7 +158,7 @@ sfx_bomber_explode(void)
         .3,
         {50, 200, 0, 50}
     };
-    static struct SynthEnvelope fm = {
+    static const struct SynthEnvelope fm = {
         SynthWaveformTriangle,
         5,
         .5,
@@ -189,28 +167,23 @@ sfx_bomber_explode(void)
         {1, 299, 0, 0}
     };
 
-    synth_lock();
     synth_channel_kill(CH_BOMBER_DIE);
-    synth_envelope(&w0, CH_BOMBER_DIE);
+    synth_envelope(&e0, CH_BOMBER_DIE);
     synth_envelope_fm(&fm, CH_BOMBER_DIE);
-    synth_unlock();
 }
-
-/* Used while the mystery moves.
- */
 
 void
 sfx_mystery_move(void)
 {
-    static struct SynthEnvelope w0 = {
+    static const struct SynthEnvelope e0 = {
         SynthWaveformPulse,
         200,
-        .5,
+        .2,
         .5,
         .3,
         {100, 10000, 0, 100}
     };
-    static struct SynthEnvelope fm = {
+    static const struct SynthEnvelope fm = {
         SynthWaveformTriangle,
         5,
         .5,
@@ -219,20 +192,15 @@ sfx_mystery_move(void)
         {1, 10199, 0, 0}
     };
 
-    synth_lock();
     synth_channel_kill(CH_UFO_MOVE);
-    synth_envelope(&w0, CH_UFO_MOVE);
+    synth_envelope(&e0, CH_UFO_MOVE);
     synth_envelope_fm(&fm, CH_UFO_MOVE);
-    synth_unlock();
 }
-
-/* Used when the mystery explodes.
- */
 
 void
 sfx_mystery_explode(void)
 {
-    static struct SynthEnvelope w0 = {
+    static const struct SynthEnvelope e0 = {
         SynthWaveformPulse,
         300,
         .5,
@@ -240,7 +208,7 @@ sfx_mystery_explode(void)
         .3,
         {50, 350, 0, 0}
     };
-    static struct SynthEnvelope fm = {
+    static const struct SynthEnvelope fm = {
         SynthWaveformTriangle,
         10,
         1,
@@ -249,9 +217,7 @@ sfx_mystery_explode(void)
         {400, 0, 0, 0}
     };
 
-    synth_lock();
     synth_channel_kill(CH_UFO_DIE);
-    synth_envelope(&w0, CH_UFO_DIE);
+    synth_envelope(&e0, CH_UFO_DIE);
     synth_envelope_fm(&fm, CH_UFO_DIE);
-    synth_unlock();
 }

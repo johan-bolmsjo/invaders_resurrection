@@ -15,60 +15,46 @@
 #define Y_VECTORS 16
 
 #define X_MIN 60
-#define X_MAX (DG_XRES - 60)
-
-int g_player_alive = 0;
+#define X_MAX (MLDisplayWidth - X_MIN)
 
 static int x_vector[X_VECTORS];
 static int y_vector[Y_VECTORS];
 static int x_vector_pos = 0;
 static int y_vector_pos = 0;
 
-static int count[15];
-static int shots = 0; /* Shots in the air */
-static Player player; /* Player information */
+static int        count[15];
+static int        shots = 0;    // Shots in the air
+static Player     player;       // Player information
 static GfxObject* player_obj;
 
-static Joy* joy_p; /* Set in player_tables(), used by runlevel func */
+// Set in player_init(), used by runlevel func
+static struct MLInput* input_ref;
 
-extern int g_cheat; /* Cheat flag from main.c */
+static int is_alive = false;
 
-/* Make sure that no shots are alive before
- * changing from runlevel play1 to play2.
- */
 
+// Make sure that no shots are alive before
+// changing from runlevel play1 to play2.
 static int
 rl_play1_play2(RunLevelFunc* r)
 {
     (void)r;
-
-    if (!shots)
-        return 1;
-
-    return 0;
+    return !shots ? 1 : 0;
 }
 
-/* Make sure that no missiles are alive before
- * changing from runlevel play2 to play0.
- */
-
+// Make sure that no missiles are alive before
+// changing from runlevel play2 to play0.
 static int
 rl_play2_play0(RunLevelFunc* r)
 {
     (void)r;
-
-    if (!g_missiles_alive)
-        return 1;
-
-    return 0;
+    return !g_missiles_alive ? 1 : 0;
 }
 
-/* Make sure that no objects or shots are alive before
- * changing from runlevel play2 to title0.
- *
- * Also clear joystick button flag.
- */
-
+// Make sure that no objects or shots are alive before
+// changing from runlevel play2 to title0.
+//
+// Also clear joystick button flag.
 static int
 rl_play2_title0(RunLevelFunc* r)
 {
@@ -84,16 +70,13 @@ rl_play2_title0(RunLevelFunc* r)
         return 1;
     }
 
-    joy_p->button = 0;
+    input_ref->press_button_a = false;
 
     return 0;
 }
 
-/* Create tables etc.
- */
-
 void
-player_tables(Joy* joy)
+player_module_init(struct MLInput* input)
 {
     int i, j;
     double step = 1.5708 / 7, pos = -1.5708;
@@ -128,21 +111,19 @@ player_tables(Joy* joy)
     runlevel_register_func(&play2_title0, RUNLEVEL_PLAY2, RUNLEVEL_TITLE0,
                            rl_play2_title0);
 
-    joy_p = joy;
+    input_ref = input;
 }
 
-/* Animate player
- */
-
+// Animate player
 static void
-animate(Player* p, Joy* j)
+animate(Player* p, struct MLInput* input)
 {
     int frame = p->s.frame;
 
     p->count++;
     if (p->count > count[frame]) {
-        if (j->x_axis) {
-            frame += j->x_axis;
+        if (input->axis_x1 != 0) {
+            frame += input->axis_x1;
             if (frame < 0)
                 frame = 0;
             if (frame > 14)
@@ -159,9 +140,7 @@ animate(Player* p, Joy* j)
     p->s.frame = frame;
 }
 
-/* Move player
- */
-
+// Move player
 static void
 move(Player* p)
 {
@@ -181,19 +160,14 @@ move(Player* p)
     collision_update_from_sprite(p->c, &p->s);
 }
 
-/* Callback function to keep track of how many shots that's
- * in the air.
- */
-
+// Callback function to keep track of how many shots that's in the air.
 static void
 shot_cb(void)
 {
     shots--;
 }
 
-/* Kill pilot.
- */
-
+// Kill pilot.
 static void
 die(void)
 {
@@ -220,13 +194,10 @@ die(void)
         g_next_runlevel = RUNLEVEL_PLAY2;
 
     g_pilots--;
-    g_player_alive = 0;
+    is_alive = false;
 
     sfx_player_explode();
 }
-
-/* Kill pilot and destroy its collision object.
- */
 
 void
 player_kill(void)
@@ -237,9 +208,6 @@ player_kill(void)
         player.c = 0;
     }
 }
-
-/* Collision callback.
- */
 
 static int
 collision_cb(Collision* a, Collision* b)
@@ -252,43 +220,33 @@ collision_cb(Collision* a, Collision* b)
     return 1;
 }
 
-/* Hide player
- */
-
 void
-player_hide(DG* dg)
+player_hide(const DG* dg)
 {
     sprite_hide(dg, &player.s);
 }
 
-/* Show player
- */
-
 void
-player_show(DG* dg)
+player_show(const DG* dg)
 {
     if (player.c)
         sprite_show(dg, &player.s);
 }
 
-/* New player
- */
-
+// New player
 static void
 player_new(void)
 {
     if (!player.c) {
-        sprite_init(&player.s, player_obj, 7, DG_XRES / 2, DG_YRES - 16, 1);
+        sprite_init(&player.s, player_obj, 7, MLDisplayWidth / 2, MLDisplayHeight - 16, 1);
         player.count = 0;
         player.c = collision_create(0, 0, GID_PLAYER, collision_cb);
         collision_update_from_sprite(player.c, &player.s);
-        g_player_alive = 1;
+        is_alive = true;
     }
 }
 
-/* Give up and return to the title screen.
- */
-
+// Give up and return to the title screen.
 static void
 suicide(void)
 {
@@ -296,21 +254,18 @@ suicide(void)
         collision_destroy(player.c);
         player.c = 0;
         g_pilots = 0;
-        g_player_alive = 0;
+        is_alive = false;
     }
 }
 
-/* Player handler function.
- */
-
 void
-player_update(Joy* j, int* key_q)
+player_update(struct MLInput* input)
 {
     if (g_runlevel >= RUNLEVEL_PLAY0 &&
         g_runlevel <= RUNLEVEL_PLAY2) {
 
-        if (*key_q) {
-            *key_q = 0;
+        if (input->press_quit) {
+            input->press_quit = false;
             suicide();
         }
 
@@ -319,13 +274,14 @@ player_update(Joy* j, int* key_q)
                 player_new();
 
             if (player.c) {
-                animate(&player, j);
+                animate(&player, input);
                 move(&player);
 
-                if (j->button) {
-                    j->button = 0;
+                if (input->press_button_a) {
+                    input->press_button_a = false;
 
-                    if ((!shots || g_cheat) &&
+                    const bool quickshot = false; // For testing
+                    if ((!shots || quickshot) &&
                         g_runlevel == RUNLEVEL_PLAY1) {
                         if (shot_create(player.s.x - 1, player.s.y - 16,
                                         0, -8, 0xFFFF, 1, GID_PLAYER_SHOT,
@@ -345,4 +301,10 @@ player_update(Joy* j, int* key_q)
                 g_next_runlevel = RUNLEVEL_TITLE0;
         }
     }
+}
+
+bool
+player_is_alive(void)
+{
+    return is_alive;
 }

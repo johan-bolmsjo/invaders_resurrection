@@ -6,13 +6,11 @@
 #include "error.h"
 #include "gids.h"
 #include "shields.h"
+#include "libmedia/libmedia.h"
 
 static Shot* shot_list = 0;
 
 int g_shot_obj = 0;
-
-/* Destroy shot
- */
 
 static void
 shot_destroy(Shot* s)
@@ -38,11 +36,8 @@ shot_destroy(Shot* s)
     }
 }
 
-/* Collision callback function.
- */
-
 static int
-shot_callback(Collision* a, Collision* b)
+collision_cb(Collision* a, Collision* b)
 {
     if (b->gid == GID_SHIELD) {
         if (!shields_hit(a->x0, a->y0, -1, b->id))
@@ -53,26 +48,20 @@ shot_callback(Collision* a, Collision* b)
     return 1;
 }
 
-/* Create shot.
- */
-
 Shot*
 shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
             int fatal, int gid, void (*cb)(void))
 {
-    Collision* c = 0;
-    Shot* s;
-
-    if ((unsigned int)x > (DG_XRES - 2) ||
-        (unsigned int)y > (DG_YRES - 2))
+    if ((unsigned int)x > (MLDisplayWidth - 2) ||
+        (unsigned int)y > (MLDisplayHeight - 2)) {
         return 0;
+    }
 
-    s = malloc(sizeof(Shot));
-    if (!s)
-        panic("Out of memory.");
+    Shot* s = malloc(sizeof(Shot));
 
+    Collision* c = NULL;
     if (fatal) {
-        c = collision_create(0, s, gid, shot_callback);
+        c = collision_create(0, s, gid, collision_cb);
         c->x0 = x;
         c->y0 = y;
         c->x1 = x + 1;
@@ -104,11 +93,8 @@ shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
     return s;
 }
 
-/* Hide all shots
- */
-
 void
-shot_hide(DG* dg)
+shot_hide(const DG* dg)
 {
     Shot* s = shot_list;
     while (s) {
@@ -116,37 +102,31 @@ shot_hide(DG* dg)
         if (p) {
             p[0] = 0;
             p[1] = 0;
-            p[DG_XRES] = 0;
-            p[DG_XRES + 1] = 0;
+            p[MLDisplayWidth] = 0;
+            p[MLDisplayWidth + 1] = 0;
         }
 
         s = s->next;
     }
 }
 
-/* Show all shots
- */
-
 void
-shot_show(DG* dg)
+shot_show(const DG* dg)
 {
     Shot* s = shot_list;
     while (s) {
         if (!s->pend_rm) {
-            uint16_t* p = dg->adr[dg->hid] + s->x + s->y * DG_XRES;
+            uint16_t* p = dg->adr[dg->hid] + s->x + s->y * MLDisplayWidth;
             s->adr[dg->hid] = p;
             p[0] = s->colour;
             p[1] = s->colour;
-            p[DG_XRES] = s->colour;
-            p[DG_XRES + 1] = s->colour;
+            p[MLDisplayWidth] = s->colour;
+            p[MLDisplayWidth + 1] = s->colour;
         }
 
         s = s->next;
     }
 }
-
-/* Update all shots.
- */
 
 void
 shot_update(void)
@@ -164,8 +144,8 @@ shot_update(void)
         s->x += s->x_vector;
         s->y += s->y_vector;
 
-        if ((unsigned int)s->x > (DG_XRES - 2) ||
-            (unsigned int)s->y > (DG_YRES - 2)) {
+        if ((unsigned int)s->x > (MLDisplayWidth - 2) ||
+            (unsigned int)s->y > (MLDisplayHeight - 2)) {
             shot_destroy(s);
             if (s->c)
                 collision_destroy(s->c);

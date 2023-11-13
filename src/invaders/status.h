@@ -1,11 +1,20 @@
 #pragma once
+/// \file status.h
+///
+/// Game status bar.
+///
 
-#include "dg.h"
+#include "libmedia/libmedia.h"
 
 extern unsigned int g_pilots;
 extern unsigned int g_score;
 extern unsigned int g_hi_score;
 
+/// Reset status.
 void status_reset(void);
-void status_hide(DG* dg);
-void status_show(DG* dg);
+
+/// Clear status list.
+void status_hide(const DG* dg);
+
+/// Update and draw status list.
+void status_show(const DG* dg);

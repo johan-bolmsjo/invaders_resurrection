@@ -1,13 +1,10 @@
-/* The mystery is the UFO that goes forth and back in the upper
- * region of the screen.
- */
-
 #include "mystery.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
 
 #include "gids.h"
+#include "libmedia/libmedia.h"
 #include "libsynth/libsynth.h"
 #include "player.h"
 #include "runlevel.h"
@@ -15,31 +12,27 @@
 #include "status.h"
 #include "ufo.h"
 
-#define MYSTERY_TIMER (30.0 * DG_VFREQ) /* Mystery max delay in VBLs */
-#define SCORE_TIMER   (3 * DG_VFREQ)    /* Time to display the score */
+#define MYSTERY_TIMER (30.0 * MLDisplayFreq) /* Mystery max delay in VBLs */
+#define SCORE_TIMER   (3 * MLDisplayFreq)    /* Time to display the score */
 #define MYSTERY_Y     32                /* Mystery Y coordinate */
 
 static Ufo ufo = {0};
 static int score_timer = 0;
 static Sprite score_sprite = {0};
 
-/* Runlevel function.
- */
-
+// Runlevel function.
 static int
 rl_play1_play2(RunLevelFunc* r)
 {
     (void)r;
 
-    if (g_player_alive && (ufo.c || score_timer))
+    if (player_is_alive() && (ufo.c || score_timer))
         return 0;
 
     return 1;
 }
 
-/* Runlevel function.
- */
-
+// Runlevel function.
 static int
 rl_play2_title0(RunLevelFunc* r)
 {
@@ -51,11 +44,8 @@ rl_play2_title0(RunLevelFunc* r)
     return 1;
 }
 
-/* Collision callback.
- */
-
 static int
-c_cb(Collision* a, Collision* b)
+collision_cb(Collision* a, Collision* b)
 {
     (void)a;
     (void)b;
@@ -80,11 +70,8 @@ c_cb(Collision* a, Collision* b)
     return 1;
 }
 
-/* Create tables etc.
- */
-
 void
-mystery_tables(void)
+mystery_module_init(void)
 {
     static RunLevelFunc rl0, rl1;
 
@@ -97,31 +84,24 @@ mystery_tables(void)
                            rl_play2_title0);
 }
 
-/* Hide mystery.
- */
-
 void
-mystery_hide(DG* dg)
+mystery_hide(const DG* dg)
 {
     sprite_hide(dg, &ufo.s);
     sprite_hide(dg, &score_sprite);
 }
 
-/* Show mystery.
- */
-
 void
-mystery_show(DG* dg)
+mystery_show(const DG* dg)
 {
-    if (ufo.c)
+    if (ufo.c) {
         sprite_show(dg, &ufo.s);
+    }
 
-    if (score_timer)
+    if (score_timer) {
         sprite_show(dg, &score_sprite);
+    }
 }
-
-/* Updates and creates "mysteries" during game play.
- */
 
 void
 mystery_update(void)
@@ -155,16 +135,16 @@ mystery_update(void)
             if (!timer) {
                 if (!dir) {
                     x_start = -20;
-                    x_stop = DG_XRES + 20;
+                    x_stop = MLDisplayWidth + 20;
                     x_vector = 2;
                 } else {
-                    x_start = DG_XRES + 20;
+                    x_start = MLDisplayWidth + 20;
                     x_stop = -20;
                     x_vector = -2;
                 }
 
                 ufo_init(&ufo, x_start, MYSTERY_Y, 1);
-                ufo.c = collision_create(0, 0, GID_MYSTERY, c_cb);
+                ufo.c = collision_create(0, 0, GID_MYSTERY, collision_cb);
                 collision_update_from_sprite(ufo.c, &ufo.s);
                 sfx_mystery_move();
 

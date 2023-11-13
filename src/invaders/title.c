@@ -1,6 +1,3 @@
-/* Title screen.
- */
-
 #include "title.h"
 
 #include "armada.h"
@@ -11,17 +8,14 @@
 #include "text.h"
 #include "ufo.h"
 
-static Ufo ufo;
-static Bomber bombers[3];
+static Ufo     ufo;
+static Bomber  bombers[3];
 static Sprite* sprites[4];
-static Text text;
-static Text texts[6];
-
-/* Setup things.
- */
+static Text    text;
+static Text    texts[6];
 
 void
-title_tables(void)
+title_module_init(void)
 {
     int i;
     static const char* strings[6] = {"  I N V A D E R S\n\na NoCrew production",
@@ -49,11 +43,8 @@ title_tables(void)
     text.str = 0;
 }
 
-/* Draw title objects.
- */
-
 void
-title_show(DG* dg)
+title_show(const DG* dg)
 {
     int i;
 
@@ -66,11 +57,8 @@ title_show(DG* dg)
     }
 }
 
-/* Clear title objects.
- */
-
 void
-title_hide(DG* dg)
+title_hide(const DG* dg)
 {
     int i;
     Clip clip = {240, 120, 160, 192, 0, 0};
@@ -84,12 +72,8 @@ title_hide(DG* dg)
         blit_clipped_colour_box(dg, &clip, 0);
 }
 
-/* Manages changes.
- * Returns 1 if we shall quit the game.
- */
-
 int
-title_update(DG* dg, Joy* j, int key_q)
+title_update(const DG* dg, struct MLInput* input)
 {
     (void)dg;
 
@@ -97,12 +81,13 @@ title_update(DG* dg, Joy* j, int key_q)
     static int count = 0;
 
     if (g_runlevel == RUNLEVEL_TITLE0) {
-        if (key_q)
+        if (input->press_quit) {
             return 1;
+        }
 
-        if (j->button) {
+        if (input->press_button_a) {
+            input->press_button_a = false;
             count = 0;
-            j->button = 0;
             g_next_runlevel = RUNLEVEL_TITLE1;
         } else {
 

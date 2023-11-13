@@ -1,20 +1,12 @@
-/* Collision detection
- */
-
 #include "collision.h"
 
 #include <stdlib.h>
 
 #include "error.h"
 
-static Collision* c_base = 0;  /* Linked list base */
-static Collision** c_list = 0; /* List sorted by x0 */
+static Collision* c_base = NULL; /* Linked list base */
 
 int g_collision_obj = 0;
-
-/* Creates collision object with a callback function that is called
- * uppon collision.
- */
 
 Collision*
 collision_create(int id, void* id_p, int gid,
@@ -23,9 +15,6 @@ collision_create(int id, void* id_p, int gid,
     Collision* c;
 
     c = malloc(sizeof(Collision));
-    if (!c)
-        panic("Out of memory.");
-
     c->id = id;
     c->id_p = id_p;
     c->gid = gid;
@@ -45,9 +34,6 @@ collision_create(int id, void* id_p, int gid,
     return c;
 }
 
-/* Removes a collition object.
- */
-
 void
 collision_destroy(Collision* c)
 {
@@ -61,9 +47,6 @@ collision_destroy(Collision* c)
     g_collision_obj--;
     free(c);
 }
-
-/* Uppdate a collition object with data from a sprite.
- */
 
 void
 collision_update_from_sprite(Collision* c, Sprite* s)
@@ -79,10 +62,8 @@ collision_update_from_sprite(Collision* c, Sprite* s)
     c->mask = f->collision;
 }
 
-/* Sort all collition objects in list by x0.
- * TODO(jb): The function goes out of its sorting range by one.
- */
-
+// Sort all collition objects in list by x0.
+// TODO(jb): The function goes out of its sorting range by one.
 static void
 sort_list(Collision** list, int n)
 {
@@ -114,49 +95,39 @@ sort_list(Collision** list, int n)
     sort_list(list + i, n - i);
 }
 
-/* Scans collision object list and calls call-back functions uppon
- * collision.
- */
-
 void
 collision_detection(void)
 {
-    int i, j;
-    Collision *c, *c_tmp, fubar = {0};
-
-    if (g_collision_obj < 2)
+    if (g_collision_obj < 2) {
         return;
+    }
 
-    c_list = malloc(sizeof(Collision) * (g_collision_obj + 1));
-    if (!c_list)
-        panic("Out of memory.");
-
-    c = c_base;
-    for (i = 0; i < g_collision_obj; i++) {
-        c_list[i] = c;
+    // List sorted by x0
+    Collision** tmp_vec = malloc(sizeof(Collision) * (g_collision_obj + 1));
+    Collision *c = c_base;
+    for (int i = 0; i < g_collision_obj; i++) {
+        tmp_vec[i] = c;
         c = c->next;
     }
 
-    /* TODO(jb): The sort function goes out of its sorting range by one.
-     */
+    // TODO(jb): The sort function goes out of its sorting range by one.
+    Collision end_marker = {0};
+    tmp_vec[g_collision_obj] = &end_marker;
+    sort_list(tmp_vec, g_collision_obj);
 
-    c_list[i] = &fubar;
-    sort_list(c_list, g_collision_obj);
-
-    for (i = 0; i < (g_collision_obj - 1); i++) {
-        for (j = i + 1; j < g_collision_obj; j++) {
-            if (c_list[i]->x1 < c_list[j]->x0)
+    for (int i = 0; i < (g_collision_obj - 1); i++) {
+        for (int j = i + 1; j < g_collision_obj; j++) {
+            if (tmp_vec[i]->x1 < tmp_vec[j]->x0) {
                 break;
+            }
 
-            if (c_list[i]->y0 <= c_list[j]->y1 &&
-                c_list[i]->y1 >= c_list[j]->y0) {
-                if (!c_list[i]->pend_rm) {
-                    c_list[i]->pend_rm =
-                        c_list[i]->handler(c_list[i], c_list[j]);
+            if (tmp_vec[i]->y0 <= tmp_vec[j]->y1 &&
+                tmp_vec[i]->y1 >= tmp_vec[j]->y0) {
+                if (!tmp_vec[i]->pend_rm) {
+                    tmp_vec[i]->pend_rm = tmp_vec[i]->handler(tmp_vec[i], tmp_vec[j]);
                 }
-                if (!c_list[j]->pend_rm) {
-                    c_list[j]->pend_rm =
-                        c_list[j]->handler(c_list[j], c_list[i]);
+                if (!tmp_vec[j]->pend_rm) {
+                    tmp_vec[j]->pend_rm = tmp_vec[j]->handler(tmp_vec[j], tmp_vec[i]);
                 }
             }
         }
@@ -164,11 +135,12 @@ collision_detection(void)
 
     c = c_base;
     while (c) {
-        c_tmp = c;
+        Collision* c_tmp = c;
         c = c->next;
-        if (c_tmp->pend_rm)
+        if (c_tmp->pend_rm) {
             collision_destroy(c_tmp);
+        }
     }
 
-    free(c_list);
+    free(tmp_vec);
 }

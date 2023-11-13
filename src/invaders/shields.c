@@ -1,14 +1,11 @@
-/* Shields.
- */
-
 #include "shields.h"
 
 #include <string.h>
 
 #include "collision.h"
-#include "dg.h"
 #include "gids.h"
 #include "libgfx/libgfx.h"
+#include "libmedia/libmedia.h"
 #include "libutil/clamp.h"
 #include "libutil/color.h"
 #include "prim.h"
@@ -47,13 +44,13 @@ static shield_type* g_shields[shield_count] = {&g_shield1, &g_shield2, &g_shield
 
 static Collision* g_collisions[shield_count] = {0};
 
-static Clip g_clip1 = {128 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+static Clip g_clip1 = {128 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
                        shield_x_dim, shield_y_dim, 0, 0};
-static Clip g_clip2 = {256 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+static Clip g_clip2 = {256 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
                        shield_x_dim, shield_y_dim, 0, 0};
-static Clip g_clip3 = {384 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+static Clip g_clip3 = {384 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
                        shield_x_dim, shield_y_dim, 0, 0};
-static Clip g_clip4 = {512 - shield_x_dim / 2, DG_YRES - 80 - shield_y_dim / 2,
+static Clip g_clip4 = {512 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
                        shield_x_dim, shield_y_dim, 0, 0};
 
 static Clip* g_clips[shield_count] = {&g_clip1, &g_clip2, &g_clip3, &g_clip4};
@@ -77,8 +74,9 @@ collision_cb(Collision* a, Collision* b)
     return 0;
 }
 
+// Create shield data and other initialisations.
 void
-shield_tables(void)
+shield_module_init(void)
 {
     uint8_t shield_tmpl[shield_y_dim][shield_x_dim] = {{0}};
 
@@ -156,8 +154,8 @@ shields_new(void)
             g_collisions[i] = collision_create(i, 0, GID_SHIELD, collision_cb);
             g_collisions[i]->x0 = (i + 1) * 128 - shield_x_dim / 2;
             g_collisions[i]->x1 = (i + 1) * 128 + shield_x_dim / 2 - 1;
-            g_collisions[i]->y0 = DG_YRES - 80 - shield_y_dim / 2;
-            g_collisions[i]->y1 = DG_YRES - 80 + shield_y_dim / 2 - 1;
+            g_collisions[i]->y0 = MLDisplayHeight - 80 - shield_y_dim / 2;
+            g_collisions[i]->y1 = MLDisplayHeight - 80 + shield_y_dim / 2 - 1;
         }
 
         memcpy(g_shields[i], g_shield_orig3, sizeof(g_shield_orig3));
@@ -255,7 +253,7 @@ shields_hit(int x, int y, int y_vec, int shield_id)
 }
 
 void
-shields_show(DG* dg)
+shields_show(const DG* dg)
 {
     for (int i = 0; i < shield_count; i++) {
         if (g_draw[i]) {
@@ -270,7 +268,7 @@ shields_show(DG* dg)
 }
 
 void
-shields_hide(DG* dg)
+shields_hide(const DG* dg)
 {
     for (int i = 0; i < shield_count; i++) {
         if (!g_draw[i] && g_flash_count[i] < shield_flash_frames) {

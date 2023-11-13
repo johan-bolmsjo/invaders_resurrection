@@ -1,6 +1,3 @@
-/* Invaders armada.
- */
-
 #include "armada.h"
 
 #include <stdlib.h>
@@ -16,9 +13,9 @@
 #include "status.h"
 
 #define X_MIN 18
-#define X_MAX (DG_XRES - 18)
+#define X_MAX (MLDisplayWidth - 18)
 #define Y_MIN (Y_MAX - 11 * HEIGHT)
-#define Y_MAX (DG_YRES - 15)
+#define Y_MAX (MLDisplayHeight - 15)
 
 #define X_START 122 /* Start position X-axis */
 
@@ -42,10 +39,8 @@ static int y_vector[Y_VECTORS];
 static int x_vector_c = 0;
 static int y_vector_c = 0;
 
-/* Collision handler.
- * Increases score, speed and plays explosion sound.
- */
-
+// Collision handler.
+// Increases score, speed and plays explosion sound.
 static int
 collision_cb(Collision* a, Collision* b)
 {
@@ -118,9 +113,7 @@ collision_cb(Collision* a, Collision* b)
     return 1;
 }
 
-/* Animate armada and update collision objects.
- */
-
+// Animate armada and update collision objects.
 static void
 animate(void)
 {
@@ -135,9 +128,7 @@ animate(void)
     }
 }
 
-/* Move armada to the start position.
- */
-
+// Move armada to the start position.
 static void
 move_armada_to_start(void)
 {
@@ -162,9 +153,7 @@ move_armada_to_start(void)
     armada.kill = 0;
 }
 
-/* Move armada in the usual space invaders way.
- */
-
+// Move armada in the usual space invaders way.
 static void
 move_armada(void)
 {
@@ -244,11 +233,8 @@ move_armada(void)
     }
 }
 
-/* One-time setup of things.
- */
-
 void
-armada_tables(void)
+armada_module_init(void)
 {
     int i, j, type;
 
@@ -285,12 +271,11 @@ armada_tables(void)
     }
 }
 
-/* Create new armada.
- *
- * TODO(jb): Doesn't update the collision positions so be sure to run animate()
- *           before collision_detection() is run.
- */
-
+// Create new armada.
+//
+// TODO(jb): Doesn't update the collision positions so be sure to run animate()
+//           before collision_detection() is run.
+//
 static void
 armada_new(void)
 {
@@ -332,53 +317,36 @@ armada_new(void)
     move_armada_to_start();
 }
 
-/* Reset some values, called from the title screen.
- */
-
 void
 armada_reset(void)
 {
-    armada.y_off = -1; /* armada_new () is called after this function */
+    armada.y_off = -1; // armada_new () is called after this function
     armada.missiles_max = 3;
 }
 
-/* Remove armada from the screen.
- */
-
 void
-armada_hide(DG* dg)
+armada_hide(const DG* dg)
 {
-    int i;
     Bomber* b = armada.b[0];
-
-    for (i = 0; i < ARMADA_XY; i++)
+    for (int i = 0; i < ARMADA_XY; i++) {
         sprite_hide(dg, &b[i].s);
-}
-
-/* Draw armada on the screen.
- */
-
-void
-armada_show(DG* dg)
-{
-    int i;
-    Bomber* b = armada.b[0];
-
-    for (i = 0; i < ARMADA_XY; i++) {
-        if (b[i].c && b[i].s.vis)
-            sprite_show(dg, &b[i].s);
     }
 }
 
-/* Main bombers function.
- */
+void
+armada_show(const DG* dg)
+{
+    Bomber* b = armada.b[0];
+    for (int i = 0; i < ARMADA_XY; i++) {
+        if (b[i].c && b[i].s.vis) {
+            sprite_show(dg, &b[i].s);
+        }
+    }
+}
 
 void
 armada_update(void)
 {
-    int i;
-    Bomber* b;
-
     if (g_runlevel == RUNLEVEL_PLAY0) {
         if (!armada.alive) {
             armada_new();
@@ -401,15 +369,15 @@ armada_update(void)
 
     if (g_runlevel == RUNLEVEL_PLAY2) {
         if (armada.vis_c) {
-            b = &armada.b[0][--armada.vis_c];
+            Bomber*  b = &armada.b[0][--armada.vis_c];
             b->s.vis = 0;
         } else {
             if (g_pilots) {
                 g_next_runlevel = RUNLEVEL_PLAY0;
                 move_armada_to_start();
             } else {
-                for (i = 0; i < ARMADA_XY; i++) {
-                    b = &armada.b[0][i];
+                for (int i = 0; i < ARMADA_XY; i++) {
+                    Bomber* b = &armada.b[0][i];
                     if (b->c) {
                         collision_destroy(b->c);
                         b->c = 0;
