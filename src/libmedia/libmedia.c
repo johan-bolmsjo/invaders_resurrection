@@ -312,7 +312,7 @@ ml_poll_input(struct MLInput* input)
 
         case SDL_JOYAXISMOTION:
             if (!(sdl_event.jaxis.axis & 1)) {
-                ml.input.axis_x1 = min_int(32767, max_int(-32767, sdl_event.jaxis.value)) / 16384;
+                ml.input.axis_x1 = clamp_int(sdl_event.jaxis.value, -32767, 32767) / 16384;
             }
             break;
 

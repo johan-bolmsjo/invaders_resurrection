@@ -6,7 +6,7 @@
 #include "gids.h"
 #include "libgfx/libgfx.h"
 #include "libmedia/libmedia.h"
-#include "libutil/clamp.h"
+#include "libutil/xmath.h"
 #include "libutil/color.h"
 #include "prim.h"
 #include "runlevel.h"
