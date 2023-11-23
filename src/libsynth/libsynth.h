@@ -24,24 +24,27 @@ struct SynthEnvelope {
     int   adsr_ms[4];       // Attack, decay, sustain and release times in milliseconds
 };
 
-// Generate mono channel 16 bit samples to an audio buffer. Envelopes that run to their
-// end during mixing stops producing sound. The game loop typically start new envelopes on
-// channels to generate sounds corresponding to game events. Use a small mixing buffer to
-// minimize sound artifacts.
+/// Initialize synth.
+void synth_init(void);
+
+/// Generate mono channel 16 bit samples to an audio buffer. Envelopes that runs to
+/// completion during mixing stops producing sound. The game loop typically start new
+/// envelopes on channels to generate sounds corresponding to game events. Use a small
+/// mixing buffer to minimize sound artifacts.
 void synth_mix(int16_t* buffer, int n_samples);
 
-// Play envelope on channel as a regular sound.
-// A channel can play four regular envelopes.
+/// Play envelope on channel as a regular sound.
+/// A channel can play four regular envelopes.
 void synth_envelope(const struct SynthEnvelope* env, int ch);
 
-// Frequency modulate all regular envelopes on channel with envelope.
+/// Frequency modulate all regular envelopes on channel with envelope.
 void synth_envelope_fm(const struct SynthEnvelope* env, int ch);
 
-// Pulse width modulate all regular envelopes on channel with envelope.
+/// Pulse width modulate all regular envelopes on channel with envelope.
 void synth_envelope_pwm(const struct SynthEnvelope* env, int ch);
 
-// Kill playback on channel.
+/// Kill playback on channel.
 void synth_channel_kill(int ch);
 
-// Count the number of regular envelopes playing on channel.
+/// Count the number of regular envelopes playing on channel.
 int synth_channel_envelopes(int ch);

@@ -48,6 +48,7 @@ include src/gfxgen/gfxgen.mk
 include src/tools/tools.mk
 include data/data.mk
 include src/libmedia/libmedia.mk
+include src/libutil/libutil.mk
 include src/libsynth/libsynth.mk
 include src/invaders/invaders.mk
 

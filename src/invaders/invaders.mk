@@ -21,7 +21,7 @@ $(call define-host-srcs, invaders, \
 	src/invaders/ufo.c \
 )
 
-$(call define-host-exe, invaders, invaders libgfx libmedia libsynth)
+$(call define-host-exe, invaders, invaders libgfx libmedia libsynth libutil)
 
 # Make sure data files are generated as they are included by these source files.
 src/invaders/text.c: $(TARGET_SRCS_font_data.c)

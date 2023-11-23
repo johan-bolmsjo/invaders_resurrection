@@ -101,6 +101,8 @@ main(void)
     mystery_module_init();
     shield_module_init();
 
+    synth_init();
+
     if (!ml_init()) {
         fatalf("Failed to initialize media library!");
     }

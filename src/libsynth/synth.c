@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libutil/prng.h"
+
 // Channel envelopes
 enum {
     NumberOfRegularChannelEnvelopes = 4,
@@ -76,8 +78,17 @@ struct Channel {
 };
 
 static struct {
-    struct Channel channels[NumberOfSynthChannels];
+    int                 bit_noise_count;
+    uint64_t            bit_noise_data;
+    struct prng64_state prng_state;
+    struct Channel      channels[NumberOfSynthChannels];
 } synth;
+
+void synth_init(void)
+{
+    (void)prng64_seed(&synth.prng_state);
+    synth.bit_noise_count = 0;
+}
 
 // Get samples per millisecond in 24:8 fix-point.
 static inline int
@@ -254,6 +265,19 @@ update_channel(int ch)
     }
 }
 
+static inline uint16_t
+bit_noise(void)
+{
+    if (synth.bit_noise_count == 0) {
+        synth.bit_noise_count = 64;
+        synth.bit_noise_data = prng64_next(&synth.prng_state);
+    }
+    synth.bit_noise_count--;
+    int16_t noise = synth.bit_noise_data & 1;
+    synth.bit_noise_data >>= 1;
+    return noise;
+}
+
 void
 synth_mix(int16_t* buffer, int n_samples)
 {
@@ -292,7 +316,18 @@ synth_mix(int16_t* buffer, int n_samples)
             }
         }
 
-        buffer[si] = ch_mix >> 10;
+        const int16_t sample = ch_mix >> 10;
+
+        // Mix in some inaudible noise to prevent pulse audio from stop playing
+        // the game audio stream. It seems that pulse audio stops playing audio
+        // if the stream is silent (all zeroes) for a short while. In our case,
+        // the condition is triggered with a close to full invaders armada that
+        // moves slowly, and thus generates tick sounds below the threshold
+        // frequency.
+        //
+        // It took some hours to figure this one out :-/
+        //
+        buffer[si] = sample | bit_noise();
     }
 }
 
