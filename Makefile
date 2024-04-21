@@ -20,17 +20,17 @@ endif
 include mk/prologue.mk
 
 ###############################################################################
-# Check for presence of SDL library.
+# Check for presence of SDL2 library.
 # TODO(jb): This needs to be adjusted to support cross compilation.
-TARGET_CHECK_sdl.mk := $(OUTDIR_CHECK)/sdl.mk
-$(TARGET_CHECK_sdl.mk):
+TARGET_CHECK_sdl2.mk := $(OUTDIR_CHECK)/sdl2.mk
+$(TARGET_CHECK_sdl2.mk):
 	$(Q)$(RM) $@.tmp
-	$(Q)echo CFLAGS_SDL := $(shell pkg-config sdl --cflags) >> $@.tmp
-	$(Q)echo LDFLAGS_SDL := $(shell pkg-config sdl --libs) >> $@.tmp
+	$(Q)echo CFLAGS_SDL := $(shell pkg-config sdl2 --cflags) >> $@.tmp
+	$(Q)echo LDFLAGS_SDL := $(shell pkg-config sdl2 --libs) >> $@.tmp
 	$(Q)pkg-config sdl --exists
 	$(Q)mv $@.tmp $@
 
-include $(TARGET_CHECK_sdl.mk)
+include $(TARGET_CHECK_sdl2.mk)
 
 ###############################################################################
 

@@ -3,7 +3,6 @@
 #include <SDL.h>
 #include <stddef.h>
 
-#include "SDL_keysym.h"
 #include "libutil/array.h"
 #include "libutil/xmath.h"
 
@@ -12,7 +11,8 @@ static struct {
     struct {
         bool init;
         int  bg_index;
-        SDL_Surface* sdl_screen;
+        SDL_Window* sdl_window;
+        SDL_Surface* sdl_window_surface;
         SDL_Surface* sdl_vscreen[2];
         struct MLGraphicsBuffer vscreen[2];
         struct MLDisplayDG dg;
@@ -34,8 +34,6 @@ ml_init(void)
     if (!ml.init) {
         ml.init = SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) == 0;
         if (ml.init) {
-            SDL_EnableKeyRepeat(0, 0);
-
 #if 0 // TODO(jb): Joystick support
             SDL_Joystick* sdl_joystick;
 
@@ -72,8 +70,13 @@ deinit_display()
         }
     }
 
-    // The surface returned by SDL_SetVideoMode should not be freed.
-    ml.display.sdl_screen = NULL;
+    // The surface returned by SDL_GetWindowSurface should not be freed.
+    ml.display.sdl_window_surface = NULL;
+
+    if (ml.display.sdl_window) {
+        SDL_DestroyWindow(ml.display.sdl_window);
+        ml.display.sdl_window = NULL;
+    }
 
     ml.display.bg_index = 0;
     ml.display.dg.hid = ml.display.bg_index;
@@ -116,25 +119,19 @@ ml_set_display_mode(const struct MLDisplayMode* requested)
     deinit_display();
 
     const int bpp = pixel_format_bpp(requested->format);
-    const int pitch = requested->width * (bpp / 8);
     const struct PixelFormatMasks masks = pixel_format_masks(requested->format);
 
-    SDL_Surface* s = SDL_SetVideoMode(requested->width, requested->height, bpp, SDL_SWSURFACE);
-    if (s == NULL) {
+    // TODO(jb): Make window SDL_WINDOW_RESIZABLE
+    SDL_Window* w =  SDL_CreateWindow("Invaders Resurrection",
+                                      SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                                      requested->width, requested->height,
+                                      SDL_WINDOW_OPENGL);
+    if (w == NULL) {
         goto fail;
     }
-    ml.display.sdl_screen = s;
 
-    if (s->w != requested->width ||
-        s->h != requested->height ||
-        s->pitch != pitch ||
-        s->format->Rmask != masks.r ||
-        s->format->Gmask != masks.g ||
-        s->format->Bmask != masks.b ||
-        s->format->Amask != masks.a) {
-
-        goto fail;
-    }
+    ml.display.sdl_window = w;
+    ml.display.sdl_window_surface = SDL_GetWindowSurface(ml.display.sdl_window);
 
     for (size_t i = 0; i < ARRAY_SIZE(ml.display.sdl_vscreen); i++) {
         SDL_Surface* vs =
@@ -194,8 +191,8 @@ ml_swap_framebuffers(void)
             SDL_Delay(delay_ms);
         }
 
-        (void)SDL_BlitSurface(ml.display.sdl_vscreen[ml.display.bg_index], NULL, ml.display.sdl_screen, NULL);
-        SDL_UpdateRect(ml.display.sdl_screen, 0, 0, 0, 0);
+        (void)SDL_BlitSurface(ml.display.sdl_vscreen[ml.display.bg_index], NULL, ml.display.sdl_window_surface, NULL);
+        (void)SDL_UpdateWindowSurface(ml.display.sdl_window);
 
         ml.display.bg_index ^= 1;
         ml.display.dg.hid = ml.display.bg_index;
@@ -264,6 +261,12 @@ ml_poll_input(struct MLInput* input)
 
     while (SDL_PollEvent(&sdl_event)) {
         switch (sdl_event.type) {
+        case SDL_WINDOWEVENT:
+            if (sdl_event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                // TODO(jb): Handle window resize
+            }
+            break;
+
         case SDL_KEYDOWN:
             switch (sdl_event.key.keysym.sym) {
             case SDLK_ESCAPE:
@@ -280,6 +283,16 @@ ml_poll_input(struct MLInput* input)
 
             case SDLK_SPACE:
                 input->press_button_a = true;
+                break;
+
+            case SDLK_p:
+                // TODO(jb): Implement pause
+                input->press_pause = true;
+                break;
+
+            case SDLK_f: // [[fallthrough]];
+            case SDLK_F11:
+                // TODO(jb): Toggle fullscreen
                 break;
 
             case SDLK_F12:

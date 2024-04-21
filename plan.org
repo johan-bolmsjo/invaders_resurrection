@@ -36,7 +36,20 @@ be any source graphics data. We have to accept that that is lost to time.
 - [ ] Convert the font =pearl_8x8.dat.deflate= to gzip format if choosen
   for the graphics data bundle.
 
+* TODO Remove double buffering
+When the game was made clearing the whole screen each frame was costly in terms of CPU cycles.
+There is no longer any reason to do this for such a low resolution game.
+Thus remove the double buffering to simplify the code.
+
 * TODO Use SDL version 2
+** TODO Implement fullscreen toggle
+- Keys :: f, F11
+
+** TODO Fix joystick support
+Bring back joystick support (with SDL 2).
+
+* TODO Implement Pause Screen
+- Keys :: p
 
 * TODO Revise sound mixing
 The sound is generally glitchy with SDL 1.x. It worked better with the
@@ -45,13 +58,20 @@ NEO sound API for which the code was originally written.
 - Implement robust sound playback using SDL 2
 - Ensure low latency
 
-* TODO Remove double buffering
-When the game was made clearing the whole screen each frame was costly in terms of CPU cycles.
-There is no longer any reason to do this for such a low resolution game.
-Thus remove the double buffering to simplify the code.
+** Update [2024-04-21 Sun]
 
-* TODO Fix joystick support
-Bring back joystick support (with SDL 2).
+After some research, I don't think sound playback is that buggy. Based
+on how SDL works with sound, I don't think it can be improved without
+altering the strategy for sound effect playback.
+
+The problem is that the application has no way to control actual audio
+queue depth. The main problem is the very short sounds when the bomber
+armada moves at high speed. The sounds are cut off because of the
+inexact playback. A viable strategy could be that instead of emitting
+sounds from the game loop, the sound effect playback effectively
+operates in a "tracker mode", so that the next sound effect is scheduled
+automatically when the previous one terminates.
+
 
 * TODO CRT shader effect
 Feed the rendered image through a CRT shader effect to reduce the blocky appearance of 640x480 resolution.

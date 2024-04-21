@@ -8,7 +8,7 @@ Overall TODO list is kept in [plan.org](plan.org).
 
 The build system is using plain GNU Make (developed using version 4.3).
 
-Make sure that SDL 1.2 is installed.
+Make sure that SDL 2.x is installed.
 Consult http://www.libsdl.org/ or your Linux distributions package manager.
 
 Build invaders as follows:

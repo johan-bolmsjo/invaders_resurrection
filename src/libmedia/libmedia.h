@@ -62,6 +62,7 @@ struct MLAudioDeviceParams {
 /// Input state tailored for the current game.
 struct MLInput {
     bool press_quit;
+    bool press_pause;
     bool press_screenshot;
     bool press_button_a;
     int axis_x1;
