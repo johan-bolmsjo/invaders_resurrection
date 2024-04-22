@@ -6,106 +6,98 @@
 #include <inttypes.h>
 #include <zlib.h>
 
+#include "libmedia/libmedia.h"
+#include "libutil/array.h"
 #include "libutil/endian.h"
+#include "libutil/xmath.h"
 
-#include "font_data.c"
+#include "compressed_font_data.c"
 
-static uint8_t font[2048];
-static uint16_t palette[3] = {65535, 40314, 17141};
+static uint8_t font_data[2048];
 
-int
+bool
 text_decode_font(void)
 {
     uLong src_len, dst_len;
 
-    src_len = ntohl(*(uint32_t*)(font_data + 4));
-    dst_len = ntohl(*(uint32_t*)font_data);
+    src_len = ntohl(*(uint32_t*)(compressed_font_data + 4));
+    dst_len = ntohl(*(uint32_t*)compressed_font_data);
 
-    return uncompress(font, &dst_len, font_data + 8, src_len);
+    return uncompress(font_data, &dst_len, compressed_font_data + 8, src_len) == Z_OK;
 }
 
 void
-text_print_char_adr(char chr, uint16_t colour, uint16_t* dst)
+text_print_char_at_address(char c, struct rgb565 color, struct rgb565* addr)
 {
+    const struct rgb565 black = pack_rgb565(rgb565_black());
     int h, w;
     uint8_t *cp, v;
 
-    cp = font + (int)chr * 8;
+    cp = &font_data[(int)c * 8];
 
     for (h = 8; h > 0; h--) {
         v = *cp++;
         for (w = 8; w > 0; w--) {
-            if (v & 0x80)
-                *dst++ = colour;
-            else
-                *dst++ = 0;
+            if (v & 0x80) {
+                *addr++ = color;
+            } else {
+                *addr++ = black;
+            }
             v <<= 1;
         }
-        dst += MLDisplayWidth - 8;
+        addr += MLDisplayWidth - CharWidth;
     }
 }
 
 void
-text_print_str_adr(const char* str, uint16_t colour, uint16_t* dst)
+text_print_string_at_address(const char* s, struct rgb565 color, struct rgb565* addr)
 {
-    char chr;
-    while ((chr = *str++)) {
-        text_print_char_adr(chr, colour, dst);
-        dst += 8;
+    char c;
+    while ((c = *s++)) {
+        text_print_char_at_address(c, color, addr);
+        addr += CharWidth;
     }
 }
 
-void
-text_print_str_fancy_init(Text* t, const char* str, int x_off, int x, int y)
-{
-    t->str = str;
-    t->colour = 0;
-    t->x_off = x_off;
-    t->x = x;
-    t->y = y;
+static inline bool
+is_char_space(char c) {
+    return c == '\n' || c == ' ';
 }
 
-void
-text_print_str_fancy(const DG* dg, Text* t)
+bool
+text_print_string_animated(const struct MLGraphicsBuffer* buf, const char* s, int x, int y, int frames)
 {
-    if (t->str) {
-        if (!t->colour) {
-            t->chr = *t->str++;
-            switch (t->chr) {
-            case 0:
-                t->str = 0;
-                return;
+    static const struct rgb565 palette[3] = {{65535}, {40314}, {17141}};
+    const int char_frame_time = ARRAY_SIZE(palette);
+    const int xbegin = x;
+    const int xmax = buf->width / CharWidth - 1;
+    const int ymax = buf->height / CharHeight - 1;
 
-            case 10:
-                t->x = t->x_off;
-                t->y++;
-                t->chr = ' ';
-                break;
-
-            default:
-                t->x++;
+    bool space = false;
+    char c;
+    while ((c = *s++) && frames > 0) {
+        switch (c) {
+        case '\n':
+            x = xbegin;
+            y++;
+            break;
+        case ' ':
+            x++;
+            break;
+        default: {
+            const struct rgb565 color = palette[min_int(frames, char_frame_time) - 1];
+            if (x <= xmax && y <= ymax) {
+                text_print_char_at_address(c, color, ml_graphics_buffer_xy(buf, x * CharWidth, y * CharHeight));
             }
-            if (t->x >= (MLDisplayWidth / 8)) {
-                t->x = t->x_off;
-                t->y++;
-            }
-            if (t->y >= (MLDisplayHeight / 8)) {
-                t->str = 0;
-                return;
-            }
-
-            t->offset = t->x * 8 + MLDisplayWidth * t->y * 8;
+            x++;
+        }
         }
 
-        if (t->colour < 3) {
-            text_print_char_adr(t->chr, palette[t->colour],
-                                dg->adr[dg->hid] + t->offset);
-            t->colour++;
-        } else {
-            text_print_char_adr(t->chr, palette[2],
-                                dg->adr[dg->hid] + t->offset);
-            t->colour = 0;
-            text_print_str_fancy(dg, t);
+        // Consecutive spaces render in constant time.
+        if (!space || !is_char_space(c)) {
+            frames -= char_frame_time;
         }
+        space = is_char_space(c);
     }
+    return !c && frames >= 0; // End of string; done
 }

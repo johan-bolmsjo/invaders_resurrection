@@ -5,14 +5,14 @@
 enum {
     // Max values for red, green and blue pixel components.
     // These also works as bit masks.
-    max_r = 0x1f,
-    max_g = 0x3f,
-    max_b = 0x1f,
+    max_r5 = 0x1f,
+    max_g6 = 0x3f,
+    max_b5 = 0x1f,
 
     // Left shift of red, green and blue pixel components.
-    shift_b = 0,
-    shift_g = shift_b + 5,
-    shift_r = shift_g + 6,
+    shift_rgb565_b = 0,
+    shift_rgb565_g = shift_rgb565_b + 5,
+    shift_rgb565_r = shift_rgb565_g + 6,
 };
 
 struct rgb {
@@ -25,26 +25,30 @@ struct rgb565 {
     uint16_t v;
 };
 
+/// Pack separate RGB components into a RGB565 value.
+/// The input RGB components are expected to be pre scaled as RGB565.
 static inline struct rgb565
 pack_rgb565(struct rgb c) {
-    return (struct rgb565){(c.r & max_r) << shift_r | (c.g & max_g) << shift_g | (c.b & max_b)};
+    return (struct rgb565){(c.r & max_r5) << shift_rgb565_r | (c.g & max_g6) << shift_rgb565_g | (c.b & max_b5)};
 }
 
+/// Unpack RGB565 value into separate RGB components.
+/// The unpacked RGB components are not scaled to RGB888.
 static inline struct rgb
 unpack_rgb565(struct rgb565 c) {
     return (struct rgb) {
-        .r = (c.v >> shift_r) & max_r,
-        .g = (c.v >> shift_g) & max_g,
-        .b = (c.v >> shift_b) & max_b,
+        .r = (c.v >> shift_rgb565_r) & max_r5,
+        .g = (c.v >> shift_rgb565_g) & max_g6,
+        .b = (c.v >> shift_rgb565_b) & max_b5,
     };
 }
 
 static inline struct rgb
-rgb_white(void) {
-    return (struct rgb){.r = max_r, .g = max_g, .b = max_b};
+rgb565_white(void) {
+    return (struct rgb){.r = max_r5, .g = max_g6, .b = max_b5};
 }
 
 static inline struct rgb
-rgb_black(void) {
+rgb565_black(void) {
     return (struct rgb){.r = 0, .g = 0, .b = 0};
 }

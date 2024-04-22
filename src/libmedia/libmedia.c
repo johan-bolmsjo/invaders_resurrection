@@ -158,7 +158,7 @@ fail:
 }
 
 const struct MLGraphicsBuffer*
-ml_background_framebuffer(void)
+ml_get_draw_buffer(void)
 {
     if (ml.display.init) {
         return &ml.display.vscreen[ml.display.bg_index];
@@ -176,7 +176,7 @@ MLDisplayDG* ml_display_dg(void)
 }
 
 void
-ml_swap_framebuffers(void)
+ml_update_screen(void)
 {
     if (ml.display.init) {
         // Calculate a delay so that the game loop renders at close to MLDisplayFreq.
@@ -341,4 +341,10 @@ ml_poll_input(struct MLInput* input)
     if (ml.input.hold_right && !ml.input.hold_left) {
         input->axis_x1 = 1;
     }
+}
+
+void
+ml_graphics_buffer_clear(const struct MLGraphicsBuffer* buf)
+{
+    memset(buf->pixels, 0, ml_graphics_buffer_size_bytes(buf));
 }

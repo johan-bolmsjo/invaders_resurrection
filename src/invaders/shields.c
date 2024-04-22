@@ -130,11 +130,11 @@ shield_module_init(void)
 
             // Bulid shields used for the flashing animation
             if (g || b) {
-                (*s1)[y][x] = pack_rgb565(rgb_white());
-                (*s2)[y][x] = pack_rgb565((struct rgb){15, (g + max_g) / 2, (b + max_b) / 2});
+                (*s1)[y][x] = pack_rgb565(rgb565_white());
+                (*s2)[y][x] = pack_rgb565((struct rgb){15, (g + max_g6) / 2, (b + max_b5) / 2});
             } else {
-                (*s1)[y][x] = pack_rgb565(rgb_black());
-                (*s2)[y][x] = pack_rgb565(rgb_black());
+                (*s1)[y][x] = pack_rgb565(rgb565_black());
+                (*s2)[y][x] = pack_rgb565(rgb565_black());
             }
 
             // Build regular shield
@@ -183,7 +183,7 @@ shield_xy_get(shield_type shield, int x, int y) {
     if (shield_xy_in_bounds(x, y)) {
         return shield[y][x];
     }
-    return pack_rgb565(rgb_black());
+    return pack_rgb565(rgb565_black());
 }
 
 static inline void

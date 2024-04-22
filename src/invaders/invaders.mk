@@ -24,5 +24,5 @@ $(call define-host-srcs, invaders, \
 $(call define-host-exe, invaders, invaders libgfx libmedia libsynth libutil)
 
 # Make sure data files are generated as they are included by these source files.
-src/invaders/text.c: $(TARGET_SRCS_font_data.c)
-src/invaders/gfx.c:  $(TARGET_SRCS_gfx_data.c)
+src/invaders/text.c: $(TARGET_SRCS_compressed_font_data.c)
+src/invaders/gfx.c:  $(TARGET_SRCS_compressed_gfx_data.c)

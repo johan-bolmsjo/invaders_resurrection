@@ -10,7 +10,7 @@
 
 #define EXTRA_LIFE_SCORE 1500
 
-static uint16_t palette[3] = {17141, 40314, 65535};
+static const struct rgb565 palette[3] = {{17141}, {40314}, {65535}};
 
 static uint8_t pilots_str;
 static uint8_t pilots_atr;
@@ -52,7 +52,7 @@ void
 status_show(const DG* dg)
 {
     int i, j, k, c;
-    uint16_t* dst = dg->adr[dg->hid];
+    struct rgb565* dst = (struct rgb565*)dg->adr[dg->hid];
 
     if (g_runlevel >= RUNLEVEL_PLAY0 &&
         g_runlevel <= RUNLEVEL_PLAY2) {
@@ -104,30 +104,30 @@ status_show(const DG* dg)
             g_hi_score = g_score;
         }
 
-        text_print_str_adr("Pilots:", palette[0], dst);
+        text_print_string_at_address("Pilots:", palette[0], dst);
         dst += (8 * 8);
 
-        text_print_char_adr(pilots_str, palette[pilots_atr], dst);
+        text_print_char_at_address(pilots_str, palette[pilots_atr], dst);
         if (pilots_atr > 0)
             pilots_atr--;
         dst += (3 * 8);
 
-        text_print_str_adr("Score:", palette[0], dst);
+        text_print_string_at_address("Score:", palette[0], dst);
         dst += (7 * 8);
 
         for (i = 0; i < 6; i++) {
-            text_print_char_adr(score_str[i], palette[score_atr[i]], dst);
+            text_print_char_at_address(score_str[i], palette[score_atr[i]], dst);
             if (score_atr[i] > 0)
                 score_atr[i]--;
             dst += (1 * 8);
         }
         dst += (2 * 8);
 
-        text_print_str_adr("Hi Score:", palette[0], dst);
+        text_print_string_at_address("Hi Score:", palette[0], dst);
         dst += (10 * 8);
 
         for (i = 0; i < 6; i++) {
-            text_print_char_adr(hi_score_str[i], palette[hi_score_atr[i]], dst);
+            text_print_char_at_address(hi_score_str[i], palette[hi_score_atr[i]], dst);
             if (hi_score_atr[i] > 0)
                 hi_score_atr[i]--;
             dst += (1 * 8);

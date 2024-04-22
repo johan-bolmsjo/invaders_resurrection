@@ -59,9 +59,8 @@ missiles_module_init(void)
 
     for (i = 0; i < MISSILES_MAX; i++) {
         missiles_off[i] = (int)((double)ARMADA_X * random() /
-                                (RAND_MAX + 1.0)) +
-                          1;
-        missiles[i].s.vis = 1;
+                                (RAND_MAX + 1.0)) + 1;
+        missiles[i].s.show = true;
         missiles[i].s.go = gfx_obj;
     }
 
@@ -76,7 +75,7 @@ missiles_show(const DG* dg)
 
     for (i = 0; i < MISSILES_MAX; i++) {
         if (missiles[i].c) {
-            sprite_show(dg, &missiles[i].s);
+            sprite_draw(dg, &missiles[i].s);
         }
     }
 }

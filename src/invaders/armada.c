@@ -265,7 +265,7 @@ armada_module_init(void)
         for (j = 0; j < ARMADA_X; j++) {
             armada.b[i][j].x = j;
             armada.b[i][j].y = i;
-            armada.b[i][j].s.vis = 0;
+            armada.b[i][j].s.show = false;
             armada.b[i][j].s.go = gfx_obj[type];
         }
     }
@@ -338,8 +338,8 @@ armada_show(const DG* dg)
 {
     Bomber* b = armada.b[0];
     for (int i = 0; i < ARMADA_XY; i++) {
-        if (b[i].c && b[i].s.vis) {
-            sprite_show(dg, &b[i].s);
+        if (b[i].c && b[i].s.show) {
+            sprite_draw(dg, &b[i].s);
         }
     }
 }
@@ -354,7 +354,7 @@ armada_update(void)
         }
 
         if (armada.vis_c < ARMADA_XY)
-            armada.b[0][armada.vis_c++].s.vis = 1;
+            armada.b[0][armada.vis_c++].s.show = true;
         else
             g_next_runlevel = RUNLEVEL_PLAY1;
     }
@@ -370,7 +370,7 @@ armada_update(void)
     if (g_runlevel == RUNLEVEL_PLAY2) {
         if (armada.vis_c) {
             Bomber*  b = &armada.b[0][--armada.vis_c];
-            b->s.vis = 0;
+            b->s.show = false;
         } else {
             if (g_pilots) {
                 g_next_runlevel = RUNLEVEL_PLAY0;

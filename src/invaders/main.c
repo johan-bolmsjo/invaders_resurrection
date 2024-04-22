@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "armada.h"
 #include "gfx.h"
@@ -83,7 +84,7 @@ main(void)
     }
     check_gfx_objects_exist();
 
-    if (text_decode_font()) {
+    if (!text_decode_font()) {
         fatalf("Failed to decode font file!");
     }
 
@@ -131,14 +132,16 @@ main(void)
     ml_pause_audio(false);
     const DG* dg = ml_display_dg();
 
-    bool quit = false;
-    while (!quit) {
+    enum GameRunState run_state = GameContinue;
+    while (run_state == GameContinue) {
+        const struct MLGraphicsBuffer* draw_buffer = ml_get_draw_buffer();
+
         ml_poll_input(&input);
 
         ml_lock_audio();
 
-        stars_hide(dg);
-        title_hide(dg);
+        ml_graphics_buffer_clear(draw_buffer);
+
         status_hide(dg);
         shields_hide(dg);
         player_hide(dg);
@@ -147,7 +150,7 @@ main(void)
         mystery_hide(dg);
         shot_hide(dg);
 
-        title_show(dg);
+        title_draw(dg, draw_buffer);
         status_show(dg);
         shields_show(dg);
         player_show(dg);
@@ -156,10 +159,10 @@ main(void)
         mystery_show(dg);
         shot_show(dg);
 
-        stars_show(dg);
+        // TODO(jb): Can be drawn first when all smart object removal code has been removed.
+        stars_draw(draw_buffer);
 
-        if (title_update(dg, &input)) {
-            quit = true;
+        if ((run_state = title_update(&input)) == GameExit) {
             continue;
         }
 
@@ -178,7 +181,7 @@ main(void)
             save_screenshot(dg);
             input.press_screenshot = false;
         }
-        ml_swap_framebuffers();
+        ml_update_screen();
     }
 
     ml_close_audio();

@@ -2,17 +2,31 @@
 
 #include "armada.h"
 #include "bomber.h"
+#include "libmedia/libmedia.h"
+#include "libutil/array.h"
 #include "runlevel.h"
 #include "sprite.h"
 #include "status.h"
 #include "text.h"
 #include "ufo.h"
 
-static Ufo     ufo;
-static Bomber  bombers[3];
-static Sprite* sprites[4];
-static Text    text;
-static Text    texts[6];
+struct Text {
+    const char* s;
+    int         x;
+    int         y;
+};
+
+struct TextAnim {
+    int         frames;
+    bool        done;
+};
+
+static Ufo             ufo;
+static Bomber          bombers[3];
+static Sprite*         sprites[4];
+static struct Text     texts[6];
+static struct TextAnim texts_anim[6];
+static size_t          text_index;
 
 void
 title_module_init(void)
@@ -35,89 +49,69 @@ title_module_init(void)
     sprites[2] = &bombers[1].s;
     sprites[3] = &bombers[2].s;
 
-    text_print_str_fancy_init(&texts[0], strings[0], 30, 30, 15);
-    for (i = 0; i < 4; i++)
-        text_print_str_fancy_init(&texts[i + 1], strings[i + 1], 41, 41, 22 + i * 4);
-    text_print_str_fancy_init(&texts[5], strings[5], 30, 30, 38);
-
-    text.str = 0;
+    texts[0] = (struct Text){strings[0], 30, 15};
+    for (i = 0; i < 4; i++) {
+        texts[1+i] = (struct Text){strings[1+i], 41, 22 + i * 4};
+    }
+    texts[5] = (struct Text){strings[5], 30, 38};
 }
 
 void
-title_show(const DG* dg)
+title_draw(const DG* dg, const struct MLGraphicsBuffer* buf)
 {
-    int i;
-
     if (g_runlevel == RUNLEVEL_TITLE0) {
-
-        for (i = 0; i < 4; i++)
-            sprite_show(dg, sprites[i]);
-
-        text_print_str_fancy(dg, &text);
+        for (size_t i = 0; i < ARRAY_SIZE(sprites); i++) {
+            sprite_draw(dg, sprites[i]);
+        }
+        for (size_t i = 0; i <= text_index; i++) {
+            const struct Text* text = &texts[i];
+            texts_anim[i].done = text_print_string_animated(buf, text->s, text->x, text->y, texts_anim[i].frames);
+        }
     }
 }
 
-void
-title_hide(const DG* dg)
+enum GameRunState
+title_update(struct MLInput* input)
 {
-    int i;
-    Clip clip = {240, 120, 160, 192, 0, 0};
-
-    if (g_runlevel == RUNLEVEL_TITLE0) {
-        for (i = 0; i < 4; i++)
-            sprite_hide(dg, sprites[i]);
-    }
-
-    if (g_runlevel == RUNLEVEL_TITLE1)
-        blit_clipped_colour_box(dg, &clip, 0);
-}
-
-int
-title_update(const DG* dg, struct MLInput* input)
-{
-    (void)dg;
-
-    int i;
-    static int count = 0;
-
     if (g_runlevel == RUNLEVEL_TITLE0) {
         if (input->press_quit) {
-            return 1;
+            return GameExit;
         }
 
         if (input->press_button_a) {
             input->press_button_a = false;
-            count = 0;
             g_next_runlevel = RUNLEVEL_TITLE1;
         } else {
-
-            if (!text.str && count < 6) {
-                if (count >= 1 && count <= 4)
-                    sprites[count - 1]->vis = 1;
-
-                text = texts[count++];
+            if (!texts_anim[text_index].done) {
+                texts_anim[text_index].frames++;
+            } else if (text_index < ARRAY_SIZE(texts)-1) {
+                text_index++;
+                if (text_index >= 1 && text_index <= 4) {
+                    sprites[text_index - 1]->show = true;
+                }
             }
 
             ufo_anim(&ufo);
-            for (i = 0; i < 3; i++)
+            for (size_t i = 0; i < ARRAY_SIZE(bombers); i++) {
                 bomber_anim(&bombers[i]);
+            }
         }
     }
 
     if (g_runlevel == RUNLEVEL_TITLE1) {
-        if (count < 2) {
-            count++;
-        } else {
-            count = 0;
-            text.str = 0;
-            for (i = 0; i < 4; i++)
-                sprites[i]->vis = 0;
-
-            armada_reset();
-            status_reset();
-            g_next_runlevel = RUNLEVEL_PLAY0;
+        for (size_t i = 0; i < ARRAY_SIZE(sprites); i++) {
+            sprites[i]->show = false;
         }
+        for (size_t i = 0; i < ARRAY_SIZE(texts); i++) {
+            texts_anim[i].frames = 0;
+            texts_anim[i].done = false;
+        }
+        text_index = 0;
+
+        armada_reset();
+        status_reset();
+        g_next_runlevel = RUNLEVEL_PLAY0;
     }
 
-    return 0;
+    return GameContinue;
 }

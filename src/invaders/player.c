@@ -230,7 +230,7 @@ void
 player_show(const DG* dg)
 {
     if (player.c)
-        sprite_show(dg, &player.s);
+        sprite_draw(dg, &player.s);
 }
 
 // New player

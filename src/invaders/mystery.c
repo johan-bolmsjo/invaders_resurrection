@@ -95,11 +95,11 @@ void
 mystery_show(const DG* dg)
 {
     if (ufo.c) {
-        sprite_show(dg, &ufo.s);
+        sprite_draw(dg, &ufo.s);
     }
 
     if (score_timer) {
-        sprite_show(dg, &score_sprite);
+        sprite_draw(dg, &score_sprite);
     }
 }
 

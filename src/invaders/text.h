@@ -7,29 +7,27 @@
 #include <inttypes.h>
 
 #include "libmedia/libmedia.h"
+#include "libutil/color.h"
 
-typedef struct _Text {
-    const char* str;
-    char chr;
-    int colour;
-    int x_off;
-    int x;
-    int y;
-    int offset;
-} Text;
+enum {
+    CharWidth  = 8,  // Character width in pixels
+    CharHeight = 8   // Character height in pixels
+};
 
-/// Decode game font (8x8) from asset data.
-int text_decode_font(void);
+/// Decode game font (CharWidth, CharHeight) from asset data.
+/// Returns true on success.
+bool text_decode_font(void);
 
-/// Print character "c" at address "dst".
-void text_print_char_adr(char chr, uint16_t colour, uint16_t* dst);
+/// Print character [c] at address [addr].
+void text_print_char_at_address(char c, struct rgb565 color, struct rgb565* addr);
 
-/// Print string "str" at address "dst".
-/// No clipping is performed.
-void text_print_str_adr(const char* str, uint16_t colour, uint16_t* dst);
+/// Print string [s] at address [addr].
+/// \note No clipping is performed.
+void text_print_string_at_address(const char* s, struct rgb565 color, struct rgb565* addr);
 
-/// x and y is character coordinates.
-/// TODO(jb): Que?¿
-void text_print_str_fancy_init(Text* t, const char* str, int x_off, int x, int y);
-
-void text_print_str_fancy(const DG* dg, Text* t);
+/// Print string [s] in an animated fashion at character coordinates [x]
+/// and [y]. The [frames] parameter determines how many frames to emit
+/// before stop drawing. The caller is expected to increment frames for
+/// each call to this function. Returns true when the animation is
+/// complete.
+bool text_print_string_animated(const struct MLGraphicsBuffer* buf, const char* s, int x, int y, int frames);

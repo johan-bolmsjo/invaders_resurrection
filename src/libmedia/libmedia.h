@@ -31,6 +31,7 @@ struct MLGraphicsBuffer {
     void*              pixels;
 };
 
+/// TODO(jb): Remove
 /// \deprecated Compatibillity struct.
 typedef struct MLDisplayDG {
     int vis;
@@ -80,15 +81,15 @@ void ml_deinit(void);
 /// Returns true on success.
 bool ml_set_display_mode(const struct MLDisplayMode* requested);
 
-/// Get background framebuffer to draw on.
-/// The function ml_swap_framebuffers swaps background and foreground framebuffers.
-const struct MLGraphicsBuffer* ml_background_framebuffer(void);
+/// Get graphics buffer to draw on.
+const struct MLGraphicsBuffer* ml_get_draw_buffer(void);
 
+/// TODO(jb): Remove
 /// \deprecated Compatibillity struct.
 const struct MLDisplayDG* ml_display_dg(void);
 
-/// Swap background and foreground framebuffers.
-void ml_swap_framebuffers(void);
+/// Update screen (or window) with content of draw buffer.
+void ml_update_screen(void);
 
 /// Opens the default audio device with the requested parameters.
 /// Returns true on success.
@@ -112,3 +113,34 @@ void ml_unlock_audio(void);
 ///
 /// \note Existing button press state is not cleared.
 void ml_poll_input(struct MLInput* input);
+
+static inline int
+ml_pixel_bytes(enum MLPixelFormat format) {
+    switch (format) {
+    case MLPixelFormatRGB565:
+        return 2;
+    default:
+        return 0;
+    }
+}
+
+/// Clear graphics buffer.
+void ml_graphics_buffer_clear(const struct MLGraphicsBuffer* buf);
+
+/// Get width of graphics buffer in bytes.
+static inline int
+ml_graphics_buffer_width_bytes(const struct MLGraphicsBuffer* buf) {
+    return buf->width * ml_pixel_bytes(buf->format);
+}
+
+/// Get size of graphics buffer in bytes.
+static inline int
+ml_graphics_buffer_size_bytes(const struct MLGraphicsBuffer* buf) {
+    return buf->width * buf->height * ml_pixel_bytes(buf->format);
+}
+
+/// Get address to X,Y coordinate.
+static inline void*
+ml_graphics_buffer_xy(const struct MLGraphicsBuffer* buf, int x, int y) {
+    return &((char*)buf->pixels)[(y * buf->width + x) * ml_pixel_bytes(buf->format)];
+}

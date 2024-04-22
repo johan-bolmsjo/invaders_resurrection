@@ -6,15 +6,16 @@
 
 #include "libmedia/libmedia.h"
 
+enum GameRunState {
+    GameContinue,
+    GameExit,
+};
+
 /// Initialize module.
 void title_module_init(void);
 
 /// Draw title objects.
-void title_show(const DG* dg);
+void title_draw(const DG* dg, const struct MLGraphicsBuffer* buf);
 
-/// Clear title objects.
-void title_hide(const DG* dg);
-
-/// Manages changes.
-/// Returns 1 if game should terminate.
-int title_update(const DG* dg, struct MLInput* input);
+/// Update title screen.
+enum GameRunState title_update(struct MLInput* input);

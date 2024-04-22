@@ -5,9 +5,9 @@
 #include <inttypes.h>
 
 void
-sprite_init(Sprite* sprite, GfxObject* go, int frame, int x, int y, int vis)
+sprite_init(Sprite* sprite, GfxObject* go, int frame, int x, int y, bool show)
 {
-    sprite->vis = vis;
+    sprite->show = show;
     sprite->x = x;
     sprite->y = y;
     sprite->frame = frame;
@@ -26,12 +26,12 @@ sprite_hide(const DG* dg, Sprite* sprite)
 }
 
 void
-sprite_show(const DG* dg, Sprite* sprite)
+sprite_draw(const DG* dg, Sprite* sprite)
 {
     Clip* clip = &sprite->clip[dg->hid];
     GfxFrame* gf = sprite->go->fpp[sprite->frame];
 
-    if (sprite->vis) {
+    if (sprite->show) {
         if (!clip_gfx_frame(clip, gf, sprite->x, sprite->y)) {
             blit_clipped_gfx_frame(dg, clip, gf);
             sprite->blit[dg->hid] = 1;
