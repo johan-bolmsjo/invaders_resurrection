@@ -52,7 +52,7 @@ void
 missiles_module_init(void)
 {
     int i;
-    GfxObject* gfx_obj;
+    struct GfxObject* gfx_obj;
 
     memset(missiles, 0, sizeof(Missile) * MISSILES_MAX);
     gfx_obj = gfx_object_find("missile");

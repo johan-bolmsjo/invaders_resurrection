@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-static GfxObject* object_list = 0;
+static struct GfxObject* object_list = 0;
 
 /* For other files.
  */
 
-GfxObject*
+struct GfxObject*
 gfx_get_first_object(void)
 {
     return object_list;
@@ -17,11 +17,11 @@ gfx_get_first_object(void)
 /* Find object with name 'name'.
  */
 
-GfxObject*
+struct GfxObject*
 gfx_object_find(const char* name)
 {
     int l, i;
-    GfxObject* o = object_list;
+    struct GfxObject* o = object_list;
 
     l = strlen(name);
     while (o) {
@@ -38,7 +38,7 @@ gfx_object_find(const char* name)
     return NULL;
 }
 
-GfxObject*
+struct GfxObject*
 gfx_object_create(const char* name)
 {
     const int name_len = strlen(name);
@@ -46,7 +46,7 @@ gfx_object_create(const char* name)
         return NULL;
 
     char* name_copy = strdup(name);
-    GfxObject* obj = malloc(sizeof(GfxObject));
+    struct GfxObject* obj = malloc(sizeof(struct GfxObject));
 
     if (!name_copy || !obj) {
         free(name_copy);
@@ -72,7 +72,7 @@ gfx_object_create(const char* name)
 }
 
 void
-gfx_object_destroy(GfxObject* o)
+gfx_object_destroy(struct GfxObject* o)
 {
     int i;
 
@@ -99,18 +99,18 @@ gfx_object_destroy_all(void)
         gfx_object_destroy(object_list);
 }
 
-GfxFrame*
+struct GfxFrame*
 gfx_frame_create(int flags, int width, int height, int x_off, int y_off)
 {
     int c_longs, e = 0;
     void *g = 0, *a = 0, *c = 0;
-    GfxFrame* f;
+    struct GfxFrame* f;
 
     c_longs = (width + 31) >> 5;
-    f = malloc(sizeof(GfxFrame));
+    f = malloc(sizeof(struct GfxFrame));
 
     if (flags & GFX_TAG_GRAPHICS) {
-        if ((g = malloc(width * height * sizeof(uint16_t))) == NULL)
+        if ((g = malloc(width * height * sizeof(struct rgb565))) == NULL)
             e = 1;
     }
 
@@ -147,7 +147,7 @@ gfx_frame_create(int flags, int width, int height, int x_off, int y_off)
 }
 
 void
-gfx_frame_destroy(GfxFrame* f)
+gfx_frame_destroy(struct GfxFrame* f)
 {
     free(f->graphics);
     free(f->alpha);
@@ -156,13 +156,13 @@ gfx_frame_destroy(GfxFrame* f)
 }
 
 int
-gfx_add_frame_to_object(GfxFrame* f, GfxObject* o)
+gfx_add_frame_to_object(struct GfxFrame* f, struct GfxObject* o)
 {
     int frames;
-    GfxFrame** fpp;
+    struct GfxFrame** fpp;
 
     frames = o->frames + 1;
-    fpp = realloc(o->fpp, frames * sizeof(GfxFrame*));
+    fpp = realloc(o->fpp, frames * sizeof(struct GfxFrame*));
     if (!fpp)
         return -1;
 

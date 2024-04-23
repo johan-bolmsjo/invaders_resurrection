@@ -84,7 +84,7 @@ stars_module_init(void)
 
     // Make the first stars black to avoid the "star belt" effect when they first appear.
     for (size_t i = 0; i < ARRAY_SIZE(stars_cmap); i++) {
-        stars_cmap[i] = pack_rgb565(rgb565_black());
+        stars_cmap[i] = pack_rgb565(rgb565_color_black());
     }
     for (size_t i = 0; i < ARRAY_SIZE(stars); i++) {
         create_star(&stars[i]);

@@ -18,8 +18,5 @@ void shields_del(void);
 /// shield_id is the registered collision ID for the shield.
 bool shields_hit(int x, int y, int y_vec, int shield_id);
 
-/// Copy shields to the screen.
-void shields_show(const DG* dg);
-
-/// Delete shields from the screen.
-void shields_hide(const DG* dg);
+/// Draw shields.
+void shields_draw(const struct MLGraphicsBuffer* draw_buf);

@@ -44,16 +44,16 @@ static shield_type* g_shields[shield_count] = {&g_shield1, &g_shield2, &g_shield
 
 static Collision* g_collisions[shield_count] = {0};
 
-static Clip g_clip1 = {128 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
-                       shield_x_dim, shield_y_dim, 0, 0};
-static Clip g_clip2 = {256 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
-                       shield_x_dim, shield_y_dim, 0, 0};
-static Clip g_clip3 = {384 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
-                       shield_x_dim, shield_y_dim, 0, 0};
-static Clip g_clip4 = {512 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
-                       shield_x_dim, shield_y_dim, 0, 0};
+static struct Clip g_clip1 = {128 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
+                              shield_x_dim, shield_y_dim, 0, 0};
+static struct Clip g_clip2 = {256 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
+                              shield_x_dim, shield_y_dim, 0, 0};
+static struct Clip g_clip3 = {384 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
+                              shield_x_dim, shield_y_dim, 0, 0};
+static struct Clip g_clip4 = {512 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
+                              shield_x_dim, shield_y_dim, 0, 0};
 
-static Clip* g_clips[shield_count] = {&g_clip1, &g_clip2, &g_clip3, &g_clip4};
+static struct Clip* g_clips[shield_count] = {&g_clip1, &g_clip2, &g_clip3, &g_clip4};
 
 static bool g_draw[shield_count]  = {false};
 
@@ -130,11 +130,11 @@ shield_module_init(void)
 
             // Bulid shields used for the flashing animation
             if (g || b) {
-                (*s1)[y][x] = pack_rgb565(rgb565_white());
+                (*s1)[y][x] = pack_rgb565(rgb565_color_white());
                 (*s2)[y][x] = pack_rgb565((struct rgb){15, (g + max_g6) / 2, (b + max_b5) / 2});
             } else {
-                (*s1)[y][x] = pack_rgb565(rgb565_black());
-                (*s2)[y][x] = pack_rgb565(rgb565_black());
+                (*s1)[y][x] = pack_rgb565(rgb565_color_black());
+                (*s2)[y][x] = pack_rgb565(rgb565_color_black());
             }
 
             // Build regular shield
@@ -183,7 +183,7 @@ shield_xy_get(shield_type shield, int x, int y) {
     if (shield_xy_in_bounds(x, y)) {
         return shield[y][x];
     }
-    return pack_rgb565(rgb565_black());
+    return pack_rgb565(rgb565_color_black());
 }
 
 static inline void
@@ -253,31 +253,22 @@ shields_hit(int x, int y, int y_vec, int shield_id)
 }
 
 void
-shields_show(const DG* dg)
+shields_draw(const struct MLGraphicsBuffer* draw_buf)
 {
+    // TODO(jb): Split this into draw and update functions
     for (int i = 0; i < shield_count; i++) {
         if (g_draw[i]) {
             if (g_flash_count[i] < shield_flash_frames) {
-                blit_clipped_gfx_box(dg, g_clips[i], &(*g_shields_flash[g_flash_count[i]])[0][0].v);
+                blit_clipped_gfx_box(draw_buf, g_clips[i], &(*g_shields_flash[g_flash_count[i]])[0][0]);
                 g_flash_count[i]++;
             } else {
-                blit_clipped_gfx_box(dg, g_clips[i], &(*g_shields[i])[0][0].v);
+                blit_clipped_gfx_box(draw_buf, g_clips[i], &(*g_shields[i])[0][0]);
             }
-        }
-    }
-}
-
-void
-shields_hide(const DG* dg)
-{
-    for (int i = 0; i < shield_count; i++) {
-        if (!g_draw[i] && g_flash_count[i] < shield_flash_frames) {
+        } else if (g_flash_count[i] < shield_flash_frames) {
             if (g_collisions[i]) {
                 collision_destroy(g_collisions[i]);
                 g_collisions[i] = 0;
             }
-
-            blit_clipped_colour_box(dg, g_clips[i], 0);
             g_flash_count[i]++;
         }
     }

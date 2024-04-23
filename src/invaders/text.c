@@ -29,7 +29,7 @@ text_decode_font(void)
 void
 text_print_char_at_address(char c, struct rgb565 color, struct rgb565* addr)
 {
-    const struct rgb565 black = pack_rgb565(rgb565_black());
+    const struct rgb565 black = pack_rgb565(rgb565_color_black());
     int h, w;
     uint8_t *cp, v;
 

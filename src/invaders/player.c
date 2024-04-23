@@ -22,10 +22,10 @@ static int y_vector[Y_VECTORS];
 static int x_vector_pos = 0;
 static int y_vector_pos = 0;
 
-static int        count[15];
-static int        shots = 0;    // Shots in the air
-static Player     player;       // Player information
-static GfxObject* player_obj;
+static int               count[15];
+static int               shots = 0; // Shots in the air
+static Player            player; // Player information
+static struct GfxObject* player_obj;
 
 // Set in player_init(), used by runlevel func
 static struct MLInput* input_ref;

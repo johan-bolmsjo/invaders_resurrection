@@ -144,3 +144,15 @@ static inline void*
 ml_graphics_buffer_xy(const struct MLGraphicsBuffer* buf, int x, int y) {
     return &((char*)buf->pixels)[(y * buf->width + x) * ml_pixel_bytes(buf->format)];
 }
+
+/// TODO(jb): Remove
+/// \deprecated Compatibility: Create (draw) graphics buffer from 'dg'
+static inline struct MLGraphicsBuffer
+ml_graphics_buffer_of_dg(const struct MLDisplayDG* dg) {
+    return (struct MLGraphicsBuffer) {
+        .format = MLPixelFormatRGB565,
+        .width = MLDisplayWidth,
+        .height = MLDisplayHeight,
+        .pixels = dg->adr[dg->hid],
+    };
+}

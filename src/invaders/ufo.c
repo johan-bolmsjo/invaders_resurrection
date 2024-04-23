@@ -5,7 +5,7 @@
 #include <inttypes.h>
 
 static int count[15];
-static GfxObject* ufo_object;
+static struct GfxObject* ufo_object;
 
 void
 ufo_module_init(void)

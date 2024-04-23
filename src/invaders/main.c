@@ -134,25 +134,24 @@ main(void)
 
     enum GameRunState run_state = GameContinue;
     while (run_state == GameContinue) {
-        const struct MLGraphicsBuffer* draw_buffer = ml_get_draw_buffer();
+        const struct MLGraphicsBuffer* draw_buf = ml_get_draw_buffer();
 
         ml_poll_input(&input);
 
         ml_lock_audio();
 
-        ml_graphics_buffer_clear(draw_buffer);
+        ml_graphics_buffer_clear(draw_buf);
 
         status_hide(dg);
-        shields_hide(dg);
         player_hide(dg);
         missiles_hide(dg);
         armada_hide(dg);
         mystery_hide(dg);
         shot_hide(dg);
 
-        title_draw(dg, draw_buffer);
+        title_draw(dg, draw_buf);
         status_show(dg);
-        shields_show(dg);
+        shields_draw(draw_buf);
         player_show(dg);
         missiles_show(dg);
         armada_show(dg);
@@ -160,7 +159,7 @@ main(void)
         shot_show(dg);
 
         // TODO(jb): Can be drawn first when all smart object removal code has been removed.
-        stars_draw(draw_buffer);
+        stars_draw(draw_buf);
 
         if ((run_state = title_update(&input)) == GameExit) {
             continue;

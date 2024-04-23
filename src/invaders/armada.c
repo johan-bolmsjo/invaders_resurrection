@@ -26,7 +26,7 @@
 #define HEIGHT 30
 
 Armada armada; /* Used in missiles.c as well */
-static GfxObject* gfx_obj[3];
+static struct GfxObject* gfx_obj[3];
 
 /* Vector tables for explosions.
  */

@@ -43,12 +43,18 @@ unpack_rgb565(struct rgb565 c) {
     };
 }
 
+/// Add two RGB565 values witout color component saturation.
+static inline struct rgb565
+add_rgb565(struct rgb565 c0, struct rgb565 c1) {
+    return  (struct rgb565){c0.v + c1.v};
+}
+
 static inline struct rgb
-rgb565_white(void) {
+rgb565_color_white(void) {
     return (struct rgb){.r = max_r5, .g = max_g6, .b = max_b5};
 }
 
 static inline struct rgb
-rgb565_black(void) {
+rgb565_color_black(void) {
     return (struct rgb){.r = 0, .g = 0, .b = 0};
 }

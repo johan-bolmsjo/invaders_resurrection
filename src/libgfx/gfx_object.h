@@ -2,6 +2,8 @@
 
 #include <inttypes.h>
 
+#include "libutil/color.h"
+
 /* GFX tags (don't change the values)
  */
 
@@ -30,34 +32,34 @@ int16_t y_off
 [collision data]
 */
 
-typedef struct _GfxFrame GfxFrame;
-typedef struct _GfxObject GfxObject;
 
-struct _GfxObject {
-    uint8_t name_len;
-    char* name;
-    int frames;
-    GfxFrame** fpp;
-    GfxObject* prev;
-    GfxObject* next;
-};
-
-struct _GfxFrame {
+struct GfxFrame {
     int width;
     int height;
     int x_off;
     int y_off;
     int c_longs;
-    uint16_t* graphics;
+    struct rgb565* graphics;
     uint8_t* alpha;
     uint32_t* collision;
 };
 
-GfxObject* gfx_get_first_object(void);
-GfxObject* gfx_object_find(const char* name);
-GfxObject* gfx_object_create(const char* name);
-void       gfx_object_destroy(GfxObject* o);
-void       gfx_object_destroy_all(void);
-GfxFrame*  gfx_frame_create(int flags, int width, int height, int x_off, int y_off);
-void       gfx_frame_destroy(GfxFrame* f);
-int        gfx_add_frame_to_object(GfxFrame* f, GfxObject* o);
+struct GfxObject;
+
+struct GfxObject {
+    uint8_t name_len;
+    char* name;
+    int frames;
+    struct GfxFrame** fpp;
+    struct GfxObject* prev;
+    struct GfxObject* next;
+};
+
+struct GfxObject* gfx_get_first_object(void);
+struct GfxObject* gfx_object_find(const char* name);
+struct GfxObject* gfx_object_create(const char* name);
+void              gfx_object_destroy(struct GfxObject* o);
+void              gfx_object_destroy_all(void);
+struct GfxFrame*  gfx_frame_create(int flags, int width, int height, int x_off, int y_off);
+void              gfx_frame_destroy(struct GfxFrame* f);
+int               gfx_add_frame_to_object(struct GfxFrame* f, struct GfxObject* o);

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "libutil/color.h"
 #include "prim.h"
 #include "runlevel.h"
 #include "sfx.h"
@@ -42,10 +43,13 @@ status_reset(void)
 void
 status_hide(const DG* dg)
 {
-    Clip c = {0, 0, 42 * 8, 8, 0, 0};
+    const struct Clip c = {0, 0, 42 * 8, 8, 0, 0};
 
-    if (g_runlevel < RUNLEVEL_PLAY0)
-        blit_clipped_colour_box(dg, &c, 0);
+    if (g_runlevel < RUNLEVEL_PLAY0) {
+        // TODO(jb): Compatibility; remove
+        struct MLGraphicsBuffer draw_buf = ml_graphics_buffer_of_dg(dg);
+        blit_clipped_colour_box(&draw_buf, &c, pack_rgb565(rgb565_color_black()));
+    }
 }
 
 void

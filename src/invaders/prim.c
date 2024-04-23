@@ -1,55 +1,54 @@
 #include "prim.h"
+#include "libmedia/libmedia.h"
 
 #include <stdio.h>
 #include <inttypes.h>
 #include <inttypes.h>
 
-// TODO(jb): Use struct rgb565; extend color.h as appropriate
-//
 // Alpha tables used for mixing the edges of an object with the background.
-// - 0 is opaque, 16 is totaly transparent.
-static uint16_t ALPHA_RED[32 * 16];
-static uint16_t ALPHA_GREEN[64 * 16];
-static uint16_t ALPHA_BLUE[32 * 16];
+//
+// Value 0 is opaque and 16 is transparent.
+// Values 0 and 16 are never indexed into these tables.
+//
+static struct rgb565 alpha_r_lut[16 * 32];
+static struct rgb565 alpha_g_lut[16 * 64];
+static struct rgb565 alpha_b_lut[16 * 32];
 
 void
 prim_module_init(void)
 {
-    int i, j, atom, v;
-
-    atom = 16;
-    for (j = 0; j < 16; j++) {
-        v = 0;
-        for (i = 0; i < 32; i++) {
-            ALPHA_RED[j << 5 | i] = (v >> 4) << 11;
+    int atom = 16;
+    for (int alpha = 0; alpha < 16; alpha++) {
+        int v = 0;
+        for (int r = 0; r < 32; r++) {
+            alpha_r_lut[alpha << 5 | r] = (struct rgb565){(v >> 4) << 11};
             v += atom;
         }
         v = 0;
-        for (i = 0; i < 64; i++) {
-            ALPHA_GREEN[j << 6 | i] = (v >> 4) << 5;
+        for (int g = 0; g < 64; g++) {
+            alpha_g_lut[alpha << 6 | g] = (struct rgb565){(v >> 4) << 5};
             v += atom;
         }
         v = 0;
-        for (i = 0; i < 32; i++) {
-            ALPHA_BLUE[j << 5 | i] = (v >> 4);
+        for (int b = 0; b < 32; b++) {
+            alpha_b_lut[alpha << 5 | b] = (struct rgb565){(v >> 4)};
             v += atom;
         }
         atom--;
     }
 }
 
-int
-clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y)
+bool
+clip_gfx_frame(struct Clip* clip, const struct GfxFrame* gf, int x, int y)
 {
-    int x2, y2;
-
     x -= gf->x_off;
     y -= gf->y_off;
-    x2 = x + gf->width - 1;
-    y2 = y + gf->height - 1;
+
+    int x2 = x + gf->width - 1;
+    int y2 = y + gf->height - 1;
 
     if (x >= MLDisplayWidth || x2 < 0 || y >= MLDisplayHeight || y2 < 0) {
-        return 1;
+        return false;
     }
 
     if (x < 0) {
@@ -77,126 +76,124 @@ clip_gfx_frame(Clip* clip, GfxFrame* gf, int x, int y)
     clip->w = x2 - x + 1;
     clip->h = y2 - y + 1;
 
-    return 0;
+    return true;
 }
 
 // For frames with alpha channel.
 static void
-blit_clipped_gfx_frame_with_alpha(const DG* dg, Clip* clip, GfxFrame* gf)
+blit_clipped_gfx_frame_with_alpha(const struct MLGraphicsBuffer* dst, const struct Clip* clip,
+                                  const struct GfxFrame* gf)
 {
-    int w, h, s_stride, d_stride, sa, da, sp, dp;
-    uint8_t* alpha;
-    uint16_t *src, *dst; // TODO(jb): Use struct rgb565
+    const int src_stride = gf->width - clip->w;
+    const int dst_stride = dst->width - clip->w;
 
-    s_stride = gf->width - clip->w;
-    d_stride = MLDisplayWidth - clip->w;
+    const uint8_t* src_alpha_p = &gf->alpha[clip->sy_off * gf->width + clip->sx_off];
+    const struct rgb565* src_p = &gf->graphics[clip->sy_off * gf->width + clip->sx_off];
+    struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);
 
-    alpha = gf->alpha + clip->sx_off + clip->sy_off * gf->width;
-    src = gf->graphics + clip->sx_off + clip->sy_off * gf->width;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
-
-    for (h = clip->h; h > 0; h--) {
-        for (w = clip->w; w > 0; w--) {
-            sa = *alpha++;
-            if (sa == 0) {
-                *dst++ = *src++;
+    for (int y = 0; y < clip->h; y++) {
+        for (int x = 0; x < clip->w; x++) {
+            const int src_alpha = *src_alpha_p++;
+            if (src_alpha == 0) {
+                // Opaque
+                *dst_p++ = *src_p++;
             } else {
-                if (sa == 16) {
-                    src++;
-                    dst++;
+                if (src_alpha == 16) {
+                    // Transparent
+                    src_p++;
+                    dst_p++;
                 } else {
-                    da = 16 - sa;
-                    sp = *src++;
-                    dp = *dst;
+                    const int dst_alpha = 16 - src_alpha;
+                    const struct rgb src_color = unpack_rgb565(*src_p++);
+                    const struct rgb dst_color = unpack_rgb565(*dst_p);
 
-                    /* Assembler? GCC produces ugly shit even on ARM
+                    /* Historical note:
+                     *
+                     * Assembler? GCC produces ugly shit even on ARM
                      * wich have realy nice shift capabilities:(
                      *
                      * Use 2 MB table? 65536 * 2 * 16.
                      */
-                    sp = ALPHA_RED[(sa << 5) | (sp >> 11)] |
-                         ALPHA_GREEN[(sa << 6) | ((sp >> 5) & 0x3F)] |
-                         ALPHA_BLUE[(sa << 5) | (sp & 0x1F)];
+                    const struct rgb565 src_color2 = (struct rgb565) {
+                        alpha_r_lut[(src_alpha << 5) | src_color.r].v |
+                        alpha_g_lut[(src_alpha << 6) | src_color.g].v |
+                        alpha_b_lut[(src_alpha << 5) | src_color.b].v
+                    };
 
-                    dp = ALPHA_RED[(da << 5) | (dp >> 11)] |
-                         ALPHA_GREEN[(da << 6) | ((dp >> 5) & 0x3F)] |
-                         ALPHA_BLUE[(da << 5) | (dp & 0x1F)];
+                    const struct rgb565 dst_color2 = (struct rgb565) {
+                        alpha_r_lut[(dst_alpha << 5) | dst_color.r].v |
+                        alpha_g_lut[(dst_alpha << 6) | dst_color.g].v |
+                        alpha_b_lut[(dst_alpha << 5) | dst_color.b].v
+                    };
 
-                    *dst++ = sp + dp;
+                    *dst_p++ = add_rgb565(src_color2, dst_color2);
                 }
             }
         }
 
-        alpha += s_stride;
-        src += s_stride;
-        dst += d_stride;
+        src_alpha_p += src_stride;
+        src_p += src_stride;
+        dst_p += dst_stride;
     }
 }
 
 // For frames without alpha channel.
 static void
-blit_clipped_gfx_frame_without_alpha(const DG* dg, Clip* clip, GfxFrame* gf)
+blit_clipped_gfx_frame_without_alpha(const struct MLGraphicsBuffer* dst, const struct Clip* clip, const struct GfxFrame* gf)
 {
-    int w, h, s_stride, d_stride;
-    uint16_t *src, *dst, v; // TODO(jb): Use struct rgb565
+    const int src_stride = gf->width - clip->w;
+    const int dst_stride = dst->width - clip->w;
 
-    s_stride = gf->width - clip->w;
-    d_stride = MLDisplayWidth - clip->w;
-    src = gf->graphics + clip->sx_off + clip->sy_off * gf->width;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
+    const struct rgb565* src_p = &gf->graphics[clip->sy_off * gf->width + clip->sx_off];
+    struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);
 
-    for (h = clip->h; h > 0; h--) {
-        for (w = clip->w; w > 0; w--) {
-            v = *src++;
-            if (v)
-                *dst = v;
-            dst++;
+    for (int y = 0; y < clip->h; y++) {
+        for (int x = 0; x < clip->w; x++) {
+            const struct rgb565 color = *src_p++;
+            if (color.v) {
+                *dst_p = color;
+            }
+            dst_p++;
         }
-
-        src += s_stride;
-        dst += d_stride;
+        src_p += src_stride;
+        dst_p += dst_stride;
     }
 }
 
 void
-blit_clipped_gfx_frame(const DG* dg, Clip* clip, GfxFrame* gf)
+blit_clipped_gfx_frame(const struct MLGraphicsBuffer* dst, const struct Clip* clip, const struct GfxFrame* gf)
 {
-    if (gf->alpha)
-        blit_clipped_gfx_frame_with_alpha(dg, clip, gf);
-    else
-        blit_clipped_gfx_frame_without_alpha(dg, clip, gf);
-}
-
-void
-blit_clipped_colour_box(const DG* dg, Clip* clip, uint16_t colour)
-{
-    int w, h, d_stride;
-    uint16_t* dst; // TODO(jb): Use struct rgb565
-
-    d_stride = MLDisplayWidth - clip->w;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
-
-    for (h = clip->h; h > 0; h--) {
-        for (w = clip->w; w > 0; w--)
-            *dst++ = colour;
-
-        dst += d_stride;
+    if (gf->alpha) {
+        blit_clipped_gfx_frame_with_alpha(dst, clip, gf);
+    } else {
+        blit_clipped_gfx_frame_without_alpha(dst, clip, gf);
     }
 }
 
 void
-blit_clipped_gfx_box(const DG* dg, Clip* clip, uint16_t* src)
+blit_clipped_colour_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, struct rgb565 color)
 {
-    int w, h, d_stride;
-    uint16_t* dst; // TODO(jb): Use struct rgb565
+    const int dst_stride = dst->width - clip->w;
+    struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);
 
-    d_stride = MLDisplayWidth - clip->w;
-    dst = dg->adr[dg->hid] + clip->x + clip->y * MLDisplayWidth;
+    for (int y = 0; y < clip->h; y++) {
+        for (int x = 0; x < clip->w; x++) {
+            *dst_p++ = color;
+        }
+        dst_p += dst_stride;
+    }
+}
 
-    for (h = clip->h; h > 0; h--) {
-        for (w = clip->w; w > 0; w--)
-            *dst++ = *src++;
+void
+blit_clipped_gfx_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, const struct rgb565* src)
+{
+    const int dst_stride = dst->width - clip->w;
+    struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);
 
-        dst += d_stride;
+    for (int y = 0; y < clip->h; y++) {
+        for (int x = 0; x < clip->w; x++) {
+            *dst_p++ = *src++;
+        }
+        dst_p += dst_stride;
     }
 }

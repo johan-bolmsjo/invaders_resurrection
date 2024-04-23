@@ -51,7 +51,7 @@ collision_destroy(Collision* c)
 void
 collision_update_from_sprite(Collision* c, Sprite* s)
 {
-    GfxFrame* f = s->go->fpp[s->frame];
+    struct GfxFrame* f = s->go->fpp[s->frame];
 
     c->x0 = s->x - f->x_off;
     c->y0 = s->y - f->y_off;
