@@ -1,5 +1,4 @@
-/* Missile handling.
- */
+// Missile handling.
 
 #include "missiles.h"
 
@@ -28,11 +27,9 @@ static char g_delays[MISSILES_MAX]; /* Missile drop delays */
 static int
 collision_cb(Collision* a, Collision* b)
 {
-    if (b->gid == GID_PLAYER ||
-        b->gid == GID_PLAYER_SHOT) {
+    if (b->gid == GID_PLAYER || b->gid == GID_PLAYER_SHOT) {
         missiles[a->id].c = 0;
         g_missiles_alive--;
-
         return 1;
     }
 
@@ -40,7 +37,6 @@ collision_cb(Collision* a, Collision* b)
         if (shields_hit(a->x0, a->y0, 1, b->id)) {
             missiles[a->id].c = 0;
             g_missiles_alive--;
-
             return 1;
         }
     }
@@ -58,18 +54,18 @@ missiles_module_init(void)
     gfx_obj = gfx_object_find("missile");
 
     for (i = 0; i < MISSILES_MAX; i++) {
-        missiles_off[i] = (int)((double)ARMADA_X * random() /
-                                (RAND_MAX + 1.0)) + 1;
+        missiles_off[i] = (int)((double)ARMADA_X * random() / (RAND_MAX + 1.0)) + 1;
         missiles[i].s.show = true;
         missiles[i].s.go = gfx_obj;
     }
 
-    for (i = 0; i < MISSILES_MAX; i++)
+    for (i = 0; i < MISSILES_MAX; i++) {
         g_delays[i] = (int)(15.0 * random() / (RAND_MAX + 1.0)) + 4;
+    }
 }
 
 void
-missiles_show(const DG* dg)
+missiles_draw(const DG* dg)
 {
     int i;
 
@@ -78,15 +74,6 @@ missiles_show(const DG* dg)
             sprite_draw(dg, &missiles[i].s);
         }
     }
-}
-
-void
-missiles_hide(const DG* dg)
-{
-    int i;
-
-    for (i = 0; i < MISSILES_MAX; i++)
-        sprite_hide(dg, &missiles[i].s);
 }
 
 //  TODO(jb): Dependant on armada.c stuff.. Uggly:(
@@ -113,8 +100,9 @@ missiles_update(void)
     if (g_runlevel == RUNLEVEL_PLAY1 &&
         g_next_runlevel == RUNLEVEL_PLAY1 &&
         armada.alive) {
-        if (armada.missiles_max > MISSILES_MAX)
+        if (armada.missiles_max > MISSILES_MAX) {
             armada.missiles_max = MISSILES_MAX;
+        }
 
         mi = 0;
         alive = 0;
@@ -122,15 +110,17 @@ missiles_update(void)
         for (i = 0; i < ARMADA_X; i++) {
             if (armada.alive_x[i]) {
                 list[alive++] = i;
-                if (counters[i])
+                if (counters[i]) {
                     counters[i]--;
+                }
             }
         }
 
         for (i = g_missiles_alive; i < armada.missiles_max; i++) {
             x += missiles_off[missiles_off_i++];
-            if (missiles_off_i >= MISSILES_MAX)
+            if (missiles_off_i >= MISSILES_MAX) {
                 missiles_off_i = 0;
+            }
 
             x = list[x % alive];
 
@@ -139,12 +129,14 @@ missiles_update(void)
                 if (delay_i >= MISSILES_MAX)
                     delay_i = 0;
 
-                while (missiles[mi].c)
+                while (missiles[mi].c) {
                     mi++;
+                }
 
                 y = armada.bm;
-                while (!armada.b[y][x].c)
+                while (!armada.b[y][x].c) {
                     y--;
+                }
 
                 missiles[mi].s.x = armada.b[y][x].s.x;
                 missiles[mi].s.y = armada.b[y][x].s.y + 15 + 4;

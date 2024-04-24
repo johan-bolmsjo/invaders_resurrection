@@ -19,10 +19,7 @@ extern int g_missiles_alive;
 void missiles_module_init(void);
 
 /// Draw missiles on screen.
-void missiles_show(const DG* dg);
-
-/// Remove missiles from screen.
-void missiles_hide(const DG* dg);
+void missiles_draw(const DG* dg);
 
 /// Updates old missiles and creates new ones.
 void missiles_update(void);

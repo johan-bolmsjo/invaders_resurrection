@@ -142,8 +142,6 @@ main(void)
 
         ml_graphics_buffer_clear(draw_buf);
 
-        player_hide(dg);
-        missiles_hide(dg);
         armada_hide(dg);
         mystery_hide(dg);
         shot_hide(dg);
@@ -151,8 +149,8 @@ main(void)
         title_draw(dg, draw_buf);
         status_draw(draw_buf);
         shields_draw(draw_buf);
-        player_show(dg);
-        missiles_show(dg);
+        player_draw(dg);
+        missiles_draw(dg);
         armada_show(dg);
         mystery_show(dg);
         shot_show(dg);
