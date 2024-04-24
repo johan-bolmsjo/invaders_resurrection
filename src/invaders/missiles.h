@@ -8,10 +8,10 @@
 #include "libmedia/libmedia.h"
 #include "sprite.h"
 
-typedef struct _Missile {
-    Sprite     s;
-    Collision* c;
-} Missile;
+struct Missile {
+    struct Sprite     sprite;
+    struct Collision* collision;
+};
 
 extern int g_missiles_alive;
 
@@ -19,7 +19,7 @@ extern int g_missiles_alive;
 void missiles_module_init(void);
 
 /// Draw missiles on screen.
-void missiles_draw(const DG* dg);
+void missiles_draw(const struct MLGraphicsBuffer* dst);
 
 /// Updates old missiles and creates new ones.
 void missiles_update(void);

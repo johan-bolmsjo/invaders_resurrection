@@ -14,15 +14,15 @@
 #define RUNLEVEL_PLAY1  4       // ...
 #define RUNLEVEL_PLAY2  5       // Clear bombers
 
-typedef struct _RunLevelFunc RunLevelFunc;
+struct RunLevelFunc;
 
-struct _RunLevelFunc {
+struct RunLevelFunc {
     int from;                   // 'from' runlevel 'to' runlevel
     int to;
-    int (*handler)(RunLevelFunc*);
+    int (*handler)(struct RunLevelFunc*);
     int rval;                   // Return value from handler(); 1 -> OK to switch
-    RunLevelFunc* prev;
-    RunLevelFunc* next;
+    struct RunLevelFunc* prev;
+    struct RunLevelFunc* next;
 };
 
 extern int g_runlevel;
@@ -33,5 +33,5 @@ void runlevel_update(void);
 
 /// Register run level function to be executed to check whether a
 /// condition has been met.
-void runlevel_register_func(RunLevelFunc* r, int from, int to,
-                            int (*handler)(RunLevelFunc*));
+void runlevel_register_func(struct RunLevelFunc* r, int from, int to,
+                            int (*handler)(struct RunLevelFunc*));

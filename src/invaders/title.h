@@ -15,7 +15,7 @@ enum GameRunState {
 void title_module_init(void);
 
 /// Draw title objects.
-void title_draw(const DG* dg, const struct MLGraphicsBuffer* buf);
+void title_draw(const struct MLGraphicsBuffer* dst);
 
 /// Update title screen.
 enum GameRunState title_update(struct MLInput* input);

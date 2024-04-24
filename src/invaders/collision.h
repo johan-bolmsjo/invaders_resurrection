@@ -8,9 +8,9 @@
 
 #include "sprite.h"
 
-typedef struct _Collision Collision;
+struct Collision;
 
-struct _Collision {
+struct Collision {
     // ID data =>
 
     int   id;                   // ID number and ID pointer
@@ -19,7 +19,7 @@ struct _Collision {
     int   pend_rm;              // Used by collision routine
 
     // Invoked on collision between two objects.
-    int (*handler)(Collision*, Collision*);
+    int (*handler)(struct Collision*, struct Collision*);
 
     //  Udated when ploting the object =>
 
@@ -33,21 +33,21 @@ struct _Collision {
     int       blocks;           // Width of mask in int32_ts
     uint32_t* mask;             // One bit collision mask
 
-    Collision* prev;
-    Collision* next;
+    struct Collision* prev;
+    struct Collision* next;
 };
 
 extern int g_collision_obj;
 
 /// Creates collision object with a callback function that is called upon collision.
-Collision* collision_create(int id, void* id_p, int gid,
-                            int (*handler)(Collision*, Collision*));
+struct Collision* collision_create(int id, void* id_p, int gid,
+                                   int (*handler)(struct Collision*, struct Collision*));
 
 /// Removes a collition object.
-void collision_destroy(Collision* c);
+void collision_destroy(struct Collision* c);
 
 /// Uppdate a collition object with data from a sprite.
-void collision_update_from_sprite(Collision* c, Sprite* s);
+void collision_update_from_sprite(struct Collision* c, struct Sprite* s);
 
 /// Scans collision object list and calls call-back functions upon collision.
 void collision_detection(void);

@@ -9,6 +9,7 @@
 #include <zlib.h>
 
 #include "error.h"
+#include "colours.h"
 
 #define HALF_BUF_SIZE 2048
 #define BUF_SIZE      4096
@@ -19,38 +20,40 @@
  */
 
 static int
-rle_read_8(gzFile gz, Image* image)
+rle_read_8(gzFile gz, struct Image* image)
 {
-    uint8_t buf[BUF_SIZE], *dst = image->image, eof = 0, c;
-    int index = 0, fill = 0, offset = 0, count;
-    int32_t pixels, pc = 0;
-    size_t len;
+    uint8_t buf[BUF_SIZE], *dst = image->image, eof = 0;
+    int index = 0, fill = 0, offset = 0;
+    int32_t pc = 0;
 
-    pixels = (int32_t)image->width * image->height;
+    const int32_t pixels = (int32_t)image->width * image->height;
 
     while (pc < pixels) {
         if (fill <= HALF_BUF_SIZE && !eof) {
-            len = gzread(gz, buf + offset, HALF_BUF_SIZE);
+            int len = gzread(gz, buf + offset, HALF_BUF_SIZE);
             if (len != HALF_BUF_SIZE) {
-                if (len == -1)
+                if (len == -1) {
                     return E_READ;
+                }
                 eof = 1;
             }
             fill += len;
             offset ^= HALF_BUF_SIZE;
         }
-        c = buf[index++];
+        uint8_t c = buf[index++];
         index &= BUF_MASK;
-        count = (c & TARGA_RLE_MASK_COUNT);
+        int count = (c & TARGA_RLE_MASK_COUNT);
         pc += count + 1;
-        if (pc > pixels)
+        if (pc > pixels) {
             break;
+        }
         fill -= 2;
         if (c & TARGA_RLE_MASK_TYPE) {
             c = buf[index++];
             index &= BUF_MASK;
-            for (; count >= 0; count--)
+            for (; count >= 0; count--) {
                 *dst++ = c;
+            }
         } else {
             fill -= count;
             for (; count >= 0; count--) {
@@ -60,46 +63,48 @@ rle_read_8(gzFile gz, Image* image)
         }
     }
 
-    if (pc != pixels)
+    if (pc != pixels) {
         return ERROR;
+    }
 
     return E_OK;
 }
 
 static int
-rle_read_24(gzFile gz, Image* image)
+rle_read_24(gzFile gz, struct Image* image)
 {
-    uint8_t buf[BUF_SIZE], *dst = image->image, eof = 0, c, r, g, b;
-    int index = 0, fill = 0, offset = 0, count;
-    int32_t pixels, pc = 0;
-    size_t len;
+    uint8_t buf[BUF_SIZE], *dst = image->image, eof = 0;
+    int index = 0, fill = 0, offset = 0;
+    int32_t pc = 0;
 
-    pixels = (int32_t)image->width * image->height;
+    int32_t pixels = (int32_t)image->width * image->height;
 
     while (pc < pixels) {
         if (fill <= HALF_BUF_SIZE && !eof) {
-            len = gzread(gz, buf + offset, HALF_BUF_SIZE);
+            int len = gzread(gz, buf + offset, HALF_BUF_SIZE);
             if (len != HALF_BUF_SIZE) {
-                if (len == -1)
+                if (len == -1) {
                     return E_READ;
+                }
                 eof = 1;
             }
             fill += len;
             offset ^= HALF_BUF_SIZE;
         }
-        c = buf[index++];
+        const uint8_t c = buf[index++];
         index &= BUF_MASK;
-        count = (c & TARGA_RLE_MASK_COUNT);
+        int count = (c & TARGA_RLE_MASK_COUNT);
         pc += count + 1;
-        if (pc > pixels)
+        if (pc > pixels) {
             break;
+        }
         fill -= 4;
         if (c & TARGA_RLE_MASK_TYPE) {
-            r = buf[index++];
+            const uint8_t r = buf[index++];
             index &= BUF_MASK;
-            g = buf[index++];
+            const uint8_t g = buf[index++];
             index &= BUF_MASK;
-            b = buf[index++];
+            const uint8_t b = buf[index++];
             index &= BUF_MASK;
             for (; count >= 0; count--) {
                 *dst++ = r;
@@ -119,24 +124,24 @@ rle_read_24(gzFile gz, Image* image)
         }
     }
 
-    if (pc != pixels)
+    if (pc != pixels) {
         return ERROR;
+    }
 
     return E_OK;
 }
 
-Image*
+struct Image*
 ff_targa_read(char* path)
 {
     uint8_t buf[18];
-    TargaHeader tga;
-    gzFile gz;
-    size_t len;
-    Image* image = NULL;
+    struct TargaHeader tga;
+    struct Image* image = NULL;
 
-    gz = gzopen(path, "rb");
-    if (!gz)
+    gzFile gz = gzopen(path, "rb");
+    if (!gz) {
         return NULL;
+    }
 
     if (gzread(gz, buf, 18) != 18) {
         gzclose(gz);
@@ -167,19 +172,23 @@ ff_targa_read(char* path)
 
     switch (tga.image_type & ~TARGA_TYPE_RLE_MASK) {
     case TARGA_TYPE_CMAP:
-        if (tga.image_spec.depth != 8)
+        if (tga.image_spec.depth != 8) {
             break;
-        if (tga.cmap_type == TARGA_CMAP_NO)
+        }
+        if (tga.cmap_type == TARGA_CMAP_NO) {
             break;
-        if (tga.cmap_spec.entry_size != 24)
+        }
+        if (tga.cmap_spec.entry_size != 24) {
             break;
+        }
 
         image = image_create(CMAP, tga.cmap_spec.colours,
                              tga.image_spec.width, tga.image_spec.height);
-        if (image == NULL)
+        if (image == NULL) {
             break;
+        }
 
-        len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
+        int len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
         if (gzread(gz, image->cmap, len) != len) {
             gzclose(gz);
             return NULL;
@@ -191,7 +200,7 @@ ff_targa_read(char* path)
                 image = NULL;
             }
         } else {
-            len = (size_t)image->width * image->height;
+            int len = (size_t)image->width * image->height;
             if (gzread(gz, image->image, len) != len) {
                 image_destroy(image);
                 image = NULL;
@@ -201,19 +210,21 @@ ff_targa_read(char* path)
 
     case TARGA_TYPE_RGB:
         if (tga.cmap_type == TARGA_CMAP_YES) {
-            len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
+            int len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
             if (gzseek(gz, len, SEEK_CUR) != len) {
                 gzclose(gz);
                 return NULL;
             }
         }
-        if (tga.image_spec.depth != 24)
+        if (tga.image_spec.depth != 24) {
             break;
+        }
 
         image = image_create(RGB, 0, tga.image_spec.width,
                              tga.image_spec.height);
-        if (image == NULL)
+        if (image == NULL) {
             break;
+        }
 
         if (tga.image_type & TARGA_TYPE_RLE_MASK) {
             if (rle_read_24(gz, image) == ERROR) {
@@ -221,32 +232,35 @@ ff_targa_read(char* path)
                 image = NULL;
             }
         } else {
-            len = (size_t)image->width * image->height * 3;
+            int len = (size_t)image->width * image->height * 3;
             if (gzread(gz, image->image, len) != len) {
                 image_destroy(image);
                 image = NULL;
             }
         }
         /* POV-Ray stores targa images in bgr order */
-        if (image)
+        if (image) {
             colour_bgr_to_rgb(image);
+        }
         break;
 
     case TARGA_TYPE_GREY:
         if (tga.cmap_type == TARGA_CMAP_YES) {
-            len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
+            int len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
             if (gzseek(gz, len, SEEK_CUR) != len) {
                 gzclose(gz);
                 return NULL;
             }
         }
-        if (tga.image_spec.depth != 8)
+        if (tga.image_spec.depth != 8) {
             break;
+        }
 
         image = image_create(GREY, 0, tga.image_spec.width,
                              tga.image_spec.height);
-        if (image == NULL)
+        if (image == NULL) {
             break;
+        }
 
         if (tga.image_type & TARGA_TYPE_RLE_MASK) {
             if (rle_read_8(gz, image) == ERROR) {
@@ -254,7 +268,7 @@ ff_targa_read(char* path)
                 image = NULL;
             }
         } else {
-            len = (size_t)image->width * image->height;
+            int len = (size_t)image->width * image->height;
             if (gzread(gz, image->image, len) != len) {
                 image_destroy(image);
                 image = NULL;
@@ -262,8 +276,9 @@ ff_targa_read(char* path)
         }
     }
 
-    if (!(tga.image_spec.descriptor & TARGA_VERT_MASK))
+    if (!(tga.image_spec.descriptor & TARGA_VERT_MASK)) {
         image_flip_y(image);
+    }
 
     gzclose(gz);
     return image;

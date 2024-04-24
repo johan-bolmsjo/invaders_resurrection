@@ -25,7 +25,7 @@
 #define WIDTH  36 /* Alien size */
 #define HEIGHT 30
 
-Armada armada; /* Used in missiles.c as well */
+struct Armada armada; /* Used in missiles.c as well */
 static struct GfxObject* gfx_obj[3];
 
 /* Vector tables for explosions.
@@ -42,21 +42,19 @@ static int y_vector_c = 0;
 // Collision handler.
 // Increases score, speed and plays explosion sound.
 static int
-collision_cb(Collision* a, Collision* b)
+collision_cb(struct Collision* a, struct Collision* b)
 {
-    int i, x, y, xv, yv;
-    Bomber* bomber;
-
     if (b->gid != GID_PLAYER_SHOT) {
         return 0;
     }
 
-    bomber = (Bomber*)a->id_p;
-    x = bomber->s.x;
-    y = bomber->s.y;
+    struct Bomber* bomber = (struct Bomber*)a->id_p;
+    int x = bomber->sprite.x;
+    int y = bomber->sprite.y;
 
-    for (i = 0; i < 4; i++) {
-        xv = x_vector[x_vector_c++];
+    for (int i = 0; i < 4; i++) {
+        int yv;
+        int xv = x_vector[x_vector_c++];
         if (x_vector_c == X_VECTORS) {
             x_vector_c = 0;
         }
@@ -68,10 +66,10 @@ collision_cb(Collision* a, Collision* b)
             }
         } while ((abs(xv) + abs(yv)) < 3);
 
-        shot_create(x + xv, y + yv, xv, yv, 31 << 5, 0, 0, 0);
+        shot_create(x + xv, y + yv, xv, yv, pack_rgb565((struct rgb){.g = 31}), 0, 0, 0);
     }
 
-    bomber->c = 0;
+    bomber->collision = 0;
     x = bomber->x;
     y = bomber->y;
 
@@ -131,13 +129,12 @@ collision_cb(Collision* a, Collision* b)
 static void
 animate(void)
 {
-    int i;
-    Bomber* b = armada.b[0];
+    struct Bomber* b = armada.b[0];
 
-    for (i = 0; i < ARMADA_XY; i++) {
-        if (b[i].c) {
+    for (int i = 0; i < ARMADA_XY; i++) {
+        if (b[i].collision) {
             bomber_anim(&b[i]);
-            collision_update_from_sprite(b[i].c, &b[i].s);
+            collision_update_from_sprite(b[i].collision, &b[i].sprite);
         }
     }
 }
@@ -153,8 +150,8 @@ move_armada_to_start(void)
     for (i = 0; i < ARMADA_Y; i++) {
         x = X_START;
         for (j = 0; j < ARMADA_X; j++) {
-            armada.b[i][j].s.x = x;
-            armada.b[i][j].s.y = y;
+            armada.b[i][j].sprite.x = x;
+            armada.b[i][j].sprite.y = y;
             x += WIDTH;
         }
         y += HEIGHT;
@@ -206,13 +203,13 @@ move_armada(void)
         }
 
         if (armada.dir_r) {
-            if (armada.b[armada.row][armada.rm].s.x + X_STEP <= X_MAX) {
+            if (armada.b[armada.row][armada.rm].sprite.x + X_STEP <= X_MAX) {
                 x = X_STEP;
             } else {
                 armada.dir_d = 1;
             }
         } else {
-            if (armada.b[armada.row][armada.lm].s.x - X_STEP >= X_MIN) {
+            if (armada.b[armada.row][armada.lm].sprite.x - X_STEP >= X_MIN) {
                 x = -X_STEP;
             } else {
                 armada.dir_d = 1;
@@ -220,7 +217,7 @@ move_armada(void)
         }
 
         if (armada.dir_d) {
-            if (armada.b[armada.row][armada.lm].s.y + Y_STEP == Y_MAX) {
+            if (armada.b[armada.row][armada.lm].sprite.y + Y_STEP == Y_MAX) {
                 armada.kill = 1;
             }
 
@@ -244,8 +241,8 @@ move_armada(void)
             }
 
             for (i = 0; i < ARMADA_X; i++) {
-                armada.b[armada.row][i].s.x += x;
-                armada.b[armada.row][i].s.y += y;
+                armada.b[armada.row][i].sprite.x += x;
+                armada.b[armada.row][i].sprite.y += y;
             }
 
             armada.row--;
@@ -268,7 +265,7 @@ armada_module_init(void)
         y_vector[i++] = j;
     }
 
-    memset(&armada, 0, sizeof(Armada));
+    memset(&armada, 0, sizeof(armada));
 
     gfx_obj[0] = gfx_object_find("bomber_3");
     gfx_obj[1] = gfx_object_find("bomber_2");
@@ -287,8 +284,8 @@ armada_module_init(void)
         for (j = 0; j < ARMADA_X; j++) {
             armada.b[i][j].x = j;
             armada.b[i][j].y = i;
-            armada.b[i][j].s.show = false;
-            armada.b[i][j].s.go = gfx_obj[type];
+            armada.b[i][j].sprite.show = false;
+            armada.b[i][j].sprite.gfx_obj = gfx_obj[type];
         }
     }
 }
@@ -301,9 +298,6 @@ armada_module_init(void)
 static void
 armada_new(void)
 {
-    int i;
-    Bomber* b = armada.b[0];
-
     if (armada.alive) {
         return;
     }
@@ -314,18 +308,20 @@ armada_new(void)
         armada.missiles_max++;
     }
 
-    for (i = 0; i < ARMADA_X; i++) {
+    for (int i = 0; i < ARMADA_X; i++) {
         armada.alive_x[i] = ARMADA_Y;
     }
 
-    for (i = 0; i < ARMADA_Y; i++) {
+    for (int i = 0; i < ARMADA_Y; i++) {
         armada.alive_y[i] = ARMADA_X;
     }
 
-    for (i = 0; i < ARMADA_XY; i++) {
+    struct Bomber* b = armada.b[0];
+
+    for (int i = 0; i < ARMADA_XY; i++) {
         b[i].count = 0;
-        b[i].s.frame = 0;
-        b[i].c = collision_create(0, (void*)&b[i], GID_BOMBER, collision_cb);
+        b[i].sprite.frame = 0;
+        b[i].collision = collision_create(0, (void*)&b[i], GID_BOMBER, collision_cb);
     }
 
     armada.lm = 0;
@@ -350,12 +346,12 @@ armada_reset(void)
 }
 
 void
-armada_draw(const DG* dg)
+armada_draw(const struct MLGraphicsBuffer* dst)
 {
-    Bomber* b = armada.b[0];
+    struct Bomber* b = armada.b[0];
     for (int i = 0; i < ARMADA_XY; i++) {
-        if (b[i].c && b[i].s.show) {
-            sprite_draw(dg, &b[i].s);
+        if (b[i].collision && b[i].sprite.show) {
+            sprite_draw(dst, &b[i].sprite);
         }
     }
 }
@@ -370,7 +366,7 @@ armada_update(void)
         }
 
         if (armada.vis_c < ARMADA_XY) {
-            armada.b[0][armada.vis_c++].s.show = true;
+            armada.b[0][armada.vis_c++].sprite.show = true;
         } else {
             g_next_runlevel = RUNLEVEL_PLAY1;
         }
@@ -386,18 +382,18 @@ armada_update(void)
 
     if (g_runlevel == RUNLEVEL_PLAY2) {
         if (armada.vis_c) {
-            Bomber*  b = &armada.b[0][--armada.vis_c];
-            b->s.show = false;
+            struct Bomber*  b = &armada.b[0][--armada.vis_c];
+            b->sprite.show = false;
         } else {
             if (g_pilots) {
                 g_next_runlevel = RUNLEVEL_PLAY0;
                 move_armada_to_start();
             } else {
                 for (int i = 0; i < ARMADA_XY; i++) {
-                    Bomber* b = &armada.b[0][i];
-                    if (b->c) {
-                        collision_destroy(b->c);
-                        b->c = 0;
+                    struct Bomber* b = &armada.b[0][i];
+                    if (b->collision) {
+                        collision_destroy(b->collision);
+                        b->collision = 0;
                     }
                 }
 

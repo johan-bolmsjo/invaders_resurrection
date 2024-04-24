@@ -1,4 +1,5 @@
 #include "screenshot.h"
+#include "libmedia/libmedia.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,7 +7,7 @@
 #include <inttypes.h>
 
 bool
-screenshot_create(const DG* dg, const char* path)
+screenshot_create(const struct MLGraphicsBuffer* dst, const char* path)
 {
     const uint8_t tga_header[18] = {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 2, 224, 1, 24, 32};
 
@@ -16,7 +17,7 @@ screenshot_create(const DG* dg, const char* path)
     }
 
     uint8_t*  m = malloc(MLDisplayWidth * MLDisplayWidth * 3);
-    uint16_t* s = dg->adr[dg->vis];
+    uint16_t* s = ml_graphics_buffer_xy(dst, 0, 0);
     uint8_t*  d = m;
 
     for (int i = MLDisplayWidth * MLDisplayHeight; i > 0; i--) {

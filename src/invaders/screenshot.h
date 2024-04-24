@@ -7,4 +7,4 @@
 /// Create screenshot and save it in in Targa (TGA) format to path.
 /// Returns true on success.
 bool
-screenshot_create(const DG* dg, const char* path);
+screenshot_create(const struct MLGraphicsBuffer* dst, const char* path);

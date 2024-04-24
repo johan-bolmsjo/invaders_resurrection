@@ -2,13 +2,13 @@
 
 #include "image.h"
 
-typedef struct _Clip {
+struct Clip {
     int x0;
     int y0;
     int x1;
     int y1;
     int w;
     int h;
-} Clip;
+};
 
-void clip_auto_alpha(Image* image, Clip* clip);
+void clip_auto_alpha(struct Image* image, struct Clip* clip);

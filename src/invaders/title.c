@@ -21,9 +21,9 @@ struct TextAnim {
     bool        done;
 };
 
-static Ufo             ufo;
-static Bomber          bombers[3];
-static Sprite*         sprites[4];
+static struct Ufo      ufo;
+static struct Bomber   bombers[3];
+static struct Sprite*  sprites[4];
 static struct Text     texts[6];
 static struct TextAnim texts_anim[6];
 static size_t          text_index;
@@ -37,17 +37,17 @@ title_module_init(void)
                                      "Press fire to begin"};
 
     ufo_init(&ufo, 34 * 8, 22 * 8, 0);
-    sprite_init(&bombers[0].s, gfx_object_find("bomber_3"), 0, 34 * 8, 26 * 8, 0);
+    sprite_init(&bombers[0].sprite, gfx_object_find("bomber_3"), 0, 34 * 8, 26 * 8, 0);
     bomber_init(&bombers[0]);
-    sprite_init(&bombers[1].s, gfx_object_find("bomber_2"), 0, 34 * 8, 30 * 8, 0);
+    sprite_init(&bombers[1].sprite, gfx_object_find("bomber_2"), 0, 34 * 8, 30 * 8, 0);
     bomber_init(&bombers[1]);
-    sprite_init(&bombers[2].s, gfx_object_find("bomber_1"), 0, 34 * 8, 34 * 8, 0);
+    sprite_init(&bombers[2].sprite, gfx_object_find("bomber_1"), 0, 34 * 8, 34 * 8, 0);
     bomber_init(&bombers[2]);
 
-    sprites[0] = &ufo.s;
-    sprites[1] = &bombers[0].s;
-    sprites[2] = &bombers[1].s;
-    sprites[3] = &bombers[2].s;
+    sprites[0] = &ufo.sprite;
+    sprites[1] = &bombers[0].sprite;
+    sprites[2] = &bombers[1].sprite;
+    sprites[3] = &bombers[2].sprite;
 
     texts[0] = (struct Text){strings[0], 30, 15};
     for (i = 0; i < 4; i++) {
@@ -57,15 +57,15 @@ title_module_init(void)
 }
 
 void
-title_draw(const DG* dg, const struct MLGraphicsBuffer* buf)
+title_draw(const struct MLGraphicsBuffer* dst)
 {
     if (g_runlevel == RUNLEVEL_TITLE0) {
         for (size_t i = 0; i < ARRAY_SIZE(sprites); i++) {
-            sprite_draw(dg, sprites[i]);
+            sprite_draw(dst, sprites[i]);
         }
         for (size_t i = 0; i <= text_index; i++) {
             const struct Text* text = &texts[i];
-            texts_anim[i].done = text_print_string_animated(buf, text->s, text->x, text->y, texts_anim[i].frames);
+            texts_anim[i].done = text_print_string_animated(dst, text->s, text->x, text->y, texts_anim[i].frames);
         }
     }
 }

@@ -16,28 +16,28 @@
 #define SCORE_TIMER   (3 * MLDisplayFreq)    /* Time to display the score */
 #define MYSTERY_Y     32                /* Mystery Y coordinate */
 
-static Ufo ufo = {0};
+static struct Ufo ufo = {0};
 static int score_timer = 0;
-static Sprite score_sprite = {0};
+static struct Sprite score_sprite = {0};
 
 // Runlevel function.
 static int
-rl_play1_play2(RunLevelFunc* r)
+rl_play1_play2(struct RunLevelFunc* r)
 {
     (void)r;
-    return (player_is_alive() && (ufo.c || score_timer)) ? 0 : 1;
+    return (player_is_alive() && (ufo.collision || score_timer)) ? 0 : 1;
 }
 
 // Runlevel function.
 static int
-rl_play2_title0(RunLevelFunc* r)
+rl_play2_title0(struct RunLevelFunc* r)
 {
     (void)r;
-    return (ufo.c || score_timer) ? 0 : 1;
+    return (ufo.collision || score_timer) ? 0 : 1;
 }
 
 static int
-collision_cb(Collision* a, Collision* b)
+collision_cb(struct Collision* a, struct Collision* b)
 {
     (void)a;
     (void)b;
@@ -48,15 +48,15 @@ collision_cb(Collision* a, Collision* b)
 
     int score = (int)(3.0 * random() / (RAND_MAX + 1.0));
 
-    score_sprite.x = ufo.s.x;
-    score_sprite.y = ufo.s.y;
+    score_sprite.x = ufo.sprite.x;
+    score_sprite.y = ufo.sprite.y;
     score_sprite.frame = score;
 
     g_score += 50 + (score * 50);
     score_timer = SCORE_TIMER;
 
     sfx_mystery_explode();
-    ufo.c = 0;
+    ufo.collision = 0;
 
     return 1;
 }
@@ -64,7 +64,7 @@ collision_cb(Collision* a, Collision* b)
 void
 mystery_module_init(void)
 {
-    static RunLevelFunc rl0, rl1;
+    static struct RunLevelFunc rl0, rl1;
 
     sprite_init(&score_sprite, gfx_object_find("score"), 0, 0, 0, 1);
 
@@ -76,14 +76,14 @@ mystery_module_init(void)
 }
 
 void
-mystery_draw(const DG* dg)
+mystery_draw(const struct MLGraphicsBuffer* dst)
 {
-    if (ufo.c) {
-        sprite_draw(dg, &ufo.s);
+    if (ufo.collision) {
+        sprite_draw(dst, &ufo.sprite);
     }
 
     if (score_timer) {
-        sprite_draw(dg, &score_sprite);
+        sprite_draw(dst, &score_sprite);
     }
 }
 
@@ -103,15 +103,15 @@ mystery_update(void)
         score_timer--;
     }
 
-    if (ufo.c) {
-        if (ufo.s.x == x_stop) {
+    if (ufo.collision) {
+        if (ufo.sprite.x == x_stop) {
             synth_channel_kill(CH_UFO_MOVE);
-            collision_destroy(ufo.c);
-            ufo.c = 0;
+            collision_destroy(ufo.collision);
+            ufo.collision = 0;
         } else {
             ufo_anim(&ufo);
-            ufo.s.x += x_vector;
-            collision_update_from_sprite(ufo.c, &ufo.s);
+            ufo.sprite.x += x_vector;
+            collision_update_from_sprite(ufo.collision, &ufo.sprite);
         }
     } else {
         if (g_runlevel == RUNLEVEL_PLAY1 &&
@@ -128,8 +128,8 @@ mystery_update(void)
                 }
 
                 ufo_init(&ufo, x_start, MYSTERY_Y, 1);
-                ufo.c = collision_create(0, 0, GID_MYSTERY, collision_cb);
-                collision_update_from_sprite(ufo.c, &ufo.s);
+                ufo.collision = collision_create(0, 0, GID_MYSTERY, collision_cb);
+                collision_update_from_sprite(ufo.collision, &ufo.sprite);
                 sfx_mystery_move();
 
                 timer = (int)(MYSTERY_TIMER * random() / (RAND_MAX + 1.0));

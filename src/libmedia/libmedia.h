@@ -31,14 +31,6 @@ struct MLGraphicsBuffer {
     void*              pixels;
 };
 
-/// TODO(jb): Remove
-/// \deprecated Compatibillity struct.
-typedef struct MLDisplayDG {
-    int vis;
-    int hid;
-    uint16_t* adr[2]; // Two screens for page flipping
-} DG;
-
 enum MLAudioFormat {
     MLAudioFormatNone,
     MLAudioFormatS16,  // Signed 16 bit sampled in native endian.
@@ -83,10 +75,6 @@ bool ml_set_display_mode(const struct MLDisplayMode* requested);
 
 /// Get graphics buffer to draw on.
 const struct MLGraphicsBuffer* ml_get_draw_buffer(void);
-
-/// TODO(jb): Remove
-/// \deprecated Compatibillity struct.
-const struct MLDisplayDG* ml_display_dg(void);
 
 /// Update screen (or window) with content of draw buffer.
 void ml_update_screen(void);
@@ -143,16 +131,4 @@ ml_graphics_buffer_size_bytes(const struct MLGraphicsBuffer* buf) {
 static inline void*
 ml_graphics_buffer_xy(const struct MLGraphicsBuffer* buf, int x, int y) {
     return &((char*)buf->pixels)[(y * buf->width + x) * ml_pixel_bytes(buf->format)];
-}
-
-/// TODO(jb): Remove
-/// \deprecated Compatibility: Create (draw) graphics buffer from 'dg'
-static inline struct MLGraphicsBuffer
-ml_graphics_buffer_of_dg(const struct MLDisplayDG* dg) {
-    return (struct MLGraphicsBuffer) {
-        .format = MLPixelFormatRGB565,
-        .width = MLDisplayWidth,
-        .height = MLDisplayHeight,
-        .pixels = dg->adr[dg->hid],
-    };
 }

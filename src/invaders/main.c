@@ -66,10 +66,10 @@ check_gfx_objects_exist(void)
 }
 
 static void
-save_screenshot(const DG* dg)
+save_screenshot(const struct MLGraphicsBuffer* dst)
 {
     const char* filename = "invaders_screenshot.tga";
-    if (screenshot_create(dg, filename)) {
+    if (screenshot_create(dst, filename)) {
         printf("Saved screenshot \"%s\"\n", filename);
     } else {
         printf("Failed to save screenshot \"%s\"\n", filename);
@@ -130,7 +130,6 @@ main(void)
     }
 
     ml_pause_audio(false);
-    const DG* dg = ml_display_dg();
 
     enum GameRunState run_state = GameContinue;
     while (run_state == GameContinue) {
@@ -142,17 +141,15 @@ main(void)
 
         ml_graphics_buffer_clear(draw_buf);
 
-        title_draw(dg, draw_buf);
+        stars_draw(draw_buf);
+        title_draw(draw_buf);
         status_draw(draw_buf);
         shields_draw(draw_buf);
-        player_draw(dg);
-        missiles_draw(dg);
-        armada_draw(dg);
-        mystery_draw(dg);
-        shot_draw(dg);
-
-        // TODO(jb): Can be drawn first when all smart object removal code has been removed.
-        stars_draw(draw_buf);
+        player_draw(draw_buf);
+        missiles_draw(draw_buf);
+        armada_draw(draw_buf);
+        mystery_draw(draw_buf);
+        shot_draw(draw_buf);
 
         if ((run_state = title_update(&input)) == GameExit) {
             continue;
@@ -170,7 +167,7 @@ main(void)
         ml_unlock_audio();
 
         if (input.press_screenshot) {
-            save_screenshot(dg);
+            save_screenshot(draw_buf);
             input.press_screenshot = false;
         }
         ml_update_screen();

@@ -25,26 +25,27 @@ ufo_module_init(void)
 }
 
 void
-ufo_init(Ufo* u, int x, int y, int vis)
+ufo_init(struct Ufo* ufo, int x, int y, bool show)
 {
-    u->count = 0;
-    u->dir = 1;
+    ufo->frame_count = 0;
+    ufo->direction   = 1;
 
-    sprite_init(&u->s, ufo_object, 7, x, y, vis);
+    sprite_init(&ufo->sprite, ufo_object, 7, x, y, show);
 }
 
 void
-ufo_anim(Ufo* u)
+ufo_anim(struct Ufo* ufo)
 {
-    int frame = u->s.frame;
+    int frame = ufo->sprite.frame;
 
-    u->count++;
-    if (u->count > count[frame]) {
-        if (frame == 0 || frame == 14)
-            u->dir = -u->dir;
-        frame += u->dir;
-        u->count = 0;
+    ufo->frame_count++;
+    if (ufo->frame_count > count[frame]) {
+        if (frame == 0 || frame == 14) {
+            ufo->direction = -ufo->direction;
+        }
+        frame += ufo->direction;
+        ufo->frame_count = 0;
     }
 
-    u->s.frame = frame;
+    ufo->sprite.frame = frame;
 }

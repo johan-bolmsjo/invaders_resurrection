@@ -3,4 +3,4 @@
 #include "clip.h"
 #include "image.h"
 
-Image* crop(Image* image, Clip* clip);
+struct Image* crop(struct Image* image, struct Clip* clip);

@@ -10,12 +10,10 @@ static struct {
     bool init;
     struct {
         bool init;
-        int  bg_index;
         SDL_Window* sdl_window;
         SDL_Surface* sdl_window_surface;
-        SDL_Surface* sdl_vscreen[2];
-        struct MLGraphicsBuffer vscreen[2];
-        struct MLDisplayDG dg;
+        SDL_Surface* sdl_draw_buffer;
+        struct MLGraphicsBuffer draw_buffer;
         uint32_t frame_start_time_ms;
     } display;
     struct {
@@ -61,14 +59,11 @@ ml_deinit(void)
 static void
 deinit_display()
 {
-    for (size_t i = 0; i < ARRAY_SIZE(ml.display.sdl_vscreen); i++) {
-        if (ml.display.sdl_vscreen[i]) {
-            SDL_FreeSurface(ml.display.sdl_vscreen[i]);
-            ml.display.sdl_vscreen[i] = NULL;
-            ml.display.vscreen[i].pixels = NULL;
-            ml.display.dg.adr[i] = NULL;
+        if (ml.display.sdl_draw_buffer) {
+            SDL_FreeSurface(ml.display.sdl_draw_buffer);
+            ml.display.sdl_draw_buffer = NULL;
+            ml.display.draw_buffer.pixels = NULL;
         }
-    }
 
     // The surface returned by SDL_GetWindowSurface should not be freed.
     ml.display.sdl_window_surface = NULL;
@@ -78,9 +73,6 @@ deinit_display()
         ml.display.sdl_window = NULL;
     }
 
-    ml.display.bg_index = 0;
-    ml.display.dg.hid = ml.display.bg_index;
-    ml.display.dg.vis = ml.display.dg.hid ^ 1;
     ml.display.init = false;
 }
 
@@ -133,20 +125,16 @@ ml_set_display_mode(const struct MLDisplayMode* requested)
     ml.display.sdl_window = w;
     ml.display.sdl_window_surface = SDL_GetWindowSurface(ml.display.sdl_window);
 
-    for (size_t i = 0; i < ARRAY_SIZE(ml.display.sdl_vscreen); i++) {
-        SDL_Surface* vs =
-            SDL_CreateRGBSurface(SDL_SWSURFACE, requested->width, requested->height,
-                                 bpp, masks.r, masks.g, masks.b, masks.a);
-        ml.display.sdl_vscreen[i] = vs;
-        if (vs == NULL) {
-            goto fail;
-        }
-        ml.display.vscreen[i].format = requested->format;
-        ml.display.vscreen[i].width = requested->width;
-        ml.display.vscreen[i].height = requested->height;
-        ml.display.vscreen[i].pixels = vs->pixels;
-        ml.display.dg.adr[i] = vs->pixels;
+    ml.display.sdl_draw_buffer =
+        SDL_CreateRGBSurface(SDL_SWSURFACE, requested->width, requested->height,
+                             bpp, masks.r, masks.g, masks.b, masks.a);
+    if (ml.display.sdl_draw_buffer == NULL) {
+        goto fail;
     }
+    ml.display.draw_buffer.format = requested->format;
+    ml.display.draw_buffer.width = requested->width;
+    ml.display.draw_buffer.height = requested->height;
+    ml.display.draw_buffer.pixels = ml.display.sdl_draw_buffer->pixels;
 
     SDL_ShowCursor(SDL_DISABLE);
 
@@ -161,16 +149,7 @@ const struct MLGraphicsBuffer*
 ml_get_draw_buffer(void)
 {
     if (ml.display.init) {
-        return &ml.display.vscreen[ml.display.bg_index];
-    }
-    return NULL;
-}
-
-const struct
-MLDisplayDG* ml_display_dg(void)
-{
-    if (ml.display.init) {
-        return &ml.display.dg;
+        return &ml.display.draw_buffer;
     }
     return NULL;
 }
@@ -191,12 +170,8 @@ ml_update_screen(void)
             SDL_Delay(delay_ms);
         }
 
-        (void)SDL_BlitSurface(ml.display.sdl_vscreen[ml.display.bg_index], NULL, ml.display.sdl_window_surface, NULL);
+        (void)SDL_BlitSurface(ml.display.sdl_draw_buffer, NULL, ml.display.sdl_window_surface, NULL);
         (void)SDL_UpdateWindowSurface(ml.display.sdl_window);
-
-        ml.display.bg_index ^= 1;
-        ml.display.dg.hid = ml.display.bg_index;
-        ml.display.dg.vis = ml.display.dg.hid ^ 1;
 
         ml.display.frame_start_time_ms = SDL_GetTicks();
     }

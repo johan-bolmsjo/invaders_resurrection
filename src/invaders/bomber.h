@@ -3,15 +3,15 @@
 #include "sprite.h"
 #include "collision.h"
 
-typedef struct _Bomber {
-    int        count;
-    int        x, y;            // Used in armada.c
-    Sprite     s;
-    Collision* c;
-} Bomber;
+struct Bomber {
+    int               count;
+    int               x, y;     // Used in armada.c
+    struct Sprite     sprite;
+    struct Collision* collision;
+};
 
 /// Initialise bomber.
-void bomber_init(Bomber* b);
+void bomber_init(struct Bomber* b);
 
 /// Animate bomber.
-void bomber_anim(Bomber* b);
+void bomber_anim(struct Bomber* b);

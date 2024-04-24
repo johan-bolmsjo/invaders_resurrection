@@ -17,15 +17,16 @@ xround(double x)
  */
 
 void
-scale_rgba(Image* src, Image* dst)
+scale_rgba(struct Image* src, struct Image* dst)
 {
     uint8_t *s, *d, r, g, b, a;
     int x, y, xi, xi2, yi, stride;
     double xp, yp, xpt, ypt, xpt2, ypt2, xpn, ypn, yp_max, xp_max,
         xx, yy, div_a, div_rgb, mul, ra, ga, ba, aa;
 
-    if (src->type != RGBA || dst->type != RGBA)
+    if (src->type != RGBA || dst->type != RGBA) {
         return;
+    }
 
     yp = 0;
     d = dst->image;
@@ -65,17 +66,20 @@ scale_rgba(Image* src, Image* dst)
             div_rgb = 0;
 
             for (yi = ceil(ypn) - floor(yp); yi > 0; yi--) {
-                if (ypt2 > ypn)
+                if (ypt2 > ypn) {
                     ypt2 = ypn;
+                }
 
                 xpt = xp;
                 xpt2 = ceil(xp);
-                if (xpt2 == xp)
+                if (xpt2 == xp) {
                     xpt2++;
+                }
 
                 for (xi2 = xi; xi2 > 0; xi2--) {
-                    if (xpt2 > xpn)
+                    if (xpt2 > xpn) {
                         xpt2 = xpn;
+                    }
 
                     mul = (xpt2 - xpt) * (ypt2 - ypt);
                     r = *s++;

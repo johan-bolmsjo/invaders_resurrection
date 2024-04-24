@@ -8,12 +8,25 @@
 #include "shields.h"
 #include "libmedia/libmedia.h"
 
-static Shot* shot_list = 0;
+struct Shot {
+    int               x;
+    int               y;
+    int               x_vector;
+    int               y_vector;
+    struct rgb565     color;
+    uint8_t           pend_rm;  // Pending removal if set
+    struct Collision* c;        // Collision callback function
+    void (*cb)(void);           // Extra callback function for player shots
+    struct Shot*      prev;
+    struct Shot*      next;
+};
+
+static struct Shot* shot_list = 0;
 
 int g_shot_obj = 0;
 
 static void
-shot_destroy(Shot* s)
+shot_destroy(struct Shot* s)
 {
     if (s->cb) {
         s->cb();
@@ -39,7 +52,7 @@ shot_destroy(Shot* s)
 }
 
 static int
-collision_cb(Collision* a, Collision* b)
+collision_cb(struct Collision* a, struct Collision* b)
 {
     if (b->gid == GID_SHIELD) {
         if (!shields_hit(a->x0, a->y0, -1, b->id)) {
@@ -51,8 +64,8 @@ collision_cb(Collision* a, Collision* b)
     return 1;
 }
 
-Shot*
-shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
+struct Shot*
+shot_create(int x, int y, int x_vector, int y_vector, struct rgb565 color,
             int fatal, int gid, void (*cb)(void))
 {
     if ((unsigned int)x > (MLDisplayWidth - 2) ||
@@ -60,9 +73,9 @@ shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
         return 0;
     }
 
-    Shot* s = malloc(sizeof(Shot));
+    struct Shot* s = malloc(sizeof(struct Shot));
 
-    Collision* c = NULL;
+    struct Collision* c = NULL;
     if (fatal) {
         c = collision_create(0, s, gid, collision_cb);
         c->x0 = x;
@@ -75,10 +88,8 @@ shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
     s->y = y;
     s->x_vector = x_vector;
     s->y_vector = y_vector;
-    s->colour = colour;
+    s->color = color;
     s->pend_rm = 0;
-    s->adr[0] = 0;
-    s->adr[1] = 0;
     s->c = c;
     s->cb = cb;
 
@@ -97,19 +108,17 @@ shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
 }
 
 void
-shot_draw(const DG* dg)
+shot_draw(const struct MLGraphicsBuffer* dst)
 {
-    Shot* s = shot_list;
+    struct Shot* s = shot_list;
     while (s) {
         if (!s->pend_rm) {
-            uint16_t* p = dg->adr[dg->hid] + s->x + s->y * MLDisplayWidth;
-            s->adr[dg->hid] = p;
-            p[0] = s->colour;
-            p[1] = s->colour;
-            p[MLDisplayWidth] = s->colour;
-            p[MLDisplayWidth + 1] = s->colour;
+            struct rgb565* p = ml_graphics_buffer_xy(dst, s->x, s->y);
+            p[0] = s->color;
+            p[1] = s->color;
+            p[dst->width] = s->color;
+            p[dst->width + 1] = s->color;
         }
-
         s = s->next;
     }
 }
@@ -117,10 +126,10 @@ shot_draw(const DG* dg)
 void
 shot_update(void)
 {
-    Shot *s = shot_list;
+    struct Shot* s = shot_list;
     while (s) {
         if (s->pend_rm) {
-            Shot* st = s;
+            struct Shot* st = s;
             s = s->next;
             shot_destroy(st);
             continue;

@@ -2,7 +2,7 @@
 
 #include <inttypes.h>
 
-static RunLevelFunc* base = 0;
+static struct RunLevelFunc* base = 0;
 
 int g_runlevel      = RUNLEVEL_TITLE0; // Current runlevel
 int g_next_runlevel = RUNLEVEL_TITLE0; // Next runlevel
@@ -11,7 +11,7 @@ void
 runlevel_update(void)
 {
     int change = 1;
-    RunLevelFunc* r;
+    struct RunLevelFunc* r;
 
     if (g_runlevel != g_next_runlevel) {
         r = base;
@@ -39,8 +39,8 @@ runlevel_update(void)
 }
 
 void
-runlevel_register_func(RunLevelFunc* r, int from, int to,
-                       int (*handler)(RunLevelFunc*))
+runlevel_register_func(struct RunLevelFunc* r, int from, int to,
+                       int (*handler)(struct RunLevelFunc*))
 {
     r->from = from;
     r->to = to;

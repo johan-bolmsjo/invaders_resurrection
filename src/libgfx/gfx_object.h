@@ -34,22 +34,22 @@ int16_t y_off
 
 
 struct GfxFrame {
-    int width;
-    int height;
-    int x_off;
-    int y_off;
-    int c_longs;
+    int            width;
+    int            height;
+    int            x_off;
+    int            y_off;
+    int            c_longs;
     struct rgb565* graphics;
-    uint8_t* alpha;
-    uint32_t* collision;
+    uint8_t*       alpha;
+    uint32_t*      collision;
 };
 
 struct GfxObject;
 
 struct GfxObject {
-    uint8_t name_len;
-    char* name;
-    int frames;
+    uint8_t           name_len;
+    char*             name;
+    int               frames;
     struct GfxFrame** fpp;
     struct GfxObject* prev;
     struct GfxObject* next;

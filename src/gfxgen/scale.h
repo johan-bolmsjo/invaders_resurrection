@@ -2,4 +2,4 @@
 
 #include "image.h"
 
-void scale_rgba(Image* src, Image* dst);
+void scale_rgba(struct Image* src, struct Image* dst);

@@ -113,11 +113,6 @@ stars_draw(const struct MLGraphicsBuffer* buf)
             continue;
         }
         struct rgb565* plot_addr = ml_graphics_buffer_xy(buf, star->x_off, y);
-        // Only plot on black, assume other objects are solid.
-        //
-        // TODO(jb): Remove when all delta drawing code has been removed.
-        if (plot_addr->v == 0) {
-            *plot_addr = star->color;
-        }
+        *plot_addr = star->color;
     }
 }

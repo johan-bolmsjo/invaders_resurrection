@@ -10,7 +10,7 @@
 void mystery_module_init(void);
 
 /// Draw mystery.
-void mystery_draw(const DG* dg);
+void mystery_draw(const struct MLGraphicsBuffer* dst);
 
 /// Updates and creates "mysteries" during game play.
 void mystery_update(void);

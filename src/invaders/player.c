@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "gids.h"
+#include "libutil/color.h"
 #include "missiles.h"
 #include "runlevel.h"
 #include "sfx.h"
@@ -23,9 +24,9 @@ static int x_vector_pos = 0;
 static int y_vector_pos = 0;
 
 struct Player {
-    int        steer_count;
-    Sprite     sprite;
-    Collision* collision;
+    int               steer_count;
+    struct Sprite     sprite;
+    struct Collision* collision;
 };
 
 static int               count[15];
@@ -42,7 +43,7 @@ static int is_alive = false;
 // Make sure that no shots are alive before
 // changing from runlevel play1 to play2.
 static int
-rl_play1_play2(RunLevelFunc* r)
+rl_play1_play2(struct RunLevelFunc* r)
 {
     (void)r;
     return !live_shots ? 1 : 0;
@@ -51,7 +52,7 @@ rl_play1_play2(RunLevelFunc* r)
 // Make sure that no missiles are alive before
 // changing from runlevel play2 to play0.
 static int
-rl_play2_play0(RunLevelFunc* r)
+rl_play2_play0(struct RunLevelFunc* r)
 {
     (void)r;
     return !g_missiles_alive ? 1 : 0;
@@ -62,7 +63,7 @@ rl_play2_play0(RunLevelFunc* r)
 //
 // Also clear joystick button flag.
 static int
-rl_play2_title0(RunLevelFunc* r)
+rl_play2_title0(struct RunLevelFunc* r)
 {
     (void)r;
 
@@ -86,9 +87,9 @@ void
 player_module_init(struct MLInput* input)
 {
     double step = 1.5708 / 7, pos = -1.5708;
-    static RunLevelFunc play1_play2;
-    static RunLevelFunc play2_play0;
-    static RunLevelFunc play2_title0;
+    static struct RunLevelFunc play1_play2;
+    static struct RunLevelFunc play2_play0;
+    static struct RunLevelFunc play2_title0;
 
     for (int i = 0; i < 15; i++) {
         count[i] = floor(2 * sin(fabs(pos)) + 0.5);
@@ -199,7 +200,7 @@ die(void)
             }
         } while ((abs(xv) + abs(yv)) < 3);
 
-        shot_create(x + xv, y + yv, xv, yv, 31 << 5 | 31, 0, 0, 0);
+        shot_create(x + xv, y + yv, xv, yv, pack_rgb565((struct rgb){.g =  31, .b = 31}), 0, 0, 0);
     }
 
     if (g_runlevel == RUNLEVEL_PLAY1) {
@@ -223,7 +224,7 @@ player_kill(void)
 }
 
 static int
-collision_cb(Collision* a, Collision* b)
+collision_cb(struct Collision* a, struct Collision* b)
 {
     (void)a;
     (void)b;
@@ -234,10 +235,10 @@ collision_cb(Collision* a, Collision* b)
 }
 
 void
-player_draw(const DG* dg)
+player_draw(const struct MLGraphicsBuffer* dst)
 {
     if (player.collision) {
-        sprite_draw(dg, &player.sprite);
+        sprite_draw(dst, &player.sprite);
     }
 }
 
@@ -293,7 +294,7 @@ player_update(struct MLInput* input)
                     if ((!live_shots || quickshot) &&
                         g_runlevel == RUNLEVEL_PLAY1) {
                         if (shot_create(player.sprite.x - 1, player.sprite.y - 16,
-                                        0, -8, 0xFFFF, 1, GID_PLAYER_SHOT,
+                                        0, -8, pack_rgb565(rgb565_color_white()), 1, GID_PLAYER_SHOT,
                                         shot_cb)) {
                             live_shots++;
                         }

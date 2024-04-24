@@ -2,11 +2,9 @@
 
 #include "image.h"
 
-typedef struct _FileFormat FileFormat;
-
-struct _FileFormat {
-    char** exts;
-    Image* (*func)(char*);
+struct FileFormat {
+    const char** exts;
+    struct Image* (*func)(char*);
 };
 
-Image* ff_read(char* path);
+struct Image* ff_read(char* path);

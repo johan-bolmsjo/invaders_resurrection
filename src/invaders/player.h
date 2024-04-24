@@ -11,7 +11,7 @@ void player_module_init(struct MLInput* input);
 void player_kill(void);
 
 /// Draw player.
-void player_draw(const DG* dg);
+void player_draw(const struct MLGraphicsBuffer* dst);
 
 /// Update player based on input.
 void player_update(struct MLInput* input);

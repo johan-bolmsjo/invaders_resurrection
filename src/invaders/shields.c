@@ -42,7 +42,7 @@ static shield_type g_shield3;
 static shield_type g_shield4;
 static shield_type* g_shields[shield_count] = {&g_shield1, &g_shield2, &g_shield3, &g_shield4};
 
-static Collision* g_collisions[shield_count] = {0};
+static struct Collision* g_collisions[shield_count] = {0};
 
 static struct Clip g_clip1 = {128 - shield_x_dim / 2, MLDisplayHeight - 80 - shield_y_dim / 2,
                               shield_x_dim, shield_y_dim, 0, 0};
@@ -64,7 +64,7 @@ static uint8_t g_flash_count[shield_count] = {
 
 // Collision callback routine.
 static int
-collision_cb(Collision* a, Collision* b)
+collision_cb(struct Collision* a, struct Collision* b)
 {
     if (b->gid == GID_BOMBER) {
         g_draw[a->id] = false;

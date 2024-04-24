@@ -13,7 +13,7 @@
 #define ARMADA_Y  5
 #define ARMADA_XY (ARMADA_X * ARMADA_Y)
 
-typedef struct _Armada {
+struct Armada {
     uint8_t y_off;              // Start offset Y-axis
 
     uint8_t alive_x[ARMADA_X];  // Alive in X-axis
@@ -39,10 +39,10 @@ typedef struct _Armada {
 
     uint8_t missiles_max;       // Max number of misiles
 
-    Bomber b[ARMADA_Y][ARMADA_X];
-} Armada;
+    struct Bomber b[ARMADA_Y][ARMADA_X];
+};
 
-extern Armada armada; // Used in missiles.c as well
+extern struct Armada armada; // Used in missiles.c as well
 
 /// Initialize module.
 void armada_module_init(void);
@@ -51,7 +51,7 @@ void armada_module_init(void);
 void armada_reset(void);
 
 /// Draw armada on the screen.
-void armada_draw(const DG* dg);
+void armada_draw(const struct MLGraphicsBuffer* dst);
 
 /// Main bombers function.
 void armada_update(void);

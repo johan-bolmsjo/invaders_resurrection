@@ -7,32 +7,18 @@
 #include <inttypes.h>
 
 #include "collision.h"
+#include "libutil/color.h"
 
-typedef struct _Shot Shot;
-
-struct _Shot {
-    int x;
-    int y;
-    int x_vector;
-    int y_vector;
-    uint16_t colour;
-    uint8_t pend_rm;  /* Pending removal if set */
-    uint16_t* adr[2]; /* Plot adresses */
-    Collision* c;     /* Collision callback function */
-    void (*cb)(void); /* Extra callback function for player shots */
-    Shot* prev;
-    Shot* next;
-};
+struct Shot;
 
 extern int g_shot_obj;
 
 /// Create shot.
-Shot* shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
-                  int fatal, int gid, void (*cb)(void));
-
+struct Shot* shot_create(int x, int y, int x_vector, int y_vector, struct rgb565 colour,
+                         int fatal, int gid, void (*cb)(void));
 
 /// Draw all shots.
-void shot_draw(const DG* dg);
+void shot_draw(const struct MLGraphicsBuffer* dst);
 
 /// Update all shots.
 void shot_update(void);

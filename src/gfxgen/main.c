@@ -11,12 +11,10 @@
 int
 main(int argc, char** argv)
 {
-    int8_t c;
-    GfxObject* o;
-
     extern char* optarg;
     extern int optind, opterr, optopt;
 
+    int8_t c;
     while ((c = getopt(argc, argv, "hi:o:")) != -1) {
         switch (c) {
         case 'h':
@@ -31,13 +29,14 @@ main(int argc, char** argv)
             }
             break;
 
-        case 'o':
-            o = gfx_get_first_object();
+        case 'o': {
+            struct GfxObject* o = gfx_get_first_object();
             if (o) {
                 if (gfx_write(o, optarg))
                     return 2;
             }
             break;
+        }
 
         case ':':
             fprintf(stderr, "Option -%c requires an argument.\n", optopt);

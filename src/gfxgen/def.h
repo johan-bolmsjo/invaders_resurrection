@@ -6,25 +6,25 @@
 
 #define DEF_MAX_CMD_SIZE 100
 
-typedef struct _DefFile {
+struct DefFile {
     char* mem;
     int size;
     int pos;
-} DefFile;
+};
 
-typedef struct _DefObject {
-    GfxObject* o; /* Object to attach frames to */
-    int frames;
-    Image** ipp;
-    Clip clip;
-    int x_off; /* Hot spot */
-    int y_off;
-} DefObject;
+struct DefObject {
+    struct GfxObject* o;        // Object to attach frames to
+    int               frames;
+    struct Image**    ipp;
+    struct Clip       clip;
+    int               x_off;    // Hot spot
+    int               y_off;
+};
 
-typedef struct _DefFunc {
+struct DefFunc {
     char* magic;
-    int (*func)(DefObject*);
-} DefFunc;
+    int (*func)(struct DefObject*);
+};
 
 // Execute commands from graphics definition file.
 int def_run(const char* filename);

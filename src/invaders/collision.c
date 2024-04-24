@@ -4,17 +4,15 @@
 
 #include "error.h"
 
-static Collision* c_base = NULL; /* Linked list base */
+static struct Collision* c_base = NULL; /* Linked list base */
 
 int g_collision_obj = 0;
 
-Collision*
+struct Collision*
 collision_create(int id, void* id_p, int gid,
-                 int (*handler)(Collision*, Collision*))
+                 int (*handler)(struct Collision*, struct Collision*))
 {
-    Collision* c;
-
-    c = malloc(sizeof(Collision));
+    struct Collision* c = malloc(sizeof(struct Collision));
     c->id = id;
     c->id_p = id_p;
     c->gid = gid;
@@ -35,23 +33,26 @@ collision_create(int id, void* id_p, int gid,
 }
 
 void
-collision_destroy(Collision* c)
+collision_destroy(struct Collision* c)
 {
-    if (c->prev)
+    if (c->prev) {
         c->prev->next = c->next;
-    else
+    } else {
         c_base = c->next;
-    if (c->next)
+    }
+
+    if (c->next) {
         c->next->prev = c->prev;
+    }
 
     g_collision_obj--;
     free(c);
 }
 
 void
-collision_update_from_sprite(Collision* c, Sprite* s)
+collision_update_from_sprite(struct Collision* c, struct Sprite* s)
 {
-    struct GfxFrame* f = s->go->fpp[s->frame];
+    struct GfxFrame* f = s->gfx_obj->fpp[s->frame];
 
     c->x0 = s->x - f->x_off;
     c->y0 = s->y - f->y_off;
@@ -65,25 +66,22 @@ collision_update_from_sprite(Collision* c, Sprite* s)
 // Sort all collition objects in list by x0.
 // TODO(jb): The function goes out of its sorting range by one.
 static void
-sort_list(Collision** list, int n)
+sort_list(struct Collision** list, int n)
 {
-    int i, j;
-    int v;
-    Collision* t;
-
-    if (n <= 1)
+    if (n <= 1) {
         return;
+    }
 
-    v = list[0]->x0;
-    i = 0;
-    j = n;
+    struct Collision* t;
+    int v = list[0]->x0;
+    int i = 0;
+    int j = n;
     for (;;) {
-        while (list[++i]->x0 < v && i < n)
-            ;
-        while (list[--j]->x0 > v)
-            ;
-        if (i >= j)
+        while (list[++i]->x0 < v && i < n) {}
+        while (list[--j]->x0 > v) {}
+        if (i >= j) {
             break;
+        }
         t = list[i];
         list[i] = list[j];
         list[j] = t;
@@ -103,15 +101,15 @@ collision_detection(void)
     }
 
     // List sorted by x0
-    Collision** tmp_vec = malloc(sizeof(Collision) * (g_collision_obj + 1));
-    Collision *c = c_base;
+    struct Collision** tmp_vec = malloc(sizeof(struct Collision) * (g_collision_obj + 1));
+    struct Collision *c = c_base;
     for (int i = 0; i < g_collision_obj; i++) {
         tmp_vec[i] = c;
         c = c->next;
     }
 
     // TODO(jb): The sort function goes out of its sorting range by one.
-    Collision end_marker = {0};
+    struct Collision end_marker = {0};
     tmp_vec[g_collision_obj] = &end_marker;
     sort_list(tmp_vec, g_collision_obj);
 
@@ -135,7 +133,7 @@ collision_detection(void)
 
     c = c_base;
     while (c) {
-        Collision* c_tmp = c;
+        struct Collision* c_tmp = c;
         c = c->next;
         if (c_tmp->pend_rm) {
             collision_destroy(c_tmp);
