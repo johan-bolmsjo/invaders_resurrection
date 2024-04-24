@@ -31,11 +31,8 @@ Shot* shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
                   int fatal, int gid, void (*cb)(void));
 
 
-/// Hide all shots.
-void shot_hide(const DG* dg);
-
-/// Show all shots.
-void shot_show(const DG* dg);
+/// Draw all shots.
+void shot_draw(const DG* dg);
 
 /// Update all shots.
 void shot_update(void);

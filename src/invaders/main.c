@@ -144,7 +144,6 @@ main(void)
 
         armada_hide(dg);
         mystery_hide(dg);
-        shot_hide(dg);
 
         title_draw(dg, draw_buf);
         status_draw(draw_buf);
@@ -153,7 +152,7 @@ main(void)
         missiles_draw(dg);
         armada_show(dg);
         mystery_show(dg);
-        shot_show(dg);
+        shot_draw(dg);
 
         // TODO(jb): Can be drawn first when all smart object removal code has been removed.
         stars_draw(draw_buf);

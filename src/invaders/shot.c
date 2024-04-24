@@ -21,13 +21,15 @@ shot_destroy(Shot* s)
     }
 
     if (s->pend_rm == 2) {
-        if (s->prev)
+        if (s->prev) {
             s->prev->next = s->next;
-        else
+        } else {
             shot_list = s->next;
+        }
 
-        if (s->next)
+        if (s->next) {
             s->next->prev = s->prev;
+        }
 
         free(s);
         g_shot_obj--;
@@ -40,8 +42,9 @@ static int
 collision_cb(Collision* a, Collision* b)
 {
     if (b->gid == GID_SHIELD) {
-        if (!shields_hit(a->x0, a->y0, -1, b->id))
+        if (!shields_hit(a->x0, a->y0, -1, b->id)) {
             return 0;
+        }
     }
 
     shot_destroy(a->id_p);
@@ -94,24 +97,7 @@ shot_create(int x, int y, int x_vector, int y_vector, uint16_t colour,
 }
 
 void
-shot_hide(const DG* dg)
-{
-    Shot* s = shot_list;
-    while (s) {
-        uint16_t* p = s->adr[dg->hid];
-        if (p) {
-            p[0] = 0;
-            p[1] = 0;
-            p[MLDisplayWidth] = 0;
-            p[MLDisplayWidth + 1] = 0;
-        }
-
-        s = s->next;
-    }
-}
-
-void
-shot_show(const DG* dg)
+shot_draw(const DG* dg)
 {
     Shot* s = shot_list;
     while (s) {
@@ -131,11 +117,10 @@ shot_show(const DG* dg)
 void
 shot_update(void)
 {
-    Shot *s = shot_list, *st;
-
+    Shot *s = shot_list;
     while (s) {
         if (s->pend_rm) {
-            st = s;
+            Shot* st = s;
             s = s->next;
             shot_destroy(st);
             continue;
