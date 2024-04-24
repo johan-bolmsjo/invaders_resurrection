@@ -25,11 +25,7 @@ static int
 rl_play1_play2(RunLevelFunc* r)
 {
     (void)r;
-
-    if (player_is_alive() && (ufo.c || score_timer))
-        return 0;
-
-    return 1;
+    return (player_is_alive() && (ufo.c || score_timer)) ? 0 : 1;
 }
 
 // Runlevel function.
@@ -37,11 +33,7 @@ static int
 rl_play2_title0(RunLevelFunc* r)
 {
     (void)r;
-
-    if (ufo.c || score_timer)
-        return 0;
-
-    return 1;
+    return (ufo.c || score_timer) ? 0 : 1;
 }
 
 static int
@@ -50,12 +42,11 @@ collision_cb(Collision* a, Collision* b)
     (void)a;
     (void)b;
 
-    int score;
-
-    if (b->gid != GID_PLAYER_SHOT)
+    if (b->gid != GID_PLAYER_SHOT) {
         return 0;
+    }
 
-    score = (int)(3.0 * random() / (RAND_MAX + 1.0));
+    int score = (int)(3.0 * random() / (RAND_MAX + 1.0));
 
     score_sprite.x = ufo.s.x;
     score_sprite.y = ufo.s.y;
@@ -85,14 +76,7 @@ mystery_module_init(void)
 }
 
 void
-mystery_hide(const DG* dg)
-{
-    sprite_hide(dg, &ufo.s);
-    sprite_hide(dg, &score_sprite);
-}
-
-void
-mystery_show(const DG* dg)
+mystery_draw(const DG* dg)
 {
     if (ufo.c) {
         sprite_draw(dg, &ufo.s);

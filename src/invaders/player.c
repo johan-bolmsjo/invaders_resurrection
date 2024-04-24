@@ -234,12 +234,6 @@ collision_cb(Collision* a, Collision* b)
 }
 
 void
-player_hide(const DG* dg)
-{
-    sprite_hide(dg, &player.sprite);
-}
-
-void
 player_draw(const DG* dg)
 {
     if (player.collision) {

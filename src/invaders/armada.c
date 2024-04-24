@@ -47,8 +47,9 @@ collision_cb(Collision* a, Collision* b)
     int i, x, y, xv, yv;
     Bomber* bomber;
 
-    if (b->gid != GID_PLAYER_SHOT)
+    if (b->gid != GID_PLAYER_SHOT) {
         return 0;
+    }
 
     bomber = (Bomber*)a->id_p;
     x = bomber->s.x;
@@ -56,13 +57,15 @@ collision_cb(Collision* a, Collision* b)
 
     for (i = 0; i < 4; i++) {
         xv = x_vector[x_vector_c++];
-        if (x_vector_c == X_VECTORS)
+        if (x_vector_c == X_VECTORS) {
             x_vector_c = 0;
+        }
 
         do {
             yv = y_vector[y_vector_c++];
-            if (y_vector_c == Y_VECTORS)
+            if (y_vector_c == Y_VECTORS) {
                 y_vector_c = 0;
+            }
         } while ((abs(xv) + abs(yv)) < 3);
 
         shot_create(x + xv, y + yv, xv, yv, 31 << 5, 0, 0, 0);
@@ -72,12 +75,15 @@ collision_cb(Collision* a, Collision* b)
     x = bomber->x;
     y = bomber->y;
 
-    if (y < ARMADA_Y)
+    if (y < ARMADA_Y) {
         g_score += 30;
-    if (y >= ARMADA_Y && y < (ARMADA_Y * 3))
+    }
+    if (y >= ARMADA_Y && y < (ARMADA_Y * 3)) {
         g_score += 20;
-    if (y >= (ARMADA_Y * 3))
+    }
+    if (y >= (ARMADA_Y * 3)) {
         g_score += 10;
+    }
 
     armada.alive--;
 
@@ -86,23 +92,31 @@ collision_cb(Collision* a, Collision* b)
         armada.alive_y[y]--;
 
         if (!armada.alive_x[x]) {
-            for (; armada.lm <= armada.rm; armada.lm++)
-                if (armada.alive_x[armada.lm])
+            for (; armada.lm <= armada.rm; armada.lm++) {
+                if (armada.alive_x[armada.lm]) {
                     break;
+                }
+            }
 
-            for (; armada.rm >= armada.lm; armada.rm--)
-                if (armada.alive_x[armada.rm])
+            for (; armada.rm >= armada.lm; armada.rm--) {
+                if (armada.alive_x[armada.rm]) {
                     break;
+                }
+            }
         }
 
         if (!armada.alive_y[y]) {
-            for (; armada.tm <= armada.bm; armada.tm++)
-                if (armada.alive_y[armada.tm])
+            for (; armada.tm <= armada.bm; armada.tm++) {
+                if (armada.alive_y[armada.tm]) {
                     break;
+                }
+            }
 
-            for (; armada.bm >= armada.tm; armada.bm--)
-                if (armada.alive_y[armada.bm])
+            for (; armada.bm >= armada.tm; armada.bm--) {
+                if (armada.alive_y[armada.bm]) {
                     break;
+                }
+            }
 
             armada.rows--;
         }
@@ -160,8 +174,9 @@ move_armada(void)
     int i, x = 0, y = 0;
     static int sfx_counter = 0;
 
-    if (!armada.alive)
+    if (!armada.alive) {
         return;
+    }
 
     sfx_counter++;
 
@@ -174,13 +189,15 @@ move_armada(void)
     if (armada.row_c >= armada.row_cw) {
         armada.row_c = 0;
 
-        if (armada.row < 0)
+        if (armada.row < 0) {
             armada.row = armada.bm;
+        }
 
         while (!armada.alive_y[armada.row]) {
             armada.row--;
-            if (armada.row < 0)
+            if (armada.row < 0) {
                 armada.row = armada.bm;
+            }
         }
 
         if (armada.row == armada.tm) {
@@ -189,20 +206,23 @@ move_armada(void)
         }
 
         if (armada.dir_r) {
-            if (armada.b[armada.row][armada.rm].s.x + X_STEP <= X_MAX)
+            if (armada.b[armada.row][armada.rm].s.x + X_STEP <= X_MAX) {
                 x = X_STEP;
-            else
+            } else {
                 armada.dir_d = 1;
+            }
         } else {
-            if (armada.b[armada.row][armada.lm].s.x - X_STEP >= X_MIN)
+            if (armada.b[armada.row][armada.lm].s.x - X_STEP >= X_MIN) {
                 x = -X_STEP;
-            else
+            } else {
                 armada.dir_d = 1;
+            }
         }
 
         if (armada.dir_d) {
-            if (armada.b[armada.row][armada.lm].s.y + Y_STEP == Y_MAX)
+            if (armada.b[armada.row][armada.lm].s.y + Y_STEP == Y_MAX) {
                 armada.kill = 1;
+            }
 
             if (armada.row == armada.tm) {
                 armada.dir_d = 0;
@@ -257,10 +277,12 @@ armada_module_init(void)
     type = 0;
 
     for (i = 0; i < ARMADA_Y; i++) {
-        if (i == 1)
+        if (i == 1) {
             type = 1;
-        if (i == 3)
+        }
+        if (i == 3) {
             type = 2;
+        }
 
         for (j = 0; j < ARMADA_X; j++) {
             armada.b[i][j].x = j;
@@ -282,8 +304,9 @@ armada_new(void)
     int i;
     Bomber* b = armada.b[0];
 
-    if (armada.alive)
+    if (armada.alive) {
         return;
+    }
 
     armada.y_off++;
     if (armada.y_off > 2) {
@@ -291,11 +314,13 @@ armada_new(void)
         armada.missiles_max++;
     }
 
-    for (i = 0; i < ARMADA_X; i++)
+    for (i = 0; i < ARMADA_X; i++) {
         armada.alive_x[i] = ARMADA_Y;
+    }
 
-    for (i = 0; i < ARMADA_Y; i++)
+    for (i = 0; i < ARMADA_Y; i++) {
         armada.alive_y[i] = ARMADA_X;
+    }
 
     for (i = 0; i < ARMADA_XY; i++) {
         b[i].count = 0;
@@ -325,16 +350,7 @@ armada_reset(void)
 }
 
 void
-armada_hide(const DG* dg)
-{
-    Bomber* b = armada.b[0];
-    for (int i = 0; i < ARMADA_XY; i++) {
-        sprite_hide(dg, &b[i].s);
-    }
-}
-
-void
-armada_show(const DG* dg)
+armada_draw(const DG* dg)
 {
     Bomber* b = armada.b[0];
     for (int i = 0; i < ARMADA_XY; i++) {
@@ -353,10 +369,11 @@ armada_update(void)
             shields_new();
         }
 
-        if (armada.vis_c < ARMADA_XY)
+        if (armada.vis_c < ARMADA_XY) {
             armada.b[0][armada.vis_c++].s.show = true;
-        else
+        } else {
             g_next_runlevel = RUNLEVEL_PLAY1;
+        }
     }
 
     if (g_runlevel == RUNLEVEL_PLAY1) {

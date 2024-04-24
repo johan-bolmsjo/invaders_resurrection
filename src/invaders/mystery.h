@@ -9,11 +9,8 @@
 /// Initialize module.
 void mystery_module_init(void);
 
-/// Hide mystery.
-void mystery_hide(const DG* dg);
-
-/// Show mystery.
-void mystery_show(const DG* dg);
+/// Draw mystery.
+void mystery_draw(const DG* dg);
 
 /// Updates and creates "mysteries" during game play.
 void mystery_update(void);

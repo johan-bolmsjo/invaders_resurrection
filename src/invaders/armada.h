@@ -50,11 +50,8 @@ void armada_module_init(void);
 /// Reset some values, called from the title screen.
 void armada_reset(void);
 
-/// Remove armada from the screen.
-void armada_hide(const DG* dg);
-
 /// Draw armada on the screen.
-void armada_show(const DG* dg);
+void armada_draw(const DG* dg);
 
 /// Main bombers function.
 void armada_update(void);

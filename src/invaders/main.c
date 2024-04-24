@@ -142,16 +142,13 @@ main(void)
 
         ml_graphics_buffer_clear(draw_buf);
 
-        armada_hide(dg);
-        mystery_hide(dg);
-
         title_draw(dg, draw_buf);
         status_draw(draw_buf);
         shields_draw(draw_buf);
         player_draw(dg);
         missiles_draw(dg);
-        armada_show(dg);
-        mystery_show(dg);
+        armada_draw(dg);
+        mystery_draw(dg);
         shot_draw(dg);
 
         // TODO(jb): Can be drawn first when all smart object removal code has been removed.
