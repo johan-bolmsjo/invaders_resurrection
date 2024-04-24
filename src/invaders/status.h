@@ -13,8 +13,5 @@ extern unsigned int g_hi_score;
 /// Reset status.
 void status_reset(void);
 
-/// Clear status list.
-void status_hide(const DG* dg);
-
 /// Update and draw status list.
-void status_show(const DG* dg);
+void status_draw(const struct MLGraphicsBuffer* dst);

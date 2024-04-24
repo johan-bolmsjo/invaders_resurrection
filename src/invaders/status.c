@@ -3,6 +3,7 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "libmedia/libmedia.h"
 #include "libutil/color.h"
 #include "prim.h"
 #include "runlevel.h"
@@ -41,22 +42,9 @@ status_reset(void)
 }
 
 void
-status_hide(const DG* dg)
+status_draw(const struct MLGraphicsBuffer* dst)
 {
-    const struct Clip c = {0, 0, 42 * 8, 8, 0, 0};
-
-    if (g_runlevel < RUNLEVEL_PLAY0) {
-        // TODO(jb): Compatibility; remove
-        struct MLGraphicsBuffer draw_buf = ml_graphics_buffer_of_dg(dg);
-        blit_clipped_colour_box(&draw_buf, &c, pack_rgb565(rgb565_color_black()));
-    }
-}
-
-void
-status_show(const DG* dg)
-{
-    int i, j, k, c;
-    struct rgb565* dst = (struct rgb565*)dg->adr[dg->hid];
+    struct rgb565* dst_p = ml_graphics_buffer_xy(dst, 0, 0);
 
     if (g_runlevel >= RUNLEVEL_PLAY0 &&
         g_runlevel <= RUNLEVEL_PLAY2) {
@@ -78,18 +66,19 @@ status_show(const DG* dg)
             extra_life_counter = 0;
         }
 
-        if (g_hi_score > 999999)
+        if (g_hi_score > 999999) {
             g_hi_score = 0;
+        }
 
-        c = g_pilots + '0';
+        int c = g_pilots + '0';
         if (pilots_str != c) {
             pilots_str = c;
             pilots_atr = 2;
         }
 
-        j = 100000;
-        k = g_score;
-        for (i = 0; i < 6; i++) {
+        int j = 100000;
+        int k = g_score;
+        for (int i = 0; i < 6; i++) {
             c = k / j;
             k -= (c * j);
             j /= 10;
@@ -101,40 +90,43 @@ status_show(const DG* dg)
         }
 
         if (g_score >= g_hi_score) {
-            for (i = 0; i < 6; i++) {
+            for (int i = 0; i < 6; i++) {
                 hi_score_str[i] = score_str[i];
                 hi_score_atr[i] = score_atr[i];
             }
             g_hi_score = g_score;
         }
 
-        text_print_string_at_address("Pilots:", palette[0], dst);
-        dst += (8 * 8);
+        text_print_string_at_address("Pilots:", palette[0], dst_p);
+        dst_p += (8 * 8);
 
-        text_print_char_at_address(pilots_str, palette[pilots_atr], dst);
-        if (pilots_atr > 0)
+        text_print_char_at_address(pilots_str, palette[pilots_atr], dst_p);
+        if (pilots_atr > 0) {
             pilots_atr--;
-        dst += (3 * 8);
-
-        text_print_string_at_address("Score:", palette[0], dst);
-        dst += (7 * 8);
-
-        for (i = 0; i < 6; i++) {
-            text_print_char_at_address(score_str[i], palette[score_atr[i]], dst);
-            if (score_atr[i] > 0)
-                score_atr[i]--;
-            dst += (1 * 8);
         }
-        dst += (2 * 8);
+        dst_p += (3 * 8);
 
-        text_print_string_at_address("Hi Score:", palette[0], dst);
-        dst += (10 * 8);
+        text_print_string_at_address("Score:", palette[0], dst_p);
+        dst_p += (7 * 8);
 
-        for (i = 0; i < 6; i++) {
-            text_print_char_at_address(hi_score_str[i], palette[hi_score_atr[i]], dst);
-            if (hi_score_atr[i] > 0)
+        for (int i = 0; i < 6; i++) {
+            text_print_char_at_address(score_str[i], palette[score_atr[i]], dst_p);
+            if (score_atr[i] > 0) {
+                score_atr[i]--;
+            }
+            dst_p += (1 * 8);
+        }
+        dst_p += (2 * 8);
+
+        text_print_string_at_address("Hi Score:", palette[0], dst_p);
+        dst_p += (10 * 8);
+
+        for (int i = 0; i < 6; i++) {
+            text_print_char_at_address(hi_score_str[i], palette[hi_score_atr[i]], dst_p);
+            if (hi_score_atr[i] > 0) {
                 hi_score_atr[i]--;
-            dst += (1 * 8);
+            }
+            dst_p += (1 * 8);
         }
     }
 }

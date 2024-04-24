@@ -65,13 +65,13 @@ is_char_space(char c) {
 }
 
 bool
-text_print_string_animated(const struct MLGraphicsBuffer* buf, const char* s, int x, int y, int frames)
+text_print_string_animated(const struct MLGraphicsBuffer* dst, const char* s, int x, int y, int frames)
 {
     static const struct rgb565 palette[3] = {{65535}, {40314}, {17141}};
     const int char_frame_time = ARRAY_SIZE(palette);
     const int xbegin = x;
-    const int xmax = buf->width / CharWidth - 1;
-    const int ymax = buf->height / CharHeight - 1;
+    const int xmax = dst->width / CharWidth - 1;
+    const int ymax = dst->height / CharHeight - 1;
 
     bool space = false;
     char c;
@@ -87,7 +87,7 @@ text_print_string_animated(const struct MLGraphicsBuffer* buf, const char* s, in
         default: {
             const struct rgb565 color = palette[min_int(frames, char_frame_time) - 1];
             if (x <= xmax && y <= ymax) {
-                text_print_char_at_address(c, color, ml_graphics_buffer_xy(buf, x * CharWidth, y * CharHeight));
+                text_print_char_at_address(c, color, ml_graphics_buffer_xy(dst, x * CharWidth, y * CharHeight));
             }
             x++;
         }

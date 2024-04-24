@@ -26,8 +26,8 @@ void text_print_char_at_address(char c, struct rgb565 color, struct rgb565* addr
 void text_print_string_at_address(const char* s, struct rgb565 color, struct rgb565* addr);
 
 /// Print string [s] in an animated fashion at character coordinates [x]
-/// and [y]. The [frames] parameter determines how many frames to emit
-/// before stop drawing. The caller is expected to increment frames for
-/// each call to this function. Returns true when the animation is
-/// complete.
-bool text_print_string_animated(const struct MLGraphicsBuffer* buf, const char* s, int x, int y, int frames);
+/// and [y] in graphics buffer [dst]. The [frames] parameter determines
+/// how many frames to emit before stop drawing. The caller is expected
+/// to increment frames for each call to this function. Returns true
+/// when the animation is complete.
+bool text_print_string_animated(const struct MLGraphicsBuffer* dst, const char* s, int x, int y, int frames);
