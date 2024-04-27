@@ -18,7 +18,6 @@ static struct {
     struct {
         bool init;
         SDL_Window* sdl_window;
-        SDL_Surface* sdl_window_surface;
         SDL_Surface* sdl_draw_buffer;
         struct MLGraphicsBuffer draw_buffer;
         uint32_t frame_start_time_ms;
@@ -63,20 +62,6 @@ ml_open(void)
     return ml.init;
 }
 
-void
-ml_close(void)
-{
-    if (ml.init) {
-        if (ml.controller.handle != NULL) {
-            SDL_GameControllerClose(ml.controller.handle);
-            ml.controller.handle = NULL;
-        }
-        ml_close_audio();
-        SDL_Quit();
-        ml.init = false;
-    }
-}
-
 static void
 close_display()
 {
@@ -86,15 +71,27 @@ close_display()
         ml.display.draw_buffer.pixels = NULL;
     }
 
-    // The surface returned by SDL_GetWindowSurface should not be freed.
-    ml.display.sdl_window_surface = NULL;
-
     if (ml.display.sdl_window) {
         SDL_DestroyWindow(ml.display.sdl_window);
         ml.display.sdl_window = NULL;
     }
 
     ml.display.init = false;
+}
+
+void
+ml_close(void)
+{
+    if (ml.init) {
+        if (ml.controller.handle != NULL) {
+            SDL_GameControllerClose(ml.controller.handle);
+            ml.controller.handle = NULL;
+        }
+        close_display();
+        ml_close_audio();
+        SDL_Quit();
+        ml.init = false;
+    }
 }
 
 static int
@@ -134,17 +131,13 @@ ml_set_display_mode(const struct MLDisplayMode* requested)
     const int bpp = pixel_format_bpp(requested->format);
     const struct PixelFormatMasks masks = pixel_format_masks(requested->format);
 
-    // TODO(jb): Make window SDL_WINDOW_RESIZABLE
-    SDL_Window* w =  SDL_CreateWindow("Invaders Resurrection",
-                                      SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                      requested->width, requested->height,
-                                      SDL_WINDOW_OPENGL);
-    if (w == NULL) {
+    ml.display.sdl_window = SDL_CreateWindow("Invaders Resurrection",
+                                             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                                             requested->width, requested->height,
+                                             SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    if (ml.display.sdl_window == NULL) {
         goto fail;
     }
-
-    ml.display.sdl_window = w;
-    ml.display.sdl_window_surface = SDL_GetWindowSurface(ml.display.sdl_window);
 
     ml.display.sdl_draw_buffer =
         SDL_CreateRGBSurface(SDL_SWSURFACE, requested->width, requested->height,
@@ -191,7 +184,7 @@ ml_update_screen(void)
             SDL_Delay(delay_ms);
         }
 
-        (void)SDL_BlitSurface(ml.display.sdl_draw_buffer, NULL, ml.display.sdl_window_surface, NULL);
+        (void)SDL_BlitSurface(ml.display.sdl_draw_buffer, NULL, SDL_GetWindowSurface(ml.display.sdl_window), NULL);
         (void)SDL_UpdateWindowSurface(ml.display.sdl_window);
 
         ml.display.frame_start_time_ms = SDL_GetTicks();
@@ -268,7 +261,7 @@ ml_poll_input(struct MLInput* input)
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case SDL_WINDOWEVENT:
-            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+            if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
                 // TODO(jb): Handle window resize
             }
             break;
