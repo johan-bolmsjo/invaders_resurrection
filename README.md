@@ -35,14 +35,12 @@ The following build options are supported by the GNU make based build system.
 
 Keys to use in the game:
 
-| Key    | Action                                    |
-|--------|-------------------------------------------|
-| SPACE  | Fire                                      |
-| ESCAPE | Quit                                      |
-| A      | Turn left                                 |
-| D      | Turn right                                |
-| F12    | Save screenshot (invaders_screenshot.tga) |
+| Key      | Action                                    |
+|----------|-------------------------------------------|
+| SPACE    | Fire                                      |
+| ESCAPE   | Quit                                      |
+| A, LEFT  | Turn left                                 |
+| D, RIGHT | Turn right                                |
+| F12      | Save screenshot (invaders_screenshot.tga) |
 
-There is joystick support as well...
-Well no, there was joystick support.
-This needs to be fixed.
+There is game controller support as well.

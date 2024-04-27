@@ -74,12 +74,13 @@ enum GameRunState
 title_update(struct MLInput* input)
 {
     if (g_runlevel == RUNLEVEL_TITLE0) {
-        if (input->press_quit) {
+        if (input->press_button_back) {
             return GameExit;
         }
 
-        if (input->press_button_a) {
-            input->press_button_a = false;
+        if (input->press_button_start || input->press_button_fire) {
+            input->press_button_start = false;
+            input->press_button_fire = false;
             g_next_runlevel = RUNLEVEL_TITLE1;
         } else {
             if (!texts_anim[text_index].done) {

@@ -2,9 +2,16 @@
 
 #include <SDL.h>
 #include <stddef.h>
+#include <stdint.h>
 
+#include "SDL_keycode.h"
 #include "libutil/array.h"
 #include "libutil/xmath.h"
+
+struct SteeringInput {
+    bool left;
+    bool right;
+};
 
 static struct {
     bool init;
@@ -20,27 +27,36 @@ static struct {
         bool init;
     } audio;
     struct {
-        bool hold_left;
-        bool hold_right;
-        int axis_x1;
-    } input;
+        SDL_GameController* handle;
+        struct SteeringInput dpad;
+        int x_axis;
+    } controller;
+    struct {
+        struct SteeringInput wasd;
+        struct SteeringInput arrows;
+    } keyboard;
 } ml;
 
+static SDL_GameController*
+open_first_controller() {
+    for (int i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            return SDL_GameControllerOpen(i);
+        }
+    }
+    return NULL;
+}
+
 bool
-ml_init(void)
+ml_open(void)
 {
     if (!ml.init) {
-        ml.init = SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) == 0;
+        SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,"1");
+
+        ml.init = SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) == 0;
         if (ml.init) {
-#if 0 // TODO(jb): Joystick support
-            SDL_Joystick* sdl_joystick;
-
-            if (SDL_NumJoysticks()) {
-                SDL_JoystickEventState(SDL_ENABLE);
-                sdl_joystick = SDL_JoystickOpen(0);
-            }
-#endif
-
+            SDL_JoystickEventState(SDL_ENABLE);
+            ml.controller.handle = open_first_controller();
             ml.display.frame_start_time_ms = SDL_GetTicks();
         }
     }
@@ -48,22 +64,27 @@ ml_init(void)
 }
 
 void
-ml_deinit(void)
+ml_close(void)
 {
     if (ml.init) {
+        if (ml.controller.handle != NULL) {
+            SDL_GameControllerClose(ml.controller.handle);
+            ml.controller.handle = NULL;
+        }
+        ml_close_audio();
         SDL_Quit();
         ml.init = false;
     }
 }
 
 static void
-deinit_display()
+close_display()
 {
-        if (ml.display.sdl_draw_buffer) {
-            SDL_FreeSurface(ml.display.sdl_draw_buffer);
-            ml.display.sdl_draw_buffer = NULL;
-            ml.display.draw_buffer.pixels = NULL;
-        }
+    if (ml.display.sdl_draw_buffer) {
+        SDL_FreeSurface(ml.display.sdl_draw_buffer);
+        ml.display.sdl_draw_buffer = NULL;
+        ml.display.draw_buffer.pixels = NULL;
+    }
 
     // The surface returned by SDL_GetWindowSurface should not be freed.
     ml.display.sdl_window_surface = NULL;
@@ -108,7 +129,7 @@ pixel_format_masks(enum MLPixelFormat format)
 bool
 ml_set_display_mode(const struct MLDisplayMode* requested)
 {
-    deinit_display();
+    close_display();
 
     const int bpp = pixel_format_bpp(requested->format);
     const struct PixelFormatMasks masks = pixel_format_masks(requested->format);
@@ -141,7 +162,7 @@ ml_set_display_mode(const struct MLDisplayMode* requested)
     ml.display.init = true;
     return true;
 fail:
-    deinit_display();
+    close_display();
     return false;
 }
 
@@ -229,78 +250,141 @@ ml_unlock_audio(void)
     }
 }
 
+static int
+steering_input_x_axis_value(struct SteeringInput v) {
+    if (v.left && !v.right) {
+        return -1;
+    } else if (v.right && !v.left) {
+        return 1;
+    }
+    return 0;
+}
+
 void
 ml_poll_input(struct MLInput* input)
 {
-    SDL_Event sdl_event;
+    SDL_Event event;
 
-    while (SDL_PollEvent(&sdl_event)) {
-        switch (sdl_event.type) {
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
         case SDL_WINDOWEVENT:
-            if (sdl_event.window.event == SDL_WINDOWEVENT_RESIZED) {
+            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                 // TODO(jb): Handle window resize
             }
             break;
 
         case SDL_KEYDOWN:
-            switch (sdl_event.key.keysym.sym) {
+            switch (event.key.keysym.sym) {
             case SDLK_ESCAPE:
-                input->press_quit = true;
+                input->press_button_back = true;
                 break;
 
             case SDLK_a:
-                ml.input.hold_left = true;
+                ml.keyboard.wasd.left = true;
                 break;
 
             case SDLK_d:
-                ml.input.hold_right = true;
+                ml.keyboard.wasd.right = true;
+                break;
+
+            case SDLK_LEFT:
+                ml.keyboard.arrows.left = true;
+                break;
+
+            case SDLK_RIGHT:
+                ml.keyboard.arrows.right = true;
                 break;
 
             case SDLK_SPACE:
-                input->press_button_a = true;
+                input->press_button_fire = true;
                 break;
 
-            case SDLK_p:
-                // TODO(jb): Implement pause
-                input->press_pause = true;
+            case SDLK_PAUSE:
+                // Start button has start or pause semantics depending on context.
+                input->press_button_start = true;
                 break;
 
-            case SDLK_f: // [[fallthrough]];
             case SDLK_F11:
                 // TODO(jb): Toggle fullscreen
                 break;
 
             case SDLK_F12:
-                input->press_screenshot =  true;
-                break;
-
-            default:
+                input->press_button_share =  true;
                 break;
             }
             break;
 
         case SDL_KEYUP:
-            switch (sdl_event.key.keysym.sym) {
+            switch (event.key.keysym.sym) {
             case SDLK_a:
-                ml.input.hold_left = false;
+                ml.keyboard.wasd.left = false;
                 break;
 
             case SDLK_d:
-                ml.input.hold_right = false;
+                ml.keyboard.wasd.right = false;
                 break;
 
-            default:
+            case SDLK_LEFT:
+                ml.keyboard.arrows.left = false;
+                break;
+
+            case SDLK_RIGHT:
+                ml.keyboard.arrows.right = false;
                 break;
             }
             break;
 
-        case SDL_JOYBUTTONDOWN:
-            input->press_button_a = true;
+        case SDL_CONTROLLERDEVICEADDED:
+            if (!ml.controller.handle) {
+                ml.controller.handle = SDL_GameControllerOpen(event.cdevice.which);
+            }
             break;
 
-        case SDL_JOYAXISMOTION:
-            if (!(sdl_event.jaxis.axis & 1)) {
-                ml.input.axis_x1 = clamp_int(sdl_event.jaxis.value, -32767, 32767) / 16384;
+        case SDL_CONTROLLERDEVICEREMOVED: {
+            if (ml.controller.handle && event.cdevice.which == SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(ml.controller.handle))) {
+                SDL_GameControllerClose(ml.controller.handle);
+                ml.controller.handle = open_first_controller();
+
+                // Reset controller state to neutral position.
+                ml.controller.dpad.left = false;
+                ml.controller.dpad.right = false;
+                ml.controller.x_axis = 0;
+            }
+            break;
+        }
+
+        case SDL_CONTROLLERBUTTONDOWN:
+            switch (event.cbutton.button) {
+            case SDL_CONTROLLER_BUTTON_START:
+                input->press_button_start = true;
+                break;
+            case SDL_CONTROLLER_BUTTON_BACK:
+                input->press_button_back = true;
+                break;
+            case SDL_CONTROLLER_BUTTON_MISC1:
+                // TODO(jb): MISC1 is not the "share" button on all controllers. Need to check the
+                //           controller type.
+                input->press_button_share = true;
+                break;
+            case SDL_CONTROLLER_BUTTON_X:
+                input->press_button_fire = true;
+                break;
+            }
+            // fall through
+        case SDL_CONTROLLERBUTTONUP:
+            switch (event.cbutton.button) {
+            case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+                ml.controller.dpad.left = event.cbutton.state;
+                break;
+            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+                ml.controller.dpad.right = event.cbutton.state;
+                break;
+            }
+            break;
+
+        case SDL_CONTROLLERAXISMOTION:
+            if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX) {
+                ml.controller.x_axis = clamp_int(event.caxis.value, -32767, 32767) / 16384;
             }
             break;
 
@@ -309,12 +393,17 @@ ml_poll_input(struct MLInput* input)
         }
     }
 
-    input->axis_x1 = ml.input.axis_x1;
-    if (ml.input.hold_left && !ml.input.hold_right) {
-        input->axis_x1 = -1;
+    // Steering prioritization of inputs:
+    // Stick to one source as long as it says 'left' or 'right'.
+    input->x_axis = steering_input_x_axis_value(ml.keyboard.arrows);
+    if (!input->x_axis) {
+        input->x_axis = steering_input_x_axis_value(ml.keyboard.wasd);
     }
-    if (ml.input.hold_right && !ml.input.hold_left) {
-        input->axis_x1 = 1;
+    if (!input->x_axis) {
+        input->x_axis = steering_input_x_axis_value(ml.controller.dpad);
+    }
+    if (!input->x_axis) {
+        input->x_axis = ml.controller.x_axis;
     }
 }
 

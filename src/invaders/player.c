@@ -78,7 +78,7 @@ rl_play2_title0(struct RunLevelFunc* r)
         return 1;
     }
 
-    input_ref->press_button_a = false;
+    input_ref->press_button_fire = false;
 
     return 0;
 }
@@ -127,8 +127,8 @@ animate(struct Player* p, struct MLInput* input)
 
     p->steer_count++;
     if (p->steer_count > count[frame]) {
-        if (input->axis_x1 != 0) {
-            frame += input->axis_x1;
+        if (input->x_axis != 0) {
+            frame += input->x_axis;
             if (frame < 0) {
                 frame = 0;
             }
@@ -273,8 +273,8 @@ player_update(struct MLInput* input)
     if (g_runlevel >= RUNLEVEL_PLAY0 &&
         g_runlevel <= RUNLEVEL_PLAY2) {
 
-        if (input->press_quit) {
-            input->press_quit = false;
+        if (input->press_button_back) {
+            input->press_button_back = false;
             suicide();
         }
 
@@ -287,8 +287,8 @@ player_update(struct MLInput* input)
                 animate(&player, input);
                 move(&player);
 
-                if (input->press_button_a) {
-                    input->press_button_a = false;
+                if (input->press_button_fire) {
+                    input->press_button_fire = false;
 
                     const bool quickshot = false; // For testing
                     if ((!live_shots || quickshot) &&

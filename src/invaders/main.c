@@ -104,8 +104,8 @@ main(void)
 
     synth_init();
 
-    if (!ml_init()) {
-        fatalf("Failed to initialize media library!");
+    if (!ml_open()) {
+        fatalf("Failed to open media library!");
     }
 
     if (!ml_open_audio(&(struct MLAudioDeviceParams){
@@ -124,21 +124,21 @@ main(void)
                 .width = MLDisplayWidth,
                 .height = MLDisplayHeight,
             })) {
-        ml_close_audio();
-        ml_deinit();
+        ml_close();
         fatalf("Failed to set display mode!");
     }
 
     ml_pause_audio(false);
 
-    enum GameRunState run_state = GameContinue;
-    while (run_state == GameContinue) {
-        const struct MLGraphicsBuffer* draw_buf = ml_get_draw_buffer();
-
+    for (;;) {
         ml_poll_input(&input);
+        if (input.press_quit) {
+            break;
+        }
 
         ml_lock_audio();
 
+        const struct MLGraphicsBuffer* draw_buf = ml_get_draw_buffer();
         ml_graphics_buffer_clear(draw_buf);
 
         stars_draw(draw_buf);
@@ -151,8 +151,9 @@ main(void)
         mystery_draw(draw_buf);
         shot_draw(draw_buf);
 
-        if ((run_state = title_update(&input)) == GameExit) {
-            continue;
+        if (title_update(&input) == GameExit) {
+            ml_unlock_audio();
+            break;
         }
 
         shot_update();
@@ -166,13 +167,12 @@ main(void)
 
         ml_unlock_audio();
 
-        if (input.press_screenshot) {
+        if (input.press_button_share) {
             save_screenshot(draw_buf);
-            input.press_screenshot = false;
+            input.press_button_share = false;
         }
         ml_update_screen();
     }
 
-    ml_close_audio();
-    ml_deinit();
+    ml_close();
 }

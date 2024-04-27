@@ -54,26 +54,27 @@ struct MLAudioDeviceParams {
 
 /// Input state tailored for the current game.
 struct MLInput {
-    bool press_quit;
-    bool press_pause;
-    bool press_screenshot;
-    bool press_button_a;
-    int axis_x1;
-    int axis_y1;
+    bool press_quit;          // Window close event or similar
+    bool press_button_start;  // Start game or pause
+    bool press_button_back;   // Exit game screen
+    bool press_button_share;  // Take screenshot
+    bool press_button_fire;   // Start game or fire
+    int x_axis; // -1 = left, 1 = right
 };
 
-/// Initialize media access library.
+/// Open media access library.
 /// Returns true on success.
-bool ml_init(void);
+bool ml_open(void);
 
-/// Deinitialize media access library.
-void ml_deinit(void);
+/// Close media access library.
+void ml_close(void);
 
 /// Set display mode.
 /// Returns true on success.
 bool ml_set_display_mode(const struct MLDisplayMode* requested);
 
 /// Get graphics buffer to draw on.
+/// A display mode must have been set before querying the draw buffer.
 const struct MLGraphicsBuffer* ml_get_draw_buffer(void);
 
 /// Update screen (or window) with content of draw buffer.
