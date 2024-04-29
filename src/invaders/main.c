@@ -119,11 +119,8 @@ main(void)
         fatalf("Failed to open audio device!");
     }
 
-    if (!ml_set_display_mode(&(struct MLDisplayMode){
-                .format = MLPixelFormatRGB565,
-                .width = MLDisplayWidth,
-                .height = MLDisplayHeight,
-            })) {
+    struct MLGraphicsBuffer* draw_buf = ml_graphics_buffer_create(MLPixelFormatRGB565, (struct MLRectDim){.w = MLDisplayWidth, .h = MLDisplayHeight});
+    if (!ml_open_display(draw_buf->format, draw_buf->dim)) {
         ml_close();
         fatalf("Failed to set display mode!");
     }
@@ -138,9 +135,7 @@ main(void)
 
         ml_lock_audio();
 
-        const struct MLGraphicsBuffer* draw_buf = ml_get_draw_buffer();
         ml_graphics_buffer_clear(draw_buf);
-
         stars_draw(draw_buf);
         title_draw(draw_buf);
         status_draw(draw_buf);
@@ -171,8 +166,9 @@ main(void)
             save_screenshot(draw_buf);
             input.press_button_share = false;
         }
-        ml_update_screen();
+        ml_update_display(draw_buf);
     }
 
+    ml_graphics_buffer_destroy(draw_buf);
     ml_close();
 }

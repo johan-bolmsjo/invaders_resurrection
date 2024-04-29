@@ -85,7 +85,7 @@ blit_clipped_gfx_frame_with_alpha(const struct MLGraphicsBuffer* dst, const stru
                                   const struct GfxFrame* gf)
 {
     const int src_stride = gf->width - clip->w;
-    const int dst_stride = dst->width - clip->w;
+    const int dst_stride = dst->dim.w - clip->w;
 
     const uint8_t* src_alpha_p = &gf->alpha[clip->sy_off * gf->width + clip->sx_off];
     const struct rgb565* src_p = &gf->graphics[clip->sy_off * gf->width + clip->sx_off];
@@ -142,7 +142,7 @@ static void
 blit_clipped_gfx_frame_without_alpha(const struct MLGraphicsBuffer* dst, const struct Clip* clip, const struct GfxFrame* gf)
 {
     const int src_stride = gf->width - clip->w;
-    const int dst_stride = dst->width - clip->w;
+    const int dst_stride = dst->dim.w - clip->w;
 
     const struct rgb565* src_p = &gf->graphics[clip->sy_off * gf->width + clip->sx_off];
     struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);
@@ -173,7 +173,7 @@ blit_clipped_gfx_frame(const struct MLGraphicsBuffer* dst, const struct Clip* cl
 void
 blit_clipped_colour_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, struct rgb565 color)
 {
-    const int dst_stride = dst->width - clip->w;
+    const int dst_stride = dst->dim.w - clip->w;
     struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);
 
     for (int y = 0; y < clip->h; y++) {
@@ -187,7 +187,7 @@ blit_clipped_colour_box(const struct MLGraphicsBuffer* dst, const struct Clip* c
 void
 blit_clipped_gfx_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, const struct rgb565* src)
 {
-    const int dst_stride = dst->width - clip->w;
+    const int dst_stride = dst->dim.w - clip->w;
     struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);
 
     for (int y = 0; y < clip->h; y++) {

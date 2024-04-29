@@ -116,8 +116,8 @@ shot_draw(const struct MLGraphicsBuffer* dst)
             struct rgb565* p = ml_graphics_buffer_xy(dst, s->x, s->y);
             p[0] = s->color;
             p[1] = s->color;
-            p[dst->width] = s->color;
-            p[dst->width + 1] = s->color;
+            p[dst->dim.w] = s->color;
+            p[dst->dim.w + 1] = s->color;
         }
         s = s->next;
     }

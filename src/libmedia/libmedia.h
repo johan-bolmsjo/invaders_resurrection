@@ -13,21 +13,30 @@ enum {
     MLDisplayFreq = 60,
 };
 
+/// Input state tailored for the current game.
+struct MLInput {
+    bool press_quit;          // Window close event or similar
+    bool press_button_start;  // Start game or pause
+    bool press_button_back;   // Exit game screen
+    bool press_button_share;  // Take screenshot
+    bool press_button_fire;   // Start game or fire
+    int x_axis; // -1 = left, 1 = right
+};
+
 enum MLPixelFormat {
     MLPixelFormatNone,
     MLPixelFormatRGB565,  // RGBG565 pixels in native endian
 };
 
-struct MLDisplayMode {
-    enum MLPixelFormat format;
-    int                width;   // Buffer width in pixels
-    int                height;  // Buffer height in pixels
+/// Dimensions of a rectangle (in pixels).
+struct MLRectDim {
+    int w;
+    int h;
 };
 
 struct MLGraphicsBuffer {
     enum MLPixelFormat format;
-    int                width;   // Buffer width in pixels
-    int                height;  // Buffer height in pixels
+    struct MLRectDim   dim;
     void*              pixels;
 };
 
@@ -52,16 +61,6 @@ struct MLAudioDeviceParams {
     void* userdata;
 };
 
-/// Input state tailored for the current game.
-struct MLInput {
-    bool press_quit;          // Window close event or similar
-    bool press_button_start;  // Start game or pause
-    bool press_button_back;   // Exit game screen
-    bool press_button_share;  // Take screenshot
-    bool press_button_fire;   // Start game or fire
-    int x_axis; // -1 = left, 1 = right
-};
-
 /// Open media access library.
 /// Returns true on success.
 bool ml_open(void);
@@ -69,16 +68,22 @@ bool ml_open(void);
 /// Close media access library.
 void ml_close(void);
 
-/// Set display mode.
-/// Returns true on success.
-bool ml_set_display_mode(const struct MLDisplayMode* requested);
+/// Pull input devices.
+///
+/// \note Existing button press state is not cleared.
+void ml_poll_input(struct MLInput* input);
 
-/// Get graphics buffer to draw on.
-/// A display mode must have been set before querying the draw buffer.
-const struct MLGraphicsBuffer* ml_get_draw_buffer(void);
+/// Open display with logical display parameters. The resulting opened
+/// window may have different dimensions and color depth. Returns true
+/// on success.
+bool ml_open_display(enum MLPixelFormat format, struct MLRectDim dim);
 
-/// Update screen (or window) with content of draw buffer.
-void ml_update_screen(void);
+/// Close any opened display window.
+void ml_close_display(void);
+
+/// Update display with content of draw buffer. The draw buffer is
+/// expected to have the same dimensions as the opened display.
+void ml_update_display(const struct MLGraphicsBuffer* draw_buf);
 
 /// Opens the default audio device with the requested parameters.
 /// Returns true on success.
@@ -98,11 +103,6 @@ void ml_lock_audio(void);
 /// Allow audio stream writes again.
 void ml_unlock_audio(void);
 
-/// Pull input devices.
-///
-/// \note Existing button press state is not cleared.
-void ml_poll_input(struct MLInput* input);
-
 static inline int
 ml_pixel_bytes(enum MLPixelFormat format) {
     switch (format) {
@@ -113,23 +113,22 @@ ml_pixel_bytes(enum MLPixelFormat format) {
     }
 }
 
-/// Clear graphics buffer.
-void ml_graphics_buffer_clear(const struct MLGraphicsBuffer* buf);
+struct MLGraphicsBuffer* ml_graphics_buffer_create(enum MLPixelFormat format, struct MLRectDim dim);
+void                     ml_graphics_buffer_destroy(struct MLGraphicsBuffer* buf);
+void                     ml_graphics_buffer_clear(const struct MLGraphicsBuffer* buf);
 
-/// Get width of graphics buffer in bytes.
 static inline int
 ml_graphics_buffer_width_bytes(const struct MLGraphicsBuffer* buf) {
-    return buf->width * ml_pixel_bytes(buf->format);
+    return buf->dim.w * ml_pixel_bytes(buf->format);
 }
 
-/// Get size of graphics buffer in bytes.
 static inline int
 ml_graphics_buffer_size_bytes(const struct MLGraphicsBuffer* buf) {
-    return buf->width * buf->height * ml_pixel_bytes(buf->format);
+    return buf->dim.w * buf->dim.h * ml_pixel_bytes(buf->format);
 }
 
 /// Get address to X,Y coordinate.
 static inline void*
 ml_graphics_buffer_xy(const struct MLGraphicsBuffer* buf, int x, int y) {
-    return &((char*)buf->pixels)[(y * buf->width + x) * ml_pixel_bytes(buf->format)];
+    return &((char*)buf->pixels)[(y * buf->dim.w + x) * ml_pixel_bytes(buf->format)];
 }

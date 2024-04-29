@@ -1,10 +1,13 @@
+#include "SDL_video.h"
 #include "libmedia.h"
 
 #include <SDL.h>
+#include <SDL_opengl.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "SDL_keycode.h"
+#include "SDL_log.h"
 #include "libutil/array.h"
 #include "libutil/xmath.h"
 
@@ -13,14 +16,27 @@ struct SteeringInput {
     bool right;
 };
 
+struct Coord2D {
+    float x, y;
+};
+
+struct Texture {
+    GLuint           id;
+    struct MLRectDim dim;
+    struct Coord2D   a, b;
+};
+
 static struct {
     bool init;
     struct {
-        bool init;
+        enum MLPixelFormat logical_format;
+        struct MLRectDim logical_dim;
+        struct MLRectDim physical_dim;
         SDL_Window* sdl_window;
-        SDL_Surface* sdl_draw_buffer;
-        struct MLGraphicsBuffer draw_buffer;
+        SDL_GLContext gl_context;
+        struct Texture draw_texture;
         uint32_t frame_start_time_ms;
+        int f_fullscreen;
     } display;
     struct {
         bool init;
@@ -37,7 +53,7 @@ static struct {
 } ml;
 
 static SDL_GameController*
-open_first_controller() {
+open_first_controller(void) {
     for (int i = 0; i < SDL_NumJoysticks(); i++) {
         if (SDL_IsGameController(i)) {
             return SDL_GameControllerOpen(i);
@@ -56,27 +72,9 @@ ml_open(void)
         if (ml.init) {
             SDL_JoystickEventState(SDL_ENABLE);
             ml.controller.handle = open_first_controller();
-            ml.display.frame_start_time_ms = SDL_GetTicks();
         }
     }
     return ml.init;
-}
-
-static void
-close_display()
-{
-    if (ml.display.sdl_draw_buffer) {
-        SDL_FreeSurface(ml.display.sdl_draw_buffer);
-        ml.display.sdl_draw_buffer = NULL;
-        ml.display.draw_buffer.pixels = NULL;
-    }
-
-    if (ml.display.sdl_window) {
-        SDL_DestroyWindow(ml.display.sdl_window);
-        ml.display.sdl_window = NULL;
-    }
-
-    ml.display.init = false;
 }
 
 void
@@ -87,159 +85,10 @@ ml_close(void)
             SDL_GameControllerClose(ml.controller.handle);
             ml.controller.handle = NULL;
         }
-        close_display();
+        ml_close_display();
         ml_close_audio();
         SDL_Quit();
         ml.init = false;
-    }
-}
-
-static int
-pixel_format_bpp(enum MLPixelFormat format)
-{
-    switch (format) {
-    case MLPixelFormatRGB565:
-        return 16;
-    default:
-        return 0;
-    }
-}
-
-struct PixelFormatMasks {
-    uint32_t r;
-    uint32_t g;
-    uint32_t b;
-    uint32_t a;
-};
-
-struct PixelFormatMasks
-pixel_format_masks(enum MLPixelFormat format)
-{
-    switch (format) {
-    case MLPixelFormatRGB565:
-        return (struct PixelFormatMasks){.r = 0xf800, .g = 0x07e0, .b = 0x001f, .a = 0};
-    default:
-        return (struct PixelFormatMasks){0};
-    }
-}
-
-bool
-ml_set_display_mode(const struct MLDisplayMode* requested)
-{
-    close_display();
-
-    const int bpp = pixel_format_bpp(requested->format);
-    const struct PixelFormatMasks masks = pixel_format_masks(requested->format);
-
-    ml.display.sdl_window = SDL_CreateWindow("Invaders Resurrection",
-                                             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                             requested->width, requested->height,
-                                             SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-    if (ml.display.sdl_window == NULL) {
-        goto fail;
-    }
-
-    ml.display.sdl_draw_buffer =
-        SDL_CreateRGBSurface(SDL_SWSURFACE, requested->width, requested->height,
-                             bpp, masks.r, masks.g, masks.b, masks.a);
-    if (ml.display.sdl_draw_buffer == NULL) {
-        goto fail;
-    }
-    ml.display.draw_buffer.format = requested->format;
-    ml.display.draw_buffer.width = requested->width;
-    ml.display.draw_buffer.height = requested->height;
-    ml.display.draw_buffer.pixels = ml.display.sdl_draw_buffer->pixels;
-
-    SDL_ShowCursor(SDL_DISABLE);
-
-    ml.display.init = true;
-    return true;
-fail:
-    close_display();
-    return false;
-}
-
-const struct MLGraphicsBuffer*
-ml_get_draw_buffer(void)
-{
-    if (ml.display.init) {
-        return &ml.display.draw_buffer;
-    }
-    return NULL;
-}
-
-void
-ml_update_screen(void)
-{
-    if (ml.display.init) {
-        // Calculate a delay so that the game loop renders at close to MLDisplayFreq.
-        // Stay shy of the target to allow syncing with the VBL, should such support
-        // be available.
-        const uint32_t margin_ms = 1;
-        const uint32_t target_frame_time_ms = (1000 / MLDisplayFreq) - margin_ms;
-        const uint32_t render_frame_time_ms = SDL_GetTicks() - ml.display.frame_start_time_ms;
-
-        if (render_frame_time_ms < target_frame_time_ms) {
-            const uint32_t delay_ms = target_frame_time_ms - render_frame_time_ms;
-            SDL_Delay(delay_ms);
-        }
-
-        (void)SDL_BlitSurface(ml.display.sdl_draw_buffer, NULL, SDL_GetWindowSurface(ml.display.sdl_window), NULL);
-        (void)SDL_UpdateWindowSurface(ml.display.sdl_window);
-
-        ml.display.frame_start_time_ms = SDL_GetTicks();
-    }
-}
-
-bool
-ml_open_audio(const struct MLAudioDeviceParams* requested)
-{
-    SDL_AudioSpec spec = {
-        .freq = requested->freq,
-        .format = AUDIO_S16SYS,
-        .channels = requested->channels,
-        .samples = requested->samples,
-        .callback = requested->write_audio,
-        .userdata = requested->userdata,
-    };
-
-    if (!ml.audio.init) {
-        ml.audio.init = SDL_OpenAudio(&spec, NULL) == 0;
-        return ml.audio.init;
-    }
-    return false;
-}
-
-void
-ml_close_audio(void)
-{
-    if (ml.audio.init) {
-        SDL_CloseAudio();
-        ml.audio.init = false;
-    }
-}
-
-void
-ml_pause_audio(bool pause)
-{
-    if (ml.audio.init) {
-        SDL_PauseAudio(pause ? 1 : 0);
-    }
-}
-
-void
-ml_lock_audio(void)
-{
-    if (ml.audio.init) {
-        SDL_LockAudio();
-    }
-}
-
-void
-ml_unlock_audio(void)
-{
-    if (ml.audio.init) {
-        SDL_UnlockAudio();
     }
 }
 
@@ -253,6 +102,23 @@ steering_input_x_axis_value(struct SteeringInput v) {
     return 0;
 }
 
+static void
+resize_opengl(struct MLRectDim physical_dim)
+{
+    // Reset the current viewport and perspective transformation
+    glViewport(0, 0, physical_dim.w, physical_dim.h);
+
+    // Reset projection matrix
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    // Set parallel projection (Left, Right, Bottom, Top, Near, Far).
+    // This gives a normal (0,0) at top left corner coordinate system.
+    glOrtho(0, physical_dim.w, physical_dim.h, 0, -1, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+}
+
 void
 ml_poll_input(struct MLInput* input)
 {
@@ -262,7 +128,8 @@ ml_poll_input(struct MLInput* input)
         switch (event.type) {
         case SDL_WINDOWEVENT:
             if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                // TODO(jb): Handle window resize
+                ml.display.physical_dim = (struct MLRectDim){.w = event.window.data1, .h = event.window.data2};
+                resize_opengl(ml.display.physical_dim);
             }
             break;
 
@@ -297,9 +164,12 @@ ml_poll_input(struct MLInput* input)
                 input->press_button_start = true;
                 break;
 
-            case SDLK_F11:
-                // TODO(jb): Toggle fullscreen
+            case SDLK_F11: {
+                ml.display.f_fullscreen ^= 1;
+                const Uint32 sdl_flags = ml.display.f_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
+                SDL_SetWindowFullscreen(ml.display.sdl_window, sdl_flags);
                 break;
+            }
 
             case SDLK_F12:
                 input->press_button_share =  true;
@@ -400,8 +270,224 @@ ml_poll_input(struct MLInput* input)
     }
 }
 
-void
-ml_graphics_buffer_clear(const struct MLGraphicsBuffer* buf)
+static GLenum
+pixel_format_gl_mode(enum MLPixelFormat format)
 {
-    memset(buf->pixels, 0, ml_graphics_buffer_size_bytes(buf));
+    switch (format) {
+    case MLPixelFormatRGB565:
+        return GL_UNSIGNED_SHORT_5_6_5;
+    default:
+        return 0;
+    }
+}
+
+static void
+create_draw_texture(struct Texture* draw_tex, enum MLPixelFormat format, struct MLRectDim logical_dim)
+{
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+
+    // OpenGL 2.x is only required to support power of two texture sizes, round to avoid troubles.
+    const struct MLRectDim texture_dim = (struct MLRectDim){
+        round_up_pow2_uint32(logical_dim.w), round_up_pow2_uint32(logical_dim.h)};
+
+    *draw_tex = (struct Texture) {
+        .id = texture_id,
+        .dim = texture_dim,
+        .a = {0, 0},
+        .b = {(float)logical_dim.w / texture_dim.w, (float)logical_dim.h / texture_dim.h},
+    };
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture_dim.w, texture_dim.h,
+                 0, GL_RGB, pixel_format_gl_mode(format), NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+bool
+ml_open_display(enum MLPixelFormat format, struct MLRectDim dim)
+{
+    ml_close_display();
+
+    ml.display.logical_format = format;
+    ml.display.logical_dim = dim;
+    ml.display.physical_dim = dim;
+
+    // Use OpenGL 2.1
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
+    ml.display.sdl_window =  SDL_CreateWindow("Invaders Resurrection",
+                                              SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                                              ml.display.physical_dim.w, ml.display.physical_dim.h,
+                                              SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
+    if (ml.display.sdl_window == NULL) {
+        goto fail;
+    }
+    ml.display.gl_context = SDL_GL_CreateContext(ml.display.sdl_window);
+    if (ml.display.gl_context == NULL) {
+        goto fail;
+    }
+
+    if (SDL_GL_SetSwapInterval(1) == -1) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "Failed to set OpenGL swap interval to VSync: %s\n", SDL_GetError());
+    }
+
+    glEnable(GL_TEXTURE_2D);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glShadeModel(GL_SMOOTH);
+
+    // Calculate appropriate window size based on the resolution of the
+    // display the window is currently placed on.
+    const int sdl_display_idx = SDL_GetWindowDisplayIndex(ml.display.sdl_window);
+    SDL_DisplayMode sdl_display_mode;
+    SDL_GetDesktopDisplayMode(sdl_display_idx, &sdl_display_mode);
+
+    int r = max_int(1, min_int(sdl_display_mode.w / dim.w, sdl_display_mode.h / dim.h));
+    ml.display.physical_dim.w = dim.w * r;
+    ml.display.physical_dim.h = dim.h * r;
+
+    SDL_SetWindowSize(ml.display.sdl_window, ml.display.physical_dim.w, ml.display.physical_dim.h);
+    SDL_SetWindowPosition(ml.display.sdl_window, SDL_WINDOWPOS_CENTERED_DISPLAY(sdl_display_idx), SDL_WINDOWPOS_CENTERED_DISPLAY(sdl_display_idx));
+    SDL_ShowWindow(ml.display.sdl_window);
+
+    resize_opengl(ml.display.physical_dim);
+    create_draw_texture(&ml.display.draw_texture, format, ml.display.logical_dim);
+
+    SDL_ShowCursor(SDL_DISABLE);
+    ml.display.frame_start_time_ms = SDL_GetTicks();
+    return true;
+
+fail:
+    ml_close_display();
+    return false;
+}
+
+void
+ml_close_display(void)
+{
+    if (ml.display.gl_context) {
+        SDL_GL_DeleteContext(ml.display.gl_context);
+        ml.display.gl_context = NULL;
+    }
+
+    if (ml.display.sdl_window) {
+        SDL_DestroyWindow(ml.display.sdl_window);
+        ml.display.sdl_window = NULL;
+    }
+}
+
+static void
+update_draw_texture(const struct Texture* draw_tex, const struct MLGraphicsBuffer* draw_buf)
+{
+    glBindTexture(GL_TEXTURE_2D, draw_tex->id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, draw_buf->dim.w, draw_buf->dim.h,
+                    GL_RGB, pixel_format_gl_mode(draw_buf->format), draw_buf->pixels);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+static void
+render_draw_texture(const struct Texture* draw_tex, struct MLRectDim logical_dim, struct MLRectDim physical_dim)
+{
+    // Fit logical display into physical display which may have a different aspect ratio.
+    double r = min_double((double)physical_dim.w / logical_dim.w,
+                          (double)physical_dim.h / logical_dim.h);
+    int w = (int)(r * logical_dim.w);
+    int h = (int)(r * logical_dim.h);
+    int xoff = (physical_dim.w - w) / 2;
+    int yoff = (physical_dim.h - h) / 2;
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBindTexture(GL_TEXTURE_2D, ml.display.draw_texture.id);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(draw_tex->a.x, draw_tex->a.y);
+    glVertex2f(xoff, yoff);
+    glTexCoord2f(draw_tex->b.x, draw_tex->a.y);
+    glVertex2f(xoff + w, yoff);
+    glTexCoord2f(draw_tex->b.x, draw_tex->b.y);
+    glVertex2f(xoff + w, yoff + h);
+    glTexCoord2f(draw_tex->a.x, draw_tex->b.y);
+    glVertex2f(xoff, yoff + h);
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void
+ml_update_display(const struct MLGraphicsBuffer* draw_buf)
+{
+    if (ml.display.sdl_window) {
+        // Calculate a delay so that the game loop renders at close to MLDisplayFreq.
+        // Stay shy of the target to allow syncing with the VBL, should such support
+        // be available.
+        const uint32_t margin_ms = 1;
+        const uint32_t target_frame_time_ms = (1000 / MLDisplayFreq) - margin_ms;
+        const uint32_t render_frame_time_ms = SDL_GetTicks() - ml.display.frame_start_time_ms;
+
+        if (render_frame_time_ms < target_frame_time_ms) {
+            const uint32_t delay_ms = target_frame_time_ms - render_frame_time_ms;
+            SDL_Delay(delay_ms);
+        }
+
+        update_draw_texture(&ml.display.draw_texture, draw_buf);
+        render_draw_texture(&ml.display.draw_texture, ml.display.logical_dim, ml.display.physical_dim);
+        SDL_GL_SwapWindow(ml.display.sdl_window);
+        ml.display.frame_start_time_ms = SDL_GetTicks();
+    }
+}
+
+bool
+ml_open_audio(const struct MLAudioDeviceParams* requested)
+{
+    SDL_AudioSpec spec = {
+        .freq = requested->freq,
+        .format = AUDIO_S16SYS,
+        .channels = requested->channels,
+        .samples = requested->samples,
+        .callback = requested->write_audio,
+        .userdata = requested->userdata,
+    };
+
+    if (!ml.audio.init) {
+        ml.audio.init = SDL_OpenAudio(&spec, NULL) == 0;
+        return ml.audio.init;
+    }
+    return false;
+}
+
+void
+ml_close_audio(void)
+{
+    if (ml.audio.init) {
+        SDL_CloseAudio();
+        ml.audio.init = false;
+    }
+}
+
+void
+ml_pause_audio(bool pause)
+{
+    if (ml.audio.init) {
+        SDL_PauseAudio(pause ? 1 : 0);
+    }
+}
+
+void
+ml_lock_audio(void)
+{
+    if (ml.audio.init) {
+        SDL_LockAudio();
+    }
+}
+
+void
+ml_unlock_audio(void)
+{
+    if (ml.audio.init) {
+        SDL_UnlockAudio();
+    }
 }

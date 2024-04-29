@@ -2,9 +2,6 @@
 #+options: toc:nil num:0 H:4 author:nil timestamp:nil ^:nil
 #+todo: TODO(t) | DONE(d@) CANCELED(c@)
 
-* TODO Implement fullscreen toggle
-- Keys :: F11
-
 * TODO Compile graphics assets automatically
 ** Background
 There are two data files =data/invaders.gfx.deflate= and
@@ -39,6 +36,9 @@ be any source graphics data. We have to accept that that is lost to time.
 - [ ] Convert the font =pearl_8x8.dat.deflate= to gzip format if choosen
   for the graphics data bundle.
 
+* TODO Increase missile rate when looping armada
+Increase missile rate when armada is looped after three screens.
+
 * TODO Implement pause screen
 - Keys :: Pause
 - Buttons :: Start
@@ -64,6 +64,8 @@ sounds from the game loop, the sound effect playback effectively
 operates in a "tracker mode", so that the next sound effect is scheduled
 automatically when the previous one terminates.
 
+* TODO Make a webassembly port using https://emscripten.org
+
 * TODO CRT shader effect
 Feed the rendered image through a CRT shader effect to reduce the blocky appearance of 640x480 resolution.
 
@@ -74,10 +76,17 @@ Feed the rendered image through a CRT shader effect to reduce the blocky appeara
 ** TODO Improve shield code.
 ** TODO Add some sort of queue for the sound effects so they don't get cut off.
 
-* TODO Make a webassembly port using https://emscripten.org
-
 * Closed Issues
-** TODO Fix joystick support                                       :ARCHIVE:
+** DONE Implement fullscreen toggle                                :ARCHIVE:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2024-04-29 Mon 21:06]
+:END:
+- Keys :: F11
+
+** DONE Fix joystick support                                       :ARCHIVE:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2024-04-27 Sat]
+:END:
 Bring back joystick support (with SDL 2).
 
 ** DONE Remove double buffering                                    :ARCHIVE:
@@ -88,7 +97,11 @@ When the game was made clearing the whole screen each frame was costly in terms 
 There is no longer any reason to do this for such a low resolution game.
 Thus remove the double buffering to simplify the code.
 
-** TODO Use SDL version 2                                          :ARCHIVE:
+** DONE Use SDL version 2                                          :ARCHIVE:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2024-04-21 Sun]
+:END:
+
 ** DONE Make invaders compile cleanly with modern compilers        :ARCHIVE:
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2023-11-12 Sun 16:53]

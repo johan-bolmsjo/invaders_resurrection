@@ -108,7 +108,7 @@ stars_draw(const struct MLGraphicsBuffer* buf)
         if (y < 0) {
             continue;
         }
-        if (y >= buf->height) {
+        if (y >= buf->dim.h) {
             create_star(star);
             continue;
         }

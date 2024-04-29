@@ -13,7 +13,7 @@ Consult http://www.libsdl.org/ or your Linux distributions package manager.
 
 Build invaders as follows:
 
-    make exe/invaders CPPFLAGS=-DFULLSCREEN
+    make exe/invaders
 
 Currently there is no install target.
 Launch the game directly from the build directory.
@@ -41,6 +41,7 @@ Keys to use in the game:
 | ESCAPE   | Quit                                      |
 | A, LEFT  | Turn left                                 |
 | D, RIGHT | Turn right                                |
+| F11      | Toggle full screen mode                   |
 | F12      | Save screenshot (invaders_screenshot.tga) |
 
 There is game controller support as well.

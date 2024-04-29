@@ -70,8 +70,8 @@ text_print_string_animated(const struct MLGraphicsBuffer* dst, const char* s, in
     static const struct rgb565 palette[3] = {{65535}, {40314}, {17141}};
     const int char_frame_time = ARRAY_SIZE(palette);
     const int xbegin = x;
-    const int xmax = dst->width / CharWidth - 1;
-    const int ymax = dst->height / CharHeight - 1;
+    const int xmax = dst->dim.w / CharWidth - 1;
+    const int ymax = dst->dim.h / CharHeight - 1;
 
     bool space = false;
     char c;
