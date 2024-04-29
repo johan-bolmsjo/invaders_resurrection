@@ -5,6 +5,7 @@
 #include <SDL_opengl.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "SDL_keycode.h"
 #include "SDL_log.h"
@@ -32,6 +33,7 @@ static struct {
         enum MLPixelFormat logical_format;
         struct MLRectDim logical_dim;
         struct MLRectDim physical_dim;
+        int refresh_rate;
         SDL_Window* sdl_window;
         SDL_GLContext gl_context;
         struct Texture draw_texture;
@@ -90,6 +92,14 @@ ml_close(void)
         SDL_Quit();
         ml.init = false;
     }
+}
+
+int64_t
+ml_time_milliseconds(void)
+{
+    const int64_t ticks = SDL_GetTicks64();
+    assert(ticks > 0);
+    return ticks;
 }
 
 static int
@@ -308,13 +318,14 @@ create_draw_texture(struct Texture* draw_tex, enum MLPixelFormat format, struct 
 }
 
 bool
-ml_open_display(enum MLPixelFormat format, struct MLRectDim dim)
+ml_open_display(struct MLDisplayMode mode)
 {
     ml_close_display();
 
-    ml.display.logical_format = format;
-    ml.display.logical_dim = dim;
-    ml.display.physical_dim = dim;
+    ml.display.logical_format = mode.format;
+    ml.display.logical_dim = mode.dim;
+    ml.display.physical_dim = mode.dim;
+    ml.display.refresh_rate = mode.refresh_rate;
 
     // Use OpenGL 2.1
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
@@ -346,16 +357,16 @@ ml_open_display(enum MLPixelFormat format, struct MLRectDim dim)
     SDL_DisplayMode sdl_display_mode;
     SDL_GetDesktopDisplayMode(sdl_display_idx, &sdl_display_mode);
 
-    int r = max_int(1, min_int(sdl_display_mode.w / dim.w, sdl_display_mode.h / dim.h));
-    ml.display.physical_dim.w = dim.w * r;
-    ml.display.physical_dim.h = dim.h * r;
+    int r = max_int(1, min_int(sdl_display_mode.w / mode.dim.w, sdl_display_mode.h / mode.dim.h));
+    ml.display.physical_dim.w = mode.dim.w * r;
+    ml.display.physical_dim.h = mode.dim.h * r;
 
     SDL_SetWindowSize(ml.display.sdl_window, ml.display.physical_dim.w, ml.display.physical_dim.h);
     SDL_SetWindowPosition(ml.display.sdl_window, SDL_WINDOWPOS_CENTERED_DISPLAY(sdl_display_idx), SDL_WINDOWPOS_CENTERED_DISPLAY(sdl_display_idx));
     SDL_ShowWindow(ml.display.sdl_window);
 
     resize_opengl(ml.display.physical_dim);
-    create_draw_texture(&ml.display.draw_texture, format, ml.display.logical_dim);
+    create_draw_texture(&ml.display.draw_texture, mode.format, ml.display.logical_dim);
 
     SDL_ShowCursor(SDL_DISABLE);
     ml.display.frame_start_time_ms = SDL_GetTicks();
@@ -421,20 +432,23 @@ void
 ml_update_display(const struct MLGraphicsBuffer* draw_buf)
 {
     if (ml.display.sdl_window) {
-        // Calculate a delay so that the game loop renders at close to MLDisplayFreq.
-        // Stay shy of the target to allow syncing with the VBL, should such support
-        // be available.
-        const uint32_t margin_ms = 1;
-        const uint32_t target_frame_time_ms = (1000 / MLDisplayFreq) - margin_ms;
-        const uint32_t render_frame_time_ms = SDL_GetTicks() - ml.display.frame_start_time_ms;
+        // Calculate a delay so that the game loop renders at close to the requested
+        // display refresh rate. Stay shy of the target to allow syncing with the VBL,
+        // should such support be available.
+        if (ml.display.refresh_rate > 0) {
+            const uint32_t margin_ms = 1;
+            const uint32_t target_frame_time_ms = (1000 / ml.display.refresh_rate) - margin_ms;
+            const uint32_t render_frame_time_ms = SDL_GetTicks() - ml.display.frame_start_time_ms;
 
-        if (render_frame_time_ms < target_frame_time_ms) {
-            const uint32_t delay_ms = target_frame_time_ms - render_frame_time_ms;
-            SDL_Delay(delay_ms);
+            if (render_frame_time_ms < target_frame_time_ms) {
+                const uint32_t delay_ms = target_frame_time_ms - render_frame_time_ms;
+                SDL_Delay(delay_ms);
+            }
         }
 
         update_draw_texture(&ml.display.draw_texture, draw_buf);
         render_draw_texture(&ml.display.draw_texture, ml.display.logical_dim, ml.display.physical_dim);
+
         SDL_GL_SwapWindow(ml.display.sdl_window);
         ml.display.frame_start_time_ms = SDL_GetTicks();
     }

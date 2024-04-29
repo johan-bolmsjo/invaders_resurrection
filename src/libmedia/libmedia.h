@@ -7,10 +7,6 @@ enum {
     // Game is hard-coded for this resolution.
     MLDisplayWidth  = 640,
     MLDisplayHeight = 480,
-
-    // Game is hard-coded for this refresh rate so it needs to be
-    // simulated unless it's naturally so.
-    MLDisplayFreq = 60,
 };
 
 /// Input state tailored for the current game.
@@ -32,6 +28,12 @@ enum MLPixelFormat {
 struct MLRectDim {
     int w;
     int h;
+};
+
+struct MLDisplayMode {
+    enum MLPixelFormat format;
+    struct MLRectDim   dim;
+    int                refresh_rate;  //!< Refresh rate in Hz (or zero for unspecified)
 };
 
 struct MLGraphicsBuffer {
@@ -68,6 +70,9 @@ bool ml_open(void);
 /// Close media access library.
 void ml_close(void);
 
+/// Get time in milliseconds since library initialization.
+int64_t ml_time_milliseconds(void);
+
 /// Pull input devices.
 ///
 /// \note Existing button press state is not cleared.
@@ -76,7 +81,7 @@ void ml_poll_input(struct MLInput* input);
 /// Open display with logical display parameters. The resulting opened
 /// window may have different dimensions and color depth. Returns true
 /// on success.
-bool ml_open_display(enum MLPixelFormat format, struct MLRectDim dim);
+bool ml_open_display(struct MLDisplayMode mode);
 
 /// Close any opened display window.
 void ml_close_display(void);

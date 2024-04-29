@@ -120,7 +120,7 @@ main(void)
     }
 
     struct MLGraphicsBuffer* draw_buf = ml_graphics_buffer_create(MLPixelFormatRGB565, (struct MLRectDim){.w = MLDisplayWidth, .h = MLDisplayHeight});
-    if (!ml_open_display(draw_buf->format, draw_buf->dim)) {
+    if (!ml_open_display((struct MLDisplayMode){.format = draw_buf->format, .dim = draw_buf->dim, .refresh_rate = 60})) {
         ml_close();
         fatalf("Failed to set display mode!");
     }
