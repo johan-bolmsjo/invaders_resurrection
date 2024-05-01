@@ -2,6 +2,27 @@
 #+options: toc:nil num:0 H:4 author:nil timestamp:nil ^:nil
 #+todo: TODO(t) | DONE(d@) CANCELED(c@)
 
+* TODO Revise sound mixing
+The sound is generally glitchy with SDL 1.x. It worked better with the
+NEO sound API for which the code was originally written.
+
+- Implement robust sound playback using SDL 2
+- Ensure low latency
+
+** Update [2024-04-21 Sun]
+
+After some research, I don't think sound playback is that buggy. Based
+on how SDL works with sound, I don't think it can be improved without
+altering the strategy for sound effect playback.
+
+The problem is that the application has no way to control actual audio
+queue depth. The main problem is the very short sounds when the bomber
+armada moves at high speed. The sounds are cut off because of the
+inexact playback. A viable strategy could be that instead of emitting
+sounds from the game loop, the sound effect playback effectively
+operates in a "tracker mode", so that the next sound effect is scheduled
+automatically when the previous one terminates.
+
 * TODO Compile graphics assets automatically
 ** Background
 There are two data files =data/invaders.gfx.deflate= and
@@ -36,27 +57,6 @@ be any source graphics data. We have to accept that that is lost to time.
 - [ ] Convert the font =pearl_8x8.dat.deflate= to gzip format if choosen
   for the graphics data bundle.
 
-* TODO Revise sound mixing
-The sound is generally glitchy with SDL 1.x. It worked better with the
-NEO sound API for which the code was originally written.
-
-- Implement robust sound playback using SDL 2
-- Ensure low latency
-
-** Update [2024-04-21 Sun]
-
-After some research, I don't think sound playback is that buggy. Based
-on how SDL works with sound, I don't think it can be improved without
-altering the strategy for sound effect playback.
-
-The problem is that the application has no way to control actual audio
-queue depth. The main problem is the very short sounds when the bomber
-armada moves at high speed. The sounds are cut off because of the
-inexact playback. A viable strategy could be that instead of emitting
-sounds from the game loop, the sound effect playback effectively
-operates in a "tracker mode", so that the next sound effect is scheduled
-automatically when the previous one terminates.
-
 * TODO Make a webassembly port using https://emscripten.org
 
 * Game play improvements
@@ -82,6 +82,10 @@ Dancing aliens?
 
 * TODO CRT shader effect
 Feed the rendered image through a CRT shader effect to reduce the blocky appearance of 640x480 resolution.
+
+Shader candidates from https://github.com/libretro/common-shaders:
+- CRT Royal
+- CRT Geom
 
 * Fix old issues listed in TODO file [0/5]
 ** TODO In space invaders the aliens just pause when the player dies.
