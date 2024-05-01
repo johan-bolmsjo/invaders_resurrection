@@ -5,7 +5,7 @@
 #include "libmedia/libmedia.h"
 
 /// Initialize module.
-void shield_module_init(void);
+void shield_module_init(struct MLRectDim screen_dim);
 
 /// Create new shields.
 void shields_new(void);
@@ -18,5 +18,5 @@ void shields_del(void);
 /// shield_id is the registered collision ID for the shield.
 bool shields_hit(int x, int y, int y_vec, int shield_id);
 
-/// Draw shields.
-void shields_draw(const struct MLGraphicsBuffer* draw_buf);
+/// Draw shields to screen.
+void shields_draw(const struct MLGraphicsBuffer* dst);

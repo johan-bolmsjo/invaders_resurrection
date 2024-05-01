@@ -14,9 +14,11 @@ enum {
     CharHeight = 8   // Character height in pixels
 };
 
-/// Decode game font (CharWidth, CharHeight) from asset data.
-/// Returns true on success.
-bool text_decode_font(void);
+/// Initialize module.
+///
+/// - Decodes game font (CharWidth, CharHeight) from asset data. Returns
+///   true on success.
+bool text_module_init(struct MLRectDim screen_dim);
 
 /// Print character [c] at address [addr].
 void text_print_char_at_address(char c, struct rgb565 color, struct rgb565* addr);

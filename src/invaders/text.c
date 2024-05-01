@@ -13,17 +13,26 @@
 
 #include "compressed_font_data.c"
 
-static uint8_t font_data[2048];
+static struct {
+    struct MLRectDim screen_dim;
+    uint8_t font_data[2048];
+} text_module;
+#define M text_module
 
-bool
+static bool
 text_decode_font(void)
 {
-    uLong src_len, dst_len;
+    const uLong src_len = ntohl(*(uint32_t*)(compressed_font_data + 4));
+    uLong dst_len = ntohl(*(uint32_t*)compressed_font_data);
 
-    src_len = ntohl(*(uint32_t*)(compressed_font_data + 4));
-    dst_len = ntohl(*(uint32_t*)compressed_font_data);
+    return uncompress(M.font_data, &dst_len, compressed_font_data + 8, src_len) == Z_OK;
+}
 
-    return uncompress(font_data, &dst_len, compressed_font_data + 8, src_len) == Z_OK;
+bool
+text_module_init(struct MLRectDim screen_dim)
+{
+    M.screen_dim = screen_dim;
+    return text_decode_font();
 }
 
 void
@@ -33,7 +42,7 @@ text_print_char_at_address(char c, struct rgb565 color, struct rgb565* addr)
     int h, w;
     uint8_t *cp, v;
 
-    cp = &font_data[(int)c * 8];
+    cp = &M.font_data[(int)c * 8];
 
     for (h = 8; h > 0; h--) {
         v = *cp++;
@@ -45,7 +54,7 @@ text_print_char_at_address(char c, struct rgb565 color, struct rgb565* addr)
             }
             v <<= 1;
         }
-        addr += MLDisplayWidth - CharWidth;
+        addr += M.screen_dim.w - CharWidth;
     }
 }
 

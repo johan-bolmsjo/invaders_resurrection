@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "gids.h"
+#include "libutil/array.h"
 #include "libutil/color.h"
 #include "missiles.h"
 #include "runlevel.h"
@@ -12,32 +13,32 @@
 #include "shot.h"
 #include "status.h"
 
-#define X_VECTORS 15
-#define Y_VECTORS 16
-
-#define X_MIN 60
-#define X_MAX (MLDisplayWidth - X_MIN)
-
-static int x_vector[X_VECTORS];
-static int y_vector[Y_VECTORS];
-static int x_vector_pos = 0;
-static int y_vector_pos = 0;
-
 struct Player {
     int               steer_count;
     struct Sprite     sprite;
     struct Collision* collision;
 };
 
-static int               count[15];
-static int               live_shots = 0;
-static struct Player     player; // Player information
-static struct GfxObject* player_obj;
+static struct {
+    struct MLRectDim screen_dim;
+    struct MLInput* input_ref;
 
-// Set in player_init(), used by runlevel func
-static struct MLInput* input_ref;
+    int x_vector[15];
+    int y_vector[16];
+    int x_vector_pos;
+    int y_vector_pos;
 
-static int is_alive = false;
+    int               count[15];
+    int               live_shots;
+    struct Player     player; // Player information
+    struct GfxObject* player_obj;
+
+    bool is_alive;
+} player_module;
+#define M player_module
+
+#define MinPlayerPositionX (60)
+#define MaxPlayerPositionX (M.screen_dim.w - MinPlayerPositionX)
 
 
 // Make sure that no shots are alive before
@@ -46,7 +47,7 @@ static int
 rl_play1_play2(struct RunLevelFunc* r)
 {
     (void)r;
-    return !live_shots ? 1 : 0;
+    return !M.live_shots ? 1 : 0;
 }
 
 // Make sure that no missiles are alive before
@@ -78,34 +79,38 @@ rl_play2_title0(struct RunLevelFunc* r)
         return 1;
     }
 
-    input_ref->press_button_fire = false;
+    M.input_ref->press_button_fire = false;
 
     return 0;
 }
 
 void
-player_module_init(struct MLInput* input)
+player_module_init(struct MLRectDim screen_dim, struct MLInput* input)
 {
-    double step = 1.5708 / 7, pos = -1.5708;
-    static struct RunLevelFunc play1_play2;
-    static struct RunLevelFunc play2_play0;
-    static struct RunLevelFunc play2_title0;
+    M.screen_dim = screen_dim;
+    M.input_ref = input;
 
-    for (int i = 0; i < 15; i++) {
-        count[i] = floor(2 * sin(fabs(pos)) + 0.5);
+    const double step = 1.5708 / 7;
+    double pos = -1.5708;
+
+    for (size_t i = 0; i < ARRAY_SIZE(M.count); i++) {
+        M.count[i] = floor(2 * sin(fabs(pos)) + 0.5);
         pos += step;
     }
 
-    for (int i = 0; i < X_VECTORS;) {
-        x_vector[i++] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
+    for (size_t i = 0; i < ARRAY_SIZE(M.x_vector); i++) {
+        M.x_vector[i] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
     }
 
-    for (int i = 0; i < Y_VECTORS;) {
-        y_vector[i++] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
+    for (size_t i = 0; i < ARRAY_SIZE(M.y_vector); i++) {
+        M.y_vector[i] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
     }
 
-    player_obj = gfx_object_find("player");
-    memset(&player, 0, sizeof(player));
+    M.player_obj = gfx_object_find("player");
+
+    static struct RunLevelFunc play1_play2;
+    static struct RunLevelFunc play2_play0;
+    static struct RunLevelFunc play2_title0;
 
     runlevel_register_func(&play1_play2, RUNLEVEL_PLAY1, RUNLEVEL_PLAY2,
                            rl_play1_play2);
@@ -115,8 +120,6 @@ player_module_init(struct MLInput* input)
 
     runlevel_register_func(&play2_title0, RUNLEVEL_PLAY2, RUNLEVEL_TITLE0,
                            rl_play2_title0);
-
-    input_ref = input;
 }
 
 // Animate player
@@ -126,7 +129,7 @@ animate(struct Player* p, struct MLInput* input)
     int frame = p->sprite.frame;
 
     p->steer_count++;
-    if (p->steer_count > count[frame]) {
+    if (p->steer_count > M.count[frame]) {
         if (input->x_axis != 0) {
             frame += input->x_axis;
             if (frame < 0) {
@@ -156,15 +159,15 @@ move(struct Player* p)
     int frame = p->sprite.frame;
 
     if (frame < 7) {
-        p->sprite.x -= count[frame];
-        if (p->sprite.x < X_MIN) {
-            p->sprite.x = X_MIN;
+        p->sprite.x -= M.count[frame];
+        if (p->sprite.x < MinPlayerPositionX) {
+            p->sprite.x = MinPlayerPositionX;
         }
     }
     if (frame > 7) {
-        p->sprite.x += count[frame];
-        if (p->sprite.x > X_MAX) {
-            p->sprite.x = X_MAX;
+        p->sprite.x += M.count[frame];
+        if (p->sprite.x > MaxPlayerPositionX) {
+            p->sprite.x = MaxPlayerPositionX;
         }
     }
 
@@ -175,28 +178,27 @@ move(struct Player* p)
 static void
 shot_cb(void)
 {
-    live_shots--;
+    M.live_shots--;
 }
 
 // Kill pilot.
 static void
 die(void)
 {
-    int i, xv, yv, x, y;
+    const int x = M.player.sprite.x;
+    const int y = M.player.sprite.y;
 
-    x = player.sprite.x;
-    y = player.sprite.y;
-
-    for (i = 0; i < 8; i++) {
-        xv = x_vector[x_vector_pos++];
-        if (x_vector_pos == X_VECTORS) {
-            x_vector_pos = 0;
+    for (int i = 0; i < 8; i++) {
+        const int xv = M.x_vector[M.x_vector_pos++];
+        if (M.x_vector_pos == ARRAY_SIZE(M.x_vector)) {
+            M.x_vector_pos = 0;
         }
 
+        int yv;
         do {
-            yv = y_vector[y_vector_pos++];
-            if (y_vector_pos == Y_VECTORS) {
-                y_vector_pos = 0;
+            yv = M.y_vector[M.y_vector_pos++];
+            if (M.y_vector_pos == ARRAY_SIZE(M.y_vector)) {
+                M.y_vector_pos = 0;
             }
         } while ((abs(xv) + abs(yv)) < 3);
 
@@ -208,7 +210,7 @@ die(void)
     }
 
     g_pilots--;
-    is_alive = false;
+    M.is_alive = false;
 
     sfx_player_explode();
 }
@@ -216,10 +218,10 @@ die(void)
 void
 player_kill(void)
 {
-    if (player.collision) {
+    if (M.player.collision) {
         die();
-        collision_destroy(player.collision);
-        player.collision = 0;
+        collision_destroy(M.player.collision);
+        M.player.collision = 0;
     }
 }
 
@@ -230,15 +232,15 @@ collision_cb(struct Collision* a, struct Collision* b)
     (void)b;
 
     die();
-    player.collision = 0;
+    M.player.collision = 0;
     return 1;
 }
 
 void
 player_draw(const struct MLGraphicsBuffer* dst)
 {
-    if (player.collision) {
-        sprite_draw(dst, &player.sprite);
+    if (M.player.collision) {
+        sprite_draw(dst, &M.player.sprite);
     }
 }
 
@@ -246,12 +248,12 @@ player_draw(const struct MLGraphicsBuffer* dst)
 static void
 player_new(void)
 {
-    if (!player.collision) {
-        sprite_init(&player.sprite, player_obj, 7, MLDisplayWidth / 2, MLDisplayHeight - 16, true);
-        player.steer_count = 0;
-        player.collision = collision_create(0, 0, GID_PLAYER, collision_cb);
-        collision_update_from_sprite(player.collision, &player.sprite);
-        is_alive = true;
+    if (!M.player.collision) {
+        sprite_init(&M.player.sprite, M.player_obj, 7, M.screen_dim.w / 2, M.screen_dim.h - 16, true);
+        M.player.steer_count = 0;
+        M.player.collision = collision_create(0, 0, GID_PLAYER, collision_cb);
+        collision_update_from_sprite(M.player.collision, &M.player.sprite);
+        M.is_alive = true;
     }
 }
 
@@ -259,11 +261,11 @@ player_new(void)
 static void
 suicide(void)
 {
-    if (player.collision) {
-        collision_destroy(player.collision);
-        player.collision = 0;
+    if (M.player.collision) {
+        collision_destroy(M.player.collision);
+        M.player.collision = 0;
         g_pilots = 0;
-        is_alive = false;
+        M.is_alive = false;
     }
 }
 
@@ -279,24 +281,24 @@ player_update(struct MLInput* input)
         }
 
         if (g_pilots) {
-            if (g_runlevel == RUNLEVEL_PLAY0 && !player.collision) {
+            if (g_runlevel == RUNLEVEL_PLAY0 && !M.player.collision) {
                 player_new();
             }
 
-            if (player.collision) {
-                animate(&player, input);
-                move(&player);
+            if (M.player.collision) {
+                animate(&M.player, input);
+                move(&M.player);
 
                 if (input->press_button_fire) {
                     input->press_button_fire = false;
 
                     const bool quickshot = false; // For testing
-                    if ((!live_shots || quickshot) &&
+                    if ((!M.live_shots || quickshot) &&
                         g_runlevel == RUNLEVEL_PLAY1) {
-                        if (shot_create(player.sprite.x - 1, player.sprite.y - 16,
+                        if (shot_create(M.player.sprite.x - 1, M.player.sprite.y - 16,
                                         0, -8, pack_rgb565(rgb565_color_white()), 1, GID_PLAYER_SHOT,
                                         shot_cb)) {
-                            live_shots++;
+                            M.live_shots++;
                         }
                         sfx_player_shot();
                     }
@@ -318,5 +320,5 @@ player_update(struct MLInput* input)
 bool
 player_is_alive(void)
 {
-    return is_alive;
+    return M.is_alive;
 }

@@ -9,6 +9,8 @@
 
 enum {
     TargaDataTypeUncompressedRGB = 2,
+    TargaImageDescFlagOriginLowerLeft = 0 << 5,
+    TargaImageDescFlagOriginUpperLeft = 1 << 5,
 };
 
 struct TargaHeader {
@@ -42,7 +44,7 @@ screenshot_create(const struct MLGraphicsBuffer* screen, const char* path)
         .height_lo = screen->dim.h & 0xff,
         .height_hi = screen->dim.h >> 8,
         .bitsperpixel = 24,
-        .imagedescriptor = 32,
+        .imagedescriptor = TargaImageDescFlagOriginUpperLeft,
     };
 
     int fd = open(path, O_CREAT | O_TRUNC | O_WRONLY, 0644);

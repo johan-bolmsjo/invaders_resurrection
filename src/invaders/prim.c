@@ -10,28 +10,36 @@
 // Value 0 is opaque and 16 is transparent.
 // Values 0 and 16 are never indexed into these tables.
 //
-static struct rgb565 alpha_r_lut[16 * 32];
-static struct rgb565 alpha_g_lut[16 * 64];
-static struct rgb565 alpha_b_lut[16 * 32];
+static struct {
+    struct MLRectDim screen_dim;
+
+    struct rgb565 alpha_r_lut[16 * 32];
+    struct rgb565 alpha_g_lut[16 * 64];
+    struct rgb565 alpha_b_lut[16 * 32];
+} prim_module;
+#define M prim_module
 
 void
-prim_module_init(void)
+prim_module_init(struct MLRectDim screen_dim)
 {
+    M.screen_dim = screen_dim;
+
     int atom = 16;
+
     for (int alpha = 0; alpha < 16; alpha++) {
         int v = 0;
         for (int r = 0; r < 32; r++) {
-            alpha_r_lut[alpha << 5 | r] = (struct rgb565){(v >> 4) << 11};
+            M.alpha_r_lut[alpha << 5 | r] = (struct rgb565){(v >> 4) << 11};
             v += atom;
         }
         v = 0;
         for (int g = 0; g < 64; g++) {
-            alpha_g_lut[alpha << 6 | g] = (struct rgb565){(v >> 4) << 5};
+            M.alpha_g_lut[alpha << 6 | g] = (struct rgb565){(v >> 4) << 5};
             v += atom;
         }
         v = 0;
         for (int b = 0; b < 32; b++) {
-            alpha_b_lut[alpha << 5 | b] = (struct rgb565){(v >> 4)};
+            M.alpha_b_lut[alpha << 5 | b] = (struct rgb565){(v >> 4)};
             v += atom;
         }
         atom--;
@@ -47,7 +55,7 @@ clip_gfx_frame(struct Clip* clip, const struct GfxFrame* gf, int x, int y)
     int x2 = x + gf->width - 1;
     int y2 = y + gf->height - 1;
 
-    if (x >= MLDisplayWidth || x2 < 0 || y >= MLDisplayHeight || y2 < 0) {
+    if (x >= M.screen_dim.w || x2 < 0 || y >= M.screen_dim.h || y2 < 0) {
         return false;
     }
 
@@ -57,8 +65,8 @@ clip_gfx_frame(struct Clip* clip, const struct GfxFrame* gf, int x, int y)
     } else {
         clip->sx_off = 0;
     }
-    if (x2 >= MLDisplayWidth) {
-        x2 = MLDisplayWidth - 1;
+    if (x2 >= M.screen_dim.w) {
+        x2 = M.screen_dim.w - 1;
     }
 
     if (y < 0) {
@@ -67,8 +75,8 @@ clip_gfx_frame(struct Clip* clip, const struct GfxFrame* gf, int x, int y)
     } else {
         clip->sy_off = 0;
     }
-    if (y2 >= MLDisplayHeight) {
-        y2 = MLDisplayHeight - 1;
+    if (y2 >= M.screen_dim.h) {
+        y2 = M.screen_dim.h - 1;
     }
 
     clip->x = x;
@@ -115,15 +123,15 @@ blit_clipped_gfx_frame_with_alpha(const struct MLGraphicsBuffer* dst, const stru
                      * Use 2 MB table? 65536 * 2 * 16.
                      */
                     const struct rgb565 src_color2 = (struct rgb565) {
-                        alpha_r_lut[(src_alpha << 5) | src_color.r].v |
-                        alpha_g_lut[(src_alpha << 6) | src_color.g].v |
-                        alpha_b_lut[(src_alpha << 5) | src_color.b].v
+                        M.alpha_r_lut[(src_alpha << 5) | src_color.r].v |
+                        M.alpha_g_lut[(src_alpha << 6) | src_color.g].v |
+                        M.alpha_b_lut[(src_alpha << 5) | src_color.b].v
                     };
 
                     const struct rgb565 dst_color2 = (struct rgb565) {
-                        alpha_r_lut[(dst_alpha << 5) | dst_color.r].v |
-                        alpha_g_lut[(dst_alpha << 6) | dst_color.g].v |
-                        alpha_b_lut[(dst_alpha << 5) | dst_color.b].v
+                        M.alpha_r_lut[(dst_alpha << 5) | dst_color.r].v |
+                        M.alpha_g_lut[(dst_alpha << 6) | dst_color.g].v |
+                        M.alpha_b_lut[(dst_alpha << 5) | dst_color.b].v
                     };
 
                     *dst_p++ = add_rgb565(src_color2, dst_color2);

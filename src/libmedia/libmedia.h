@@ -3,12 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-enum {
-    // Game is hard-coded for this resolution.
-    MLDisplayWidth  = 640,
-    MLDisplayHeight = 480,
-};
-
 /// Input state tailored for the current game.
 struct MLInput {
     bool press_quit;          // Window close event or similar

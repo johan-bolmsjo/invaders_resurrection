@@ -5,7 +5,7 @@
 #include "sprite.h"
 
 /// Initialize module.
-void player_module_init(struct MLInput* input);
+void player_module_init(struct MLRectDim screen_dim, struct MLInput* input);
 
 /// Kill pilot and destroy its collision object.
 void player_kill(void);

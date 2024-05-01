@@ -20,7 +20,7 @@ struct Clip {
 };
 
 /// Alpha tables used for mixing the edges of an object with the background.
-void prim_module_init(void);
+void prim_module_init(struct MLRectDim screen_dim);
 
 /// Clip graphics frame [gf] to be drawn to coordinates [x] and [y] into
 /// [clip]. Returns true if cliped or false if outside screen.

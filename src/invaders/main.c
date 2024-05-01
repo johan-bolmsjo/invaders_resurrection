@@ -86,23 +86,24 @@ main(void)
     }
     check_gfx_objects_exist();
 
-    if (!text_decode_font()) {
-        fatalf("Failed to decode font file!");
-    }
-
     struct MLInput input = {0};
 
     srandom(time(0));
 
-    prim_module_init();
-    stars_module_init();
+    if (!text_module_init(screen_dim)) {
+        fatalf("Failed to initialize text module!");
+    }
+
+    prim_module_init(screen_dim);
+    stars_module_init(screen_dim);
     ufo_module_init();
     title_module_init();
     armada_module_init(screen_dim);
     missiles_module_init(screen_dim);
-    player_module_init(&input);
+    player_module_init(screen_dim, &input);
     mystery_module_init(screen_dim);
-    shield_module_init();
+    shield_module_init(screen_dim);
+    shot_module_init(screen_dim);
 
     synth_init();
 

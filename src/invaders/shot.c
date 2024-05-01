@@ -8,6 +8,8 @@
 #include "shields.h"
 #include "libmedia/libmedia.h"
 
+int g_shot_obj = 0;
+
 struct Shot {
     int               x;
     int               y;
@@ -21,9 +23,17 @@ struct Shot {
     struct Shot*      next;
 };
 
-static struct Shot* shot_list = 0;
+static struct {
+    struct MLRectDim screen_dim;
+    struct Shot*     shot_list;
+} shot_module;
+#define M shot_module
 
-int g_shot_obj = 0;
+void
+shot_module_init(struct MLRectDim screen_dim)
+{
+    M.screen_dim = screen_dim;
+}
 
 static void
 shot_destroy(struct Shot* s)
@@ -37,7 +47,7 @@ shot_destroy(struct Shot* s)
         if (s->prev) {
             s->prev->next = s->next;
         } else {
-            shot_list = s->next;
+            M.shot_list = s->next;
         }
 
         if (s->next) {
@@ -68,9 +78,9 @@ struct Shot*
 shot_create(int x, int y, int x_vector, int y_vector, struct rgb565 color,
             int fatal, int gid, void (*cb)(void))
 {
-    if ((unsigned int)x > (MLDisplayWidth - 2) ||
-        (unsigned int)y > (MLDisplayHeight - 2)) {
-        return 0;
+    if (x < 0 || x > (M.screen_dim.w - 2) ||
+        y < 0 || y > (M.screen_dim.h - 2)) {
+        return NULL;
     }
 
     struct Shot* s = malloc(sizeof(struct Shot));
@@ -93,15 +103,15 @@ shot_create(int x, int y, int x_vector, int y_vector, struct rgb565 color,
     s->c = c;
     s->cb = cb;
 
-    if (shot_list) {
-        s->next = shot_list;
+    if (M.shot_list) {
+        s->next = M.shot_list;
         s->next->prev = s;
     } else {
         s->next = 0;
     }
 
     s->prev = 0;
-    shot_list = s;
+    M.shot_list = s;
     g_shot_obj++;
 
     return s;
@@ -110,7 +120,7 @@ shot_create(int x, int y, int x_vector, int y_vector, struct rgb565 color,
 void
 shot_draw(const struct MLGraphicsBuffer* dst)
 {
-    struct Shot* s = shot_list;
+    struct Shot* s = M.shot_list;
     while (s) {
         if (!s->pend_rm) {
             struct rgb565* p = ml_graphics_buffer_xy(dst, s->x, s->y);
@@ -126,7 +136,7 @@ shot_draw(const struct MLGraphicsBuffer* dst)
 void
 shot_update(void)
 {
-    struct Shot* s = shot_list;
+    struct Shot* s = M.shot_list;
     while (s) {
         if (s->pend_rm) {
             struct Shot* st = s;
@@ -138,8 +148,8 @@ shot_update(void)
         s->x += s->x_vector;
         s->y += s->y_vector;
 
-        if ((unsigned int)s->x > (MLDisplayWidth - 2) ||
-            (unsigned int)s->y > (MLDisplayHeight - 2)) {
+        if (s->x < 0 || s->x > (M.screen_dim.w - 2) ||
+            s->y < 0 || s->y > (M.screen_dim.h - 2)) {
             shot_destroy(s);
             if (s->c)
                 collision_destroy(s->c);
