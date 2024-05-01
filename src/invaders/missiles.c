@@ -148,8 +148,7 @@ missiles_update(void)
                 M.missiles[mi].sprite.x = armada.b[y][x].sprite.x;
                 M.missiles[mi].sprite.y = armada.b[y][x].sprite.y + 15 + 4;
                 g_missiles_alive++;
-                M.missiles[mi].collision = collision_create(mi, 0, GID_BOMBER_SHOT,
-                                                  collision_cb);
+                M.missiles[mi].collision = collision_create(mi, 0, GID_BOMBER_SHOT, collision_cb);
                 collision_update_from_sprite(M.missiles[mi].collision, &M.missiles[mi].sprite);
             }
         }

@@ -6,17 +6,19 @@
 
 #include <inttypes.h>
 
+#include "invaders/gids.h"
 #include "sprite.h"
+#include "gids.h"
 
 struct Collision;
 
 struct Collision {
     // ID data =>
 
-    int   id;                   // ID number and ID pointer
-    void* id_p;
-    int   gid;                  // Group ID
-    int   pend_rm;              // Used by collision routine
+    int                id;      // ID number and ID pointer
+    void*              id_p;
+    enum ObjectGroupID gid;
+    int                pend_rm; // Used by collision routine
 
     // Invoked on collision between two objects.
     int (*handler)(struct Collision*, struct Collision*);
@@ -40,7 +42,7 @@ struct Collision {
 extern int g_collision_obj;
 
 /// Creates collision object with a callback function that is called upon collision.
-struct Collision* collision_create(int id, void* id_p, int gid,
+struct Collision* collision_create(int id, void* id_p, enum ObjectGroupID gid,
                                    int (*handler)(struct Collision*, struct Collision*));
 
 /// Removes a collition object.

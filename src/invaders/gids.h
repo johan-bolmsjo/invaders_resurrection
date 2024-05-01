@@ -1,11 +1,10 @@
 #pragma once
 
-// Object group IDs.
-// TODO(jb): Convert to enum
-
-#define GID_PLAYER      0
-#define GID_PLAYER_SHOT 1
-#define GID_BOMBER      2
-#define GID_BOMBER_SHOT 3
-#define GID_MYSTERY     4
-#define GID_SHIELD      5
+enum ObjectGroupID {
+    GID_PLAYER      = 0,
+    GID_PLAYER_SHOT = 1,
+    GID_BOMBER      = 2,
+    GID_BOMBER_SHOT = 3,
+    GID_MYSTERY     = 4,
+    GID_SHIELD      = 5,
+};

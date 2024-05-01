@@ -3,13 +3,14 @@
 #include <stdlib.h>
 
 #include "error.h"
+#include "invaders/gids.h"
 
 static struct Collision* c_base = NULL; /* Linked list base */
 
 int g_collision_obj = 0;
 
 struct Collision*
-collision_create(int id, void* id_p, int gid,
+collision_create(int id, void* id_p, enum ObjectGroupID gid,
                  int (*handler)(struct Collision*, struct Collision*))
 {
     struct Collision* c = malloc(sizeof(struct Collision));

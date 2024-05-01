@@ -296,8 +296,7 @@ player_update(struct MLInput* input)
                     if ((!M.live_shots || quickshot) &&
                         g_runlevel == RUNLEVEL_PLAY1) {
                         if (shot_create(M.player.sprite.x - 1, M.player.sprite.y - 16,
-                                        0, -8, pack_rgb565(rgb565_color_white()), 1, GID_PLAYER_SHOT,
-                                        shot_cb)) {
+                                        0, -8, pack_rgb565(rgb565_color_white()), 1, GID_PLAYER_SHOT, shot_cb)) {
                             M.live_shots++;
                         }
                         sfx_player_shot();
