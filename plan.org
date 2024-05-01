@@ -36,13 +36,6 @@ be any source graphics data. We have to accept that that is lost to time.
 - [ ] Convert the font =pearl_8x8.dat.deflate= to gzip format if choosen
   for the graphics data bundle.
 
-* TODO Increase missile rate when looping armada
-Increase missile rate when armada is looped after three screens.
-
-* TODO Implement pause screen
-- Keys :: Pause
-- Buttons :: Start
-
 * TODO Revise sound mixing
 The sound is generally glitchy with SDL 1.x. It worked better with the
 NEO sound API for which the code was originally written.
@@ -65,6 +58,27 @@ operates in a "tracker mode", so that the next sound effect is scheduled
 automatically when the previous one terminates.
 
 * TODO Make a webassembly port using https://emscripten.org
+
+* Game play improvements
+** TODO Increase missile rate when looping armada
+Increase missile rate when armada is looped after three screens.
+
+** TODO Missile shoot down effect
+Sound + particles
+
+** TODO Bonus score based on screen clear speed
+
+** Power-ups
+Increased shot speed or double shoots under some conditions?
+
+** Co-op play?
+Competing for high best score while clearing the same screens?
+
+* TODO Implement pause screen
+- Keys :: Pause
+- Buttons :: Start
+
+Dancing aliens?
 
 * TODO CRT shader effect
 Feed the rendered image through a CRT shader effect to reduce the blocky appearance of 640x480 resolution.

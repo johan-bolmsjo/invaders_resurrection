@@ -66,10 +66,10 @@ check_gfx_objects_exist(void)
 }
 
 static void
-save_screenshot(const struct MLGraphicsBuffer* dst)
+save_screenshot(const struct MLGraphicsBuffer* screen)
 {
     const char* filename = "invaders_screenshot.tga";
-    if (screenshot_create(dst, filename)) {
+    if (screenshot_create(screen, filename)) {
         printf("Saved screenshot \"%s\"\n", filename);
     } else {
         printf("Failed to save screenshot \"%s\"\n", filename);
@@ -79,6 +79,8 @@ save_screenshot(const struct MLGraphicsBuffer* dst)
 int
 main(void)
 {
+    const struct MLRectDim screen_dim = (struct MLRectDim){.w = 640, .h = 480};
+
     if (!decode_gfx_data()) {
         fatalf("Failed to decode graphics file!");
     }
@@ -96,10 +98,10 @@ main(void)
     stars_module_init();
     ufo_module_init();
     title_module_init();
-    armada_module_init();
-    missiles_module_init();
+    armada_module_init(screen_dim);
+    missiles_module_init(screen_dim);
     player_module_init(&input);
-    mystery_module_init();
+    mystery_module_init(screen_dim);
     shield_module_init();
 
     synth_init();
@@ -119,7 +121,7 @@ main(void)
         fatalf("Failed to open audio device!");
     }
 
-    struct MLGraphicsBuffer* draw_buf = ml_graphics_buffer_create(MLPixelFormatRGB565, (struct MLRectDim){.w = MLDisplayWidth, .h = MLDisplayHeight});
+    struct MLGraphicsBuffer* draw_buf = ml_graphics_buffer_create(MLPixelFormatRGB565, screen_dim);
     if (!ml_open_display((struct MLDisplayMode){.format = draw_buf->format, .dim = draw_buf->dim, .refresh_rate = 60})) {
         ml_close();
         fatalf("Failed to set display mode!");

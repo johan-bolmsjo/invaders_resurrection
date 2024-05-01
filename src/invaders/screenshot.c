@@ -1,37 +1,71 @@
 #include "screenshot.h"
 #include "libmedia/libmedia.h"
+#include "libutil/color.h"
 
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <inttypes.h>
 
+enum {
+    TargaDataTypeUncompressedRGB = 2,
+};
+
+struct TargaHeader {
+   uint8_t idlength;
+   uint8_t colourmaptype;
+   uint8_t datatypecode;
+   uint8_t colourmaporigin_lo;
+   uint8_t colourmaporigin_hi;
+   uint8_t colourmaplength_lo;
+   uint8_t colourmaplength_hi;
+   uint8_t colourmapdepth;
+   uint8_t x_origin_lo;
+   uint8_t x_origin_hi;
+   uint8_t y_origin_lo;
+   uint8_t y_origin_hi;
+   uint8_t width_lo;
+   uint8_t width_hi;
+   uint8_t height_lo;
+   uint8_t height_hi;
+   uint8_t bitsperpixel;
+   uint8_t imagedescriptor;
+};
+
 bool
-screenshot_create(const struct MLGraphicsBuffer* dst, const char* path)
+screenshot_create(const struct MLGraphicsBuffer* screen, const char* path)
 {
-    const uint8_t tga_header[18] = {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 2, 224, 1, 24, 32};
+    struct TargaHeader hdr = {
+        .datatypecode = TargaDataTypeUncompressedRGB,
+        .width_lo = screen->dim.w & 0xff,
+        .width_hi = screen->dim.w >> 8,
+        .height_lo = screen->dim.h & 0xff,
+        .height_hi = screen->dim.h >> 8,
+        .bitsperpixel = 24,
+        .imagedescriptor = 32,
+    };
 
     int fd = open(path, O_CREAT | O_TRUNC | O_WRONLY, 0644);
     if (fd == -1) {
         return false;
     }
 
-    uint8_t*  m = malloc(MLDisplayWidth * MLDisplayWidth * 3);
-    uint16_t* s = ml_graphics_buffer_xy(dst, 0, 0);
-    uint8_t*  d = m;
+    const int       num_pixels = screen->dim.w * screen->dim.h;
+    const int       dst_size   = num_pixels * 3;
+    uint8_t*        dst        = malloc(dst_size);
+    const uint16_t* src        = ml_graphics_buffer_xy(screen, 0, 0);
 
-    for (int i = MLDisplayWidth * MLDisplayHeight; i > 0; i--) {
-        const uint16_t sv = *s++;
-        /* BGR pixel format */
-        *d++ = (sv & 31) << 3;
-        *d++ = (sv >> 3) & 0xFC;
-        *d++ = (sv >> 8) & 0xF8;
+    for (int i = 0; i < dst_size; i += 3) {
+        struct rgb pixel = unpack_rgb565((struct rgb565){.v = *src++});
+        dst[i + 0] = pixel.b << 3;
+        dst[i + 1] = pixel.g << 2;
+        dst[i + 2] = pixel.r << 3;
     }
 
-    write(fd, tga_header, 18);
-    write(fd, m, MLDisplayWidth * MLDisplayHeight * 3);
+    write(fd, &hdr, sizeof(hdr));
+    write(fd, dst, dst_size);
 
     close(fd);
-    free(m);
+    free(dst);
     return true;
 }

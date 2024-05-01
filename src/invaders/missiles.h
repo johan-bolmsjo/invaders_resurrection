@@ -16,9 +16,9 @@ struct Missile {
 extern int g_missiles_alive;
 
 /// Initialize module.
-void missiles_module_init(void);
+void missiles_module_init(struct MLRectDim screen_dim);
 
-/// Draw missiles on screen.
+/// Draw missiles to screen.
 void missiles_draw(const struct MLGraphicsBuffer* dst);
 
 /// Updates old missiles and creates new ones.

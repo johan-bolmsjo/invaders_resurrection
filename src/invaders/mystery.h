@@ -7,9 +7,9 @@
 #include "libmedia/libmedia.h"
 
 /// Initialize module.
-void mystery_module_init(void);
+void mystery_module_init(struct MLRectDim screen_dim);
 
-/// Draw mystery.
+/// Draw mystery to screen.
 void mystery_draw(const struct MLGraphicsBuffer* dst);
 
 /// Updates and creates "mysteries" during game play.

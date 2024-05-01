@@ -45,12 +45,12 @@ struct Armada {
 extern struct Armada armada; // Used in missiles.c as well
 
 /// Initialize module.
-void armada_module_init(void);
+void armada_module_init(struct MLRectDim screen_dim);
 
 /// Reset some values, called from the title screen.
 void armada_reset(void);
 
-/// Draw armada on the screen.
+/// Draw armada to the screen.
 void armada_draw(const struct MLGraphicsBuffer* dst);
 
 /// Main bombers function.

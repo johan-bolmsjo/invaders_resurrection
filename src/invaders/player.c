@@ -247,7 +247,7 @@ static void
 player_new(void)
 {
     if (!player.collision) {
-        sprite_init(&player.sprite, player_obj, 7, MLDisplayWidth / 2, MLDisplayHeight - 16, 1);
+        sprite_init(&player.sprite, player_obj, 7, MLDisplayWidth / 2, MLDisplayHeight - 16, true);
         player.steer_count = 0;
         player.collision = collision_create(0, 0, GID_PLAYER, collision_cb);
         collision_update_from_sprite(player.collision, &player.sprite);

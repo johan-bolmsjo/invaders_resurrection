@@ -37,11 +37,11 @@ title_module_init(void)
                                      "Press fire to begin"};
 
     ufo_init(&ufo, 34 * 8, 22 * 8, 0);
-    sprite_init(&bombers[0].sprite, gfx_object_find("bomber_3"), 0, 34 * 8, 26 * 8, 0);
+    sprite_init(&bombers[0].sprite, gfx_object_find("bomber_3"), 0, 34 * 8, 26 * 8, false);
     bomber_init(&bombers[0]);
-    sprite_init(&bombers[1].sprite, gfx_object_find("bomber_2"), 0, 34 * 8, 30 * 8, 0);
+    sprite_init(&bombers[1].sprite, gfx_object_find("bomber_2"), 0, 34 * 8, 30 * 8, false);
     bomber_init(&bombers[1]);
-    sprite_init(&bombers[2].sprite, gfx_object_find("bomber_1"), 0, 34 * 8, 34 * 8, 0);
+    sprite_init(&bombers[2].sprite, gfx_object_find("bomber_1"), 0, 34 * 8, 34 * 8, false);
     bomber_init(&bombers[2]);
 
     sprites[0] = &ufo.sprite;
