@@ -14,8 +14,8 @@ sfx_extra_life(void)
         {25, 50, 0, 25}
     };
 
-    synth_channel_kill(CH_EXTRA_LIFE);
-    synth_envelope(&e0, CH_EXTRA_LIFE);
+    synth_channel_kill(ChannelExtraLife);
+    synth_envelope(&e0, ChannelExtraLife);
 }
 
 void
@@ -46,10 +46,10 @@ sfx_player_shot(void)
         {50, 150, 0, 0}
     };
 
-    synth_channel_kill(CH_PLAYER_SHOT);
-    synth_envelope(&e0, CH_PLAYER_SHOT);
-    synth_envelope_fm(&fm, CH_PLAYER_SHOT);
-    synth_envelope_pwm(&pwm, CH_PLAYER_SHOT);
+    synth_channel_kill(ChannelPlayerShot);
+    synth_envelope(&e0, ChannelPlayerShot);
+    synth_envelope_fm(&fm, ChannelPlayerShot);
+    synth_envelope_pwm(&pwm, ChannelPlayerShot);
 }
 
 void
@@ -72,9 +72,9 @@ sfx_player_explode(void)
         {1, 299, 0, 0}
     };
 
-    synth_channel_kill(CH_PLAYER_DIE);
-    synth_envelope(&e0, CH_PLAYER_DIE);
-    synth_envelope_fm(&fm, CH_PLAYER_DIE);
+    synth_channel_kill(ChannelPlayerDie);
+    synth_envelope(&e0, ChannelPlayerDie);
+    synth_envelope_fm(&fm, ChannelPlayerDie);
 }
 
 static void
@@ -136,10 +136,10 @@ sfx_bomber_move(void)
     static int sfx_index = 0;
 
     // Play sound on available channel to avoid cut of sound effects.
-    if (!synth_channel_envelopes(CH_BOMBER_MOVE)) {
-        bomber_move(CH_BOMBER_MOVE, sfx_index);
-    } else if (!synth_channel_envelopes(CH_BOMBER_DIE)) {
-        bomber_move(CH_BOMBER_DIE, sfx_index);
+    if (!synth_channel_envelopes(ChannelBomberMove)) {
+        bomber_move(ChannelBomberMove, sfx_index);
+    } else if (!synth_channel_envelopes(ChannelBomberDie)) {
+        bomber_move(ChannelBomberDie, sfx_index);
     }
 
     if (++sfx_index > 3) {
@@ -167,9 +167,9 @@ sfx_bomber_explode(void)
         {1, 299, 0, 0}
     };
 
-    synth_channel_kill(CH_BOMBER_DIE);
-    synth_envelope(&e0, CH_BOMBER_DIE);
-    synth_envelope_fm(&fm, CH_BOMBER_DIE);
+    synth_channel_kill(ChannelBomberDie);
+    synth_envelope(&e0, ChannelBomberDie);
+    synth_envelope_fm(&fm, ChannelBomberDie);
 }
 
 void
@@ -192,9 +192,9 @@ sfx_mystery_move(void)
         {1, 10199, 0, 0}
     };
 
-    synth_channel_kill(CH_UFO_MOVE);
-    synth_envelope(&e0, CH_UFO_MOVE);
-    synth_envelope_fm(&fm, CH_UFO_MOVE);
+    synth_channel_kill(ChannelUfoMove);
+    synth_envelope(&e0, ChannelUfoMove);
+    synth_envelope_fm(&fm, ChannelUfoMove);
 }
 
 void
@@ -217,7 +217,7 @@ sfx_mystery_explode(void)
         {400, 0, 0, 0}
     };
 
-    synth_channel_kill(CH_UFO_DIE);
-    synth_envelope(&e0, CH_UFO_DIE);
-    synth_envelope_fm(&fm, CH_UFO_DIE);
+    synth_channel_kill(ChannelUfoDie);
+    synth_envelope(&e0, ChannelUfoDie);
+    synth_envelope_fm(&fm, ChannelUfoDie);
 }

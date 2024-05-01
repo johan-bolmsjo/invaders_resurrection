@@ -121,7 +121,7 @@ mystery_update(void)
 
     if (M.ufo.collision) {
         if (M.ufo.sprite.x == x_stop) {
-            synth_channel_kill(CH_UFO_MOVE);
+            synth_channel_kill(ChannelUfoMove);
             collision_destroy(M.ufo.collision);
             M.ufo.collision = 0;
             M.mystery_appear_ms = -1;
