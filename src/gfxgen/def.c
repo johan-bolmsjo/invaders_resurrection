@@ -8,7 +8,7 @@
 #include "libgfx/libgfx.h"
 #include "image.h"
 #include "ff.h"
-#include "colours.h"
+#include "colors.h"
 #include "clip.h"
 #include "crop.h"
 #include "scale.h"
@@ -152,7 +152,7 @@ cmd_frame(struct DefObject* d_obj)
         return ERROR;
     }
 
-    struct Image* im2 = colour_rgb_to_rgba(im);
+    struct Image* im2 = color_rgb_to_rgba(im);
     image_destroy(im);
     if (im2 == NULL) {
         return ERROR;
@@ -186,7 +186,7 @@ ascii_hex_to_int(char* p)
     return v;
 }
 
-// Adds alpha value 16 to pixels with the specified rgb colour.
+// Adds alpha value 16 to pixels with the specified rgb color.
 static int
 cmd_rgb_to_alpha(struct DefObject* d_obj)
 {
@@ -212,7 +212,7 @@ cmd_rgb_to_alpha(struct DefObject* d_obj)
 
     uint8_t thres[3] = {0, 0, 0};
     for (int i = 0; i < d_obj->frames; i++) {
-        colour_make_rgb_transparent(d_obj->ipp[i], rgb, thres);
+        color_make_rgb_transparent(d_obj->ipp[i], rgb, thres);
     }
 
     return E_OK;
@@ -381,7 +381,7 @@ cmd_end(struct DefObject* d_obj)
 
         if (gfx) {
             if (!alpha) {
-                struct Image* image = colour_rgba_to_rgb(d_obj->ipp[i]);
+                struct Image* image = color_rgba_to_rgb(d_obj->ipp[i]);
                 if (image == NULL) {
                     return ERROR;
                 }

@@ -9,7 +9,7 @@
 #include <zlib.h>
 
 #include "error.h"
-#include "colours.h"
+#include "colors.h"
 
 #define HALF_BUF_SIZE 2048
 #define BUF_SIZE      4096
@@ -151,7 +151,7 @@ ff_targa_read(char* path)
     tga.id_length = buf[0];
     tga.cmap_type = buf[1];
     tga.image_type = buf[2];
-    tga.cmap_spec.colours = ((int)buf[6] << 8) | buf[5];
+    tga.cmap_spec.colors = ((int)buf[6] << 8) | buf[5];
     tga.cmap_spec.entry_size = buf[7];
     tga.image_spec.width = ((int)buf[13] << 8) | buf[12];
     tga.image_spec.height = ((int)buf[15] << 8) | buf[14];
@@ -182,13 +182,13 @@ ff_targa_read(char* path)
             break;
         }
 
-        image = image_create(CMAP, tga.cmap_spec.colours,
+        image = image_create(CMAP, tga.cmap_spec.colors,
                              tga.image_spec.width, tga.image_spec.height);
         if (image == NULL) {
             break;
         }
 
-        int len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
+        int len = tga.cmap_spec.colors * ((tga.cmap_spec.entry_size + 7) >> 3);
         if (gzread(gz, image->cmap, len) != len) {
             gzclose(gz);
             return NULL;
@@ -210,7 +210,7 @@ ff_targa_read(char* path)
 
     case TARGA_TYPE_RGB:
         if (tga.cmap_type == TARGA_CMAP_YES) {
-            int len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
+            int len = tga.cmap_spec.colors * ((tga.cmap_spec.entry_size + 7) >> 3);
             if (gzseek(gz, len, SEEK_CUR) != len) {
                 gzclose(gz);
                 return NULL;
@@ -240,13 +240,13 @@ ff_targa_read(char* path)
         }
         /* POV-Ray stores targa images in bgr order */
         if (image) {
-            colour_bgr_to_rgb(image);
+            color_bgr_to_rgb(image);
         }
         break;
 
     case TARGA_TYPE_GREY:
         if (tga.cmap_type == TARGA_CMAP_YES) {
-            int len = tga.cmap_spec.colours * ((tga.cmap_spec.entry_size + 7) >> 3);
+            int len = tga.cmap_spec.colors * ((tga.cmap_spec.entry_size + 7) >> 3);
             if (gzseek(gz, len, SEEK_CUR) != len) {
                 gzclose(gz);
                 return NULL;

@@ -4,7 +4,7 @@
 
 #include "image.h"
 
-// Colour map types
+// Color map types
 #define TARGA_CMAP_NO  0
 #define TARGA_CMAP_YES 1
 
@@ -20,13 +20,13 @@
 #define TARGA_VERT_MASK  32
 
 // RLE
-#define TARGA_RLE_MASK_TYPE  128 /* 1 = RLE packet, 0 = RAW packet */
+#define TARGA_RLE_MASK_TYPE  128 // 1 = RLE packet, 0 = RAW packet
 #define TARGA_RLE_MASK_COUNT 127
 
 struct TargaCmapSpec {
     // int first_entry;
-    int colours;
-    uint8_t entry_size; /* Typically 15, 16, 24 or 32 */
+    int     colors;
+    uint8_t entry_size;         // Typically 15, 16, 24 or 32
 };
 
 struct TargaImageSpec {
@@ -34,7 +34,7 @@ struct TargaImageSpec {
     // int y_origin;
     int     width;
     int     height;
-    uint8_t depth;              /* Typically 8, 16, 24 or 32 */
+    uint8_t depth;              // Typically 8, 16, 24 or 32
     uint8_t descriptor;
 };
 

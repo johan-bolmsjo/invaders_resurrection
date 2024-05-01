@@ -179,7 +179,7 @@ blit_clipped_gfx_frame(const struct MLGraphicsBuffer* dst, const struct Clip* cl
 }
 
 void
-blit_clipped_colour_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, struct rgb565 color)
+blit_clipped_color_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, struct rgb565 color)
 {
     const int dst_stride = dst->dim.w - clip->w;
     struct rgb565* dst_p = ml_graphics_buffer_xy(dst, clip->x, clip->y);

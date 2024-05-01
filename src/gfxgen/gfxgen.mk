@@ -2,7 +2,7 @@ $(call define-tool-srcs, gfxgen, \
 	src/gfxgen/image.c \
 	src/gfxgen/def.c \
 	src/gfxgen/main.c \
-	src/gfxgen/colours.c \
+	src/gfxgen/colors.c \
 	src/gfxgen/clip.c \
 	src/gfxgen/gfx_write.c \
 	src/gfxgen/ff.c \

@@ -29,8 +29,8 @@ bool clip_gfx_frame(struct Clip* clip, const struct GfxFrame* gf, int x, int y);
 /// Blit graphics frame clipped by clip.
 void blit_clipped_gfx_frame(const struct MLGraphicsBuffer* dst, const struct Clip* clip, const struct GfxFrame* gf);
 
-/// Blit clipped single coloured box. Used to clear sprites.
-void blit_clipped_colour_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, struct rgb565 color);
+/// Blit clipped single colored box. Used to clear sprites.
+void blit_clipped_color_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, struct rgb565 color);
 
 /// Blit rectangular block.
 void blit_clipped_gfx_box(const struct MLGraphicsBuffer* dst, const struct Clip* clip, const struct rgb565* src);

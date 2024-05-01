@@ -13,7 +13,7 @@ crop(struct Image* image, struct Clip* clip)
         return NULL;
     }
 
-    struct Image* image2 = image_create(image->type, image->colours, clip->w, clip->h);
+    struct Image* image2 = image_create(image->type, image->colors, clip->w, clip->h);
     if (!image2) {
         return image2;
     }

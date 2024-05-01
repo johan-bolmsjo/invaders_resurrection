@@ -15,13 +15,13 @@ enum {
 
 struct TargaHeader {
    uint8_t idlength;
-   uint8_t colourmaptype;
+   uint8_t colormaptype;
    uint8_t datatypecode;
-   uint8_t colourmaporigin_lo;
-   uint8_t colourmaporigin_hi;
-   uint8_t colourmaplength_lo;
-   uint8_t colourmaplength_hi;
-   uint8_t colourmapdepth;
+   uint8_t colormaporigin_lo;
+   uint8_t colormaporigin_hi;
+   uint8_t colormaplength_lo;
+   uint8_t colormaplength_hi;
+   uint8_t colormapdepth;
    uint8_t x_origin_lo;
    uint8_t x_origin_hi;
    uint8_t y_origin_lo;

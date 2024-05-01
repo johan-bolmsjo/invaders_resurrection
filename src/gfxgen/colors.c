@@ -1,8 +1,8 @@
-#include "colours.h"
+#include "colors.h"
 
 // bgr to rgb, fix targa code later instead of this hack!
 void
-colour_bgr_to_rgb(struct Image* image)
+color_bgr_to_rgb(struct Image* image)
 {
     uint8_t* p = image->image;
     for (int i = image->width * image->height; i > 0; i--) {
@@ -15,7 +15,7 @@ colour_bgr_to_rgb(struct Image* image)
 
 // Add an alpha channel to a rgb image, store as rgba.
 struct Image*
-colour_rgb_to_rgba(struct Image* image)
+color_rgb_to_rgba(struct Image* image)
 {
     struct Image* image2 = image_create(RGBA, 0, image->width, image->height);
     if (!image2) {
@@ -37,7 +37,7 @@ colour_rgb_to_rgba(struct Image* image)
 
 // Mix each pixel with its alpha channel and black, store as rgb.
 struct Image*
-colour_rgba_to_rgb(struct Image* image)
+color_rgba_to_rgb(struct Image* image)
 {
     struct Image* image2 = image_create(RGB, 0, image->width, image->height);
     if (!image2) {
@@ -60,7 +60,7 @@ colour_rgba_to_rgb(struct Image* image)
 
 // Game specific alpha.
 void
-colour_make_rgb_transparent(struct Image* image, uint8_t* rgb, uint8_t* thres)
+color_make_rgb_transparent(struct Image* image, uint8_t* rgb, uint8_t* thres)
 {
     if (image->type != RGBA) {
         return;

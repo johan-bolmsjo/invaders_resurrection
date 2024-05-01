@@ -15,7 +15,7 @@ image_get_first(void)
 // Creates a new image and returns a pointer to this image or NULL
 // if there was not enough memory or some input parameter was out of range.
 struct Image*
-image_create(int type, int colours, int width, int height)
+image_create(int type, int colors, int width, int height)
 {
     if (width > 32767 ||
         width <= 0 ||
@@ -36,13 +36,13 @@ image_create(int type, int colours, int width, int height)
 
     switch (type) {
     case CMAP:
-        if (colours < 2 || colours > 256) {
+        if (colors < 2 || colors > 256) {
             free(image);
             return NULL;
         }
-        image->colours = colours;
+        image->colors = colors;
         image->depth = 1;
-        image->cmap = malloc((size_t)colours * 3);
+        image->cmap = malloc((size_t)colors * 3);
         if (image->cmap == NULL) {
             free(image);
             return NULL;
@@ -50,19 +50,19 @@ image_create(int type, int colours, int width, int height)
         break;
 
     case GREY:
-        image->colours = 0;
+        image->colors = 0;
         image->depth = 1;
         image->cmap = 0;
         break;
 
     case RGB:
-        image->colours = 0;
+        image->colors = 0;
         image->depth = 3;
         image->cmap = 0;
         break;
 
     case RGBA:
-        image->colours = 0;
+        image->colors = 0;
         image->depth = 4;
         image->cmap = 0;
         break;
