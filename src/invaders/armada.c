@@ -6,6 +6,7 @@
 #include "gids.h"
 #include "libgfx/libgfx.h"
 #include "libutil/array.h"
+#include "libutil/prng.h"
 #include "player.h"
 #include "runlevel.h"
 #include "sfx.h"
@@ -26,15 +27,9 @@ enum {
 struct Armada armada;
 
 static struct {
+    struct prng64_state* prng_state;
     struct MLRectDim screen_dim;
-
     struct GfxObject* gfx_obj[3];
-
-    // Vector tables for explosions.
-    int x_vector[15];
-    int y_vector[16];
-    int x_vector_c;
-    int y_vector_c;
 } armada_module;
 #define M armada_module
 
@@ -43,6 +38,10 @@ static struct {
 #define MaxPositionY (M.screen_dim.h - 15)
 #define MinPositionY (MaxPositionY - (11 * BomberHeight))
 
+static int
+random_speed() {
+    return 12 * (prng64_next_double(M.prng_state) - 0.5);
+}
 
 // Collision handler.
 // Increases score, speed and plays explosion sound.
@@ -54,37 +53,27 @@ collision_cb(struct Collision* a, struct Collision* b)
     }
 
     struct Bomber* bomber = (struct Bomber*)a->id_p;
-    int x = bomber->sprite.x;
-    int y = bomber->sprite.y;
 
-    for (int i = 0; i < 4; i++) {
-        int xv = M.x_vector[M.x_vector_c++];
-        if (M.x_vector_c == ARRAY_SIZE(M.x_vector)) {
-            M.x_vector_c = 0;
-        }
-
+    for (int i = 0; i < 5; i++) {
+        int xv = random_speed();
         int yv;
         do {
-            yv = M.y_vector[M.y_vector_c++];
-            if (M.y_vector_c == ARRAY_SIZE(M.y_vector)) {
-                M.y_vector_c = 0;
-            }
+            yv = random_speed();
         } while ((abs(xv) + abs(yv)) < 3);
 
-        shot_create(x + xv, y + yv, xv, yv, pack_rgb565((struct rgb){.g = 31}), 0, 0, 0);
+        shot_create(bomber->sprite.x + xv, bomber->sprite.y + yv, xv, yv,
+                    pack_rgb565((struct rgb){.g = 31}), 0, 0, 0);
     }
 
     bomber->collision = 0;
-    x = bomber->x;
-    y = bomber->y;
+    const int x = bomber->x;
+    const int y = bomber->y;
 
-    if (y < ARMADA_Y) {
+    if (y == 0) {
         g_score += 30;
-    }
-    if (y >= ARMADA_Y && y < (ARMADA_Y * 3)) {
+    } else if (y <= 3) {
         g_score += 20;
-    }
-    if (y >= (ARMADA_Y * 3)) {
+    } else {
         g_score += 10;
     }
 
@@ -136,7 +125,7 @@ animate(void)
 {
     struct Bomber* b = armada.b[0];
 
-    for (int i = 0; i < ARMADA_XY; i++) {
+    for (int i = 0; i < ArmadaArea; i++) {
         if (b[i].collision) {
             bomber_anim(&b[i]);
             collision_update_from_sprite(b[i].collision, &b[i].sprite);
@@ -150,9 +139,9 @@ move_armada_to_start(void)
 {
     int y = MinPositionY + armada.y_off * BomberHeight;
 
-    for (int i = 0; i < ARMADA_Y; i++) {
+    for (int i = 0; i < ArmadaHeight; i++) {
         int x = StartPositionX;
-        for (int j = 0; j < ARMADA_X; j++) {
+        for (int j = 0; j < ArmadaWidth; j++) {
             armada.b[i][j].sprite.x = x;
             armada.b[i][j].sprite.y = y;
             x += BomberWidth;
@@ -244,7 +233,7 @@ move_armada(void)
                 sfx_counter = 0;
             }
 
-            for (size_t i = 0; i < ARMADA_X; i++) {
+            for (size_t i = 0; i < ArmadaWidth; i++) {
                 armada.b[armada.row][i].sprite.x += x;
                 armada.b[armada.row][i].sprite.y += y;
             }
@@ -254,18 +243,13 @@ move_armada(void)
     }
 }
 
+#include <stdio.h>
+
 void
-armada_module_init(struct MLRectDim screen_dim)
+armada_module_init(struct MLRectDim screen_dim, struct prng64_state* prng_state)
 {
+    M.prng_state = prng_state;
     M.screen_dim = screen_dim;
-
-    for (size_t i = 0; i < ARRAY_SIZE(M.x_vector); i++) {
-        M.x_vector[i] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
-    }
-
-    for (size_t i = 0; i < ARRAY_SIZE(M.y_vector); i++) {
-        M.y_vector[i] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
-    }
 
     memset(&armada, 0, sizeof(armada));
 
@@ -275,19 +259,19 @@ armada_module_init(struct MLRectDim screen_dim)
 
     int type = 0;
 
-    for (int i = 0; i < ARMADA_Y; i++) {
-        if (i == 1) {
+    for (int y = 0; y < ArmadaHeight; y++) {
+        if (y == 1) {
             type = 1;
         }
-        if (i == 3) {
+        if (y == 3) {
             type = 2;
         }
 
-        for (int j = 0; j < ARMADA_X; j++) {
-            armada.b[i][j].x = j;
-            armada.b[i][j].y = i;
-            armada.b[i][j].sprite.show = false;
-            armada.b[i][j].sprite.gfx_obj = M.gfx_obj[type];
+        for (int x = 0; x < ArmadaWidth; x++) {
+            armada.b[y][x].x = x;
+            armada.b[y][x].y = y;
+            armada.b[y][x].sprite.show = false;
+            armada.b[y][x].sprite.gfx_obj = M.gfx_obj[type];
         }
     }
 }
@@ -310,28 +294,28 @@ armada_new(void)
         armada.missiles_max++;
     }
 
-    for (int i = 0; i < ARMADA_X; i++) {
-        armada.alive_x[i] = ARMADA_Y;
+    for (int i = 0; i < ArmadaWidth; i++) {
+        armada.alive_x[i] = ArmadaHeight;
     }
 
-    for (int i = 0; i < ARMADA_Y; i++) {
-        armada.alive_y[i] = ARMADA_X;
+    for (int i = 0; i < ArmadaHeight; i++) {
+        armada.alive_y[i] = ArmadaWidth;
     }
 
     struct Bomber* b = armada.b[0];
-    for (int i = 0; i < ARMADA_XY; i++) {
+    for (int i = 0; i < ArmadaArea; i++) {
         b[i].count = 0;
         b[i].sprite.frame = 0;
         b[i].collision = collision_create(0, (void*)&b[i], GID_BOMBER, collision_cb);
     }
 
     armada.lm = 0;
-    armada.rm = ARMADA_X - 1;
+    armada.rm = ArmadaWidth - 1;
     armada.tm = 0;
-    armada.bm = ARMADA_Y - 1;
+    armada.bm = ArmadaHeight - 1;
 
-    armada.alive = ARMADA_XY;
-    armada.rows = ARMADA_Y;
+    armada.alive = ArmadaArea;
+    armada.rows = ArmadaHeight;
     armada.vis_c = 0;
     armada.dir_r = 1;
     armada.dir_d = 0;
@@ -350,7 +334,7 @@ void
 armada_draw(const struct MLGraphicsBuffer* dst)
 {
     struct Bomber* b = armada.b[0];
-    for (int i = 0; i < ARMADA_XY; i++) {
+    for (int i = 0; i < ArmadaArea; i++) {
         if (b[i].collision && b[i].sprite.show) {
             sprite_draw(dst, &b[i].sprite);
         }
@@ -366,7 +350,7 @@ armada_update(void)
             shields_new();
         }
 
-        if (armada.vis_c < ARMADA_XY) {
+        if (armada.vis_c < ArmadaArea) {
             armada.b[0][armada.vis_c++].sprite.show = true;
         } else {
             g_next_runlevel = RUNLEVEL_PLAY1;
@@ -390,7 +374,7 @@ armada_update(void)
                 g_next_runlevel = RUNLEVEL_PLAY0;
                 move_armada_to_start();
             } else {
-                for (int i = 0; i < ARMADA_XY; i++) {
+                for (int i = 0; i < ArmadaArea; i++) {
                     struct Bomber* b = &armada.b[0][i];
                     if (b->collision) {
                         collision_destroy(b->collision);

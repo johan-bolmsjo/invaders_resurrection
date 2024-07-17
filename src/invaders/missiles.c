@@ -8,6 +8,8 @@
 
 #include "armada.h"
 #include "gids.h"
+#include "libutil/array.h"
+#include "libutil/prng.h"
 #include "runlevel.h"
 #include "shields.h"
 
@@ -19,17 +21,17 @@ enum {
 int g_missiles_alive = 0;
 
 static struct {
+    struct prng64_state* prng_state;
     struct MLRectDim screen_dim;
-
-    // Missiles offset table and index
-    int missiles_off[MaxMissileCount];
-    int missiles_off_i;
 
     struct Missile missiles[MaxMissileCount];
 
     // Missile drop delays
     char delays[MaxMissileCount];
 
+    char counters[ArmadaWidth];
+    int delay_i;
+    int x;
 } missiles_module;
 #define M missiles_module
 
@@ -55,19 +57,19 @@ collision_cb(struct Collision* a, struct Collision* b)
 }
 
 void
-missiles_module_init(struct MLRectDim screen_dim)
+missiles_module_init(struct MLRectDim screen_dim, struct prng64_state* prng_state)
 {
+    M.prng_state = prng_state;
     M.screen_dim = screen_dim;
 
     struct GfxObject* gfx_obj = gfx_object_find("missile");
-    for (size_t i = 0; i < MaxMissileCount; i++) {
-        M.missiles_off[i] = (int)((double)ARMADA_X * random() / (RAND_MAX + 1.0)) + 1;
+    for (size_t i = 0; i < ARRAY_SIZE(M.missiles); i++) {
         M.missiles[i].sprite.show = true;
         M.missiles[i].sprite.gfx_obj = gfx_obj;
     }
 
     for (size_t i = 0; i < MaxMissileCount; i++) {
-        M.delays[i] = (int)(15.0 * random() / (RAND_MAX + 1.0)) + 4;
+        M.delays[i] = (int)(prng64_next_double(M.prng_state) * 15 + 4);
     }
 }
 
@@ -87,11 +89,7 @@ missiles_draw(const struct MLGraphicsBuffer* dst)
 void
 missiles_update(void)
 {
-    static char counters[ARMADA_X] = {0};
-    static int x = 0, delay_i = 0;
-    int i, y, mi, list[ARMADA_X], alive;
-
-    for (mi = 0; mi < MaxMissileCount; mi++) {
+    for (int mi = 0; mi < MaxMissileCount; mi++) {
         if (M.missiles[mi].collision) {
             M.missiles[mi].sprite.y += MissileSpeed;
             if (M.missiles[mi].sprite.y > (M.screen_dim.w + 4)) {
@@ -111,42 +109,40 @@ missiles_update(void)
             armada.missiles_max = MaxMissileCount;
         }
 
-        mi = 0;
-        alive = 0;
+        int mi = 0;
+        int alive_x_count = 0;
+        int alive_x_index[ArmadaWidth];
 
-        for (i = 0; i < ARMADA_X; i++) {
+        for (int i = 0; i < ArmadaWidth; i++) {
             if (armada.alive_x[i]) {
-                list[alive++] = i;
-                if (counters[i]) {
-                    counters[i]--;
+                alive_x_index[alive_x_count++] = i;
+                if (M.counters[i]) {
+                    M.counters[i]--;
                 }
             }
         }
 
-        for (i = g_missiles_alive; i < armada.missiles_max; i++) {
-            x += M.missiles_off[M.missiles_off_i++];
-            if (M.missiles_off_i >= MaxMissileCount) {
-                M.missiles_off_i = 0;
-            }
+        for (int i = g_missiles_alive; i < armada.missiles_max; i++) {
+            M.x += (int)(10 * prng64_next_double(M.prng_state)) + 1; // interval [1, 10]
+            M.x = alive_x_index[M.x % alive_x_count];
 
-            x = list[x % alive];
-
-            if (!counters[x]) {
-                counters[x] = M.delays[delay_i++];
-                if (delay_i >= MaxMissileCount)
-                    delay_i = 0;
+            if (!M.counters[M.x]) {
+                M.counters[M.x] = M.delays[M.delay_i++];
+                if (M.delay_i >= MaxMissileCount) {
+                    M.delay_i = 0;
+                }
 
                 while (M.missiles[mi].collision) {
                     mi++;
                 }
 
-                y = armada.bm;
-                while (!armada.b[y][x].collision) {
+                int y = armada.bm;
+                while (!armada.b[y][M.x].collision) {
                     y--;
                 }
 
-                M.missiles[mi].sprite.x = armada.b[y][x].sprite.x;
-                M.missiles[mi].sprite.y = armada.b[y][x].sprite.y + 15 + 4;
+                M.missiles[mi].sprite.x = armada.b[y][M.x].sprite.x;
+                M.missiles[mi].sprite.y = armada.b[y][M.x].sprite.y + 15 + 4;
                 g_missiles_alive++;
                 M.missiles[mi].collision = collision_create(mi, 0, GID_BOMBER_SHOT, collision_cb);
                 collision_update_from_sprite(M.missiles[mi].collision, &M.missiles[mi].sprite);

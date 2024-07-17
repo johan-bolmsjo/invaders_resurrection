@@ -20,6 +20,7 @@ enum {
 };
 
 static struct {
+    struct prng64_state* prng_state;
     struct MLRectDim screen_dim;
     struct Ufo ufo;
     struct Sprite score_sprite;
@@ -54,7 +55,7 @@ collision_cb(struct Collision* a, struct Collision* b)
         return 0;
     }
 
-    int score_frame = (int)(3.0 * random() / (RAND_MAX + 1.0));
+    int score_frame = prng64_next_double(M.prng_state) * 3; // → [0, 2]
 
     M.score_sprite.x = M.ufo.sprite.x;
     M.score_sprite.y = MysteryYCoordinate;
@@ -71,10 +72,11 @@ collision_cb(struct Collision* a, struct Collision* b)
 }
 
 void
-mystery_module_init(struct MLRectDim screen_dim)
+mystery_module_init(struct MLRectDim screen_dim, struct prng64_state* prng_state)
 {
     static struct RunLevelFunc rl0, rl1;
 
+    M.prng_state = prng_state;
     M.screen_dim = screen_dim;
 
     M.score_until_ms = -1;
@@ -103,7 +105,7 @@ mystery_draw(const struct MLGraphicsBuffer* dst)
 static int64_t
 next_mystery_appear_time_ms(void)
 {
-    return ml_time_milliseconds() + (((int64_t)(MysteryMaxDelayMs - MysteryMinDelayMs) * random() + (RAND_MAX / 2)) / RAND_MAX + MysteryMinDelayMs);
+    return ml_time_milliseconds() + (int64_t)(prng64_next_double(M.prng_state) * (MysteryMaxDelayMs - MysteryMinDelayMs) + MysteryMinDelayMs);
 }
 
 void

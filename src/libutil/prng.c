@@ -6,11 +6,30 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
 
 static inline uint64_t
 prng64_rotl(const uint64_t x, int k)
 {
     return (x << k) | (x >> (64 - k));
+}
+
+static inline bool
+read_state_from_file(struct prng64_state* state, const char* filename)
+{
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        return false;
+    }
+
+    ssize_t r = read(fd, state->b, sizeof state->b);
+    if (r != sizeof state->b) {
+        close(fd);
+        return false;
+    }
+
+    close(fd);
+    return true;
 }
 
 bool
@@ -26,26 +45,19 @@ prng64_seed(struct prng64_state* state)
             0x7db75bc46ac3d29c,
         }
     };
+    const struct prng64_state zero_seed = {{{0}}};
 
     // TODO(jb): This is specific to some Unix like operating systems.
-    int fd = open("/dev/random", O_RDONLY);
-    if (fd == -1) {
-        goto fail;
+    if (!read_state_from_file(state, "/dev/random")) {
+        *state = default_seed;
+        return false;
     }
 
-    ssize_t r = read(fd, state->b, sizeof state->b);
-    if (r != sizeof state->b) {
-        goto fail;
+    if (!memcmp(state, &zero_seed, sizeof(*state))) {
+        *state = default_seed;
     }
 
-    close(fd);
     return true;
-fail:
-    if (fd != -1) {
-        close(fd);
-    }
-    *state = default_seed;
-    return false;
 }
 
 uint64_t
@@ -65,4 +77,11 @@ prng64_next(struct prng64_state* state)
     state->l[3] = prng64_rotl(state->l[3], 45);
 
     return result;
+}
+
+double
+prng64_next_double(struct prng64_state* state)
+{
+    const int precision = 53;
+    return (double)(prng64_next(state) >> (64 - precision)) / (double)(1ULL << precision);
 }

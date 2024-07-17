@@ -6,6 +6,7 @@
 
 #include "collision.h"
 #include "libmedia/libmedia.h"
+#include "libutil/prng.h"
 #include "sprite.h"
 
 struct Missile {
@@ -16,7 +17,7 @@ struct Missile {
 extern int g_missiles_alive;
 
 /// Initialize module.
-void missiles_module_init(struct MLRectDim screen_dim);
+void missiles_module_init(struct MLRectDim screen_dim, struct prng64_state* prng_state);
 
 /// Draw missiles to screen.
 void missiles_draw(const struct MLGraphicsBuffer* dst);

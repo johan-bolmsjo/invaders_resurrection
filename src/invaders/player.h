@@ -2,10 +2,11 @@
 
 #include "collision.h"
 #include "libmedia/libmedia.h"
+#include "libutil/prng.h"
 #include "sprite.h"
 
 /// Initialize module.
-void player_module_init(struct MLRectDim screen_dim, struct MLInput* input);
+void player_module_init(struct MLRectDim screen_dim, struct MLInput* input, struct prng64_state* prng_state);
 
 /// Kill pilot and destroy its collision object.
 void player_kill(void);

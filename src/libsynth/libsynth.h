@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "libutil/prng.h"
 
 enum {
     SynthFrequency = 44100,
@@ -25,7 +26,7 @@ struct SynthEnvelope {
 };
 
 /// Initialize synth.
-void synth_init(void);
+void synth_module_init(struct prng64_state* prng_state);
 
 /// Generate mono channel 16 bit samples to an audio buffer. Envelopes that runs to
 /// completion during mixing stops producing sound. The game loop typically start new

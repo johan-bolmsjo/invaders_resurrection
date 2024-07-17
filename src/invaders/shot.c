@@ -16,9 +16,9 @@ struct Shot {
     int               x_vector;
     int               y_vector;
     struct rgb565     color;
-    uint8_t           pend_rm;  // Pending removal if set
-    struct Collision* c;        // Collision callback function
-    void (*cb)(void);           // Extra callback function for player shots
+    uint8_t           pend_rm;    // Pending removal if set
+    struct Collision* collision;  // Collision object
+    void (*destroy_cb)(void);     // Optional callback invoked on destruction
     struct Shot*      prev;
     struct Shot*      next;
 };
@@ -38,9 +38,9 @@ shot_module_init(struct MLRectDim screen_dim)
 static void
 shot_destroy(struct Shot* s)
 {
-    if (s->cb) {
-        s->cb();
-        s->cb = 0;
+    if (s->destroy_cb) {
+        s->destroy_cb();
+        s->destroy_cb = 0;
     }
 
     if (s->pend_rm == 2) {
@@ -76,7 +76,7 @@ collision_cb(struct Collision* a, struct Collision* b)
 
 struct Shot*
 shot_create(int x, int y, int x_vector, int y_vector, struct rgb565 color,
-            int fatal, int gid, void (*cb)(void))
+              int fatal, int gid, void (*destroy_cb)(void))
 {
     if (x < 0 || x > (M.screen_dim.w - 2) ||
         y < 0 || y > (M.screen_dim.h - 2)) {
@@ -100,8 +100,8 @@ shot_create(int x, int y, int x_vector, int y_vector, struct rgb565 color,
     s->y_vector = y_vector;
     s->color = color;
     s->pend_rm = 0;
-    s->c = c;
-    s->cb = cb;
+    s->collision = c;
+    s->destroy_cb = destroy_cb;
 
     if (M.shot_list) {
         s->next = M.shot_list;
@@ -151,14 +151,14 @@ shot_update(void)
         if (s->x < 0 || s->x > (M.screen_dim.w - 2) ||
             s->y < 0 || s->y > (M.screen_dim.h - 2)) {
             shot_destroy(s);
-            if (s->c)
-                collision_destroy(s->c);
+            if (s->collision)
+                collision_destroy(s->collision);
         } else {
-            if (s->c) {
-                s->c->x0 = s->x;
-                s->c->y0 = s->y;
-                s->c->x1 = s->x + 1;
-                s->c->y1 = s->y + 1;
+            if (s->collision) {
+                s->collision->x0 = s->x;
+                s->collision->y0 = s->y;
+                s->collision->x1 = s->x + 1;
+                s->collision->y1 = s->y + 1;
             }
         }
 

@@ -85,7 +85,7 @@ rl_play2_title0(struct RunLevelFunc* r)
 }
 
 void
-player_module_init(struct MLRectDim screen_dim, struct MLInput* input)
+player_module_init(struct MLRectDim screen_dim, struct MLInput* input, struct prng64_state* prng_state)
 {
     M.screen_dim = screen_dim;
     M.input_ref = input;
@@ -99,11 +99,11 @@ player_module_init(struct MLRectDim screen_dim, struct MLInput* input)
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(M.x_vector); i++) {
-        M.x_vector[i] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
+        M.x_vector[i] = (int)(prng64_next_double(prng_state) * 11) - 5;  // → [-5, 5]
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(M.y_vector); i++) {
-        M.y_vector[i] = (int)(11.0 * random() / (RAND_MAX + 1.0)) - 5;
+        M.y_vector[i] = (int)(prng64_next_double(prng_state) * 11) - 5;  // → [-5, 5]
     }
 
     M.player_obj = gfx_object_find("player");

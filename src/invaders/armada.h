@@ -8,16 +8,19 @@
 
 #include "bomber.h"
 #include "libmedia/libmedia.h"
+#include "libutil/prng.h"
 
-#define ARMADA_X  10
-#define ARMADA_Y  5
-#define ARMADA_XY (ARMADA_X * ARMADA_Y)
+enum {
+    ArmadaWidth = 10,
+    ArmadaHeight = 5,
+    ArmadaArea = ArmadaWidth * ArmadaHeight,
+};
 
 struct Armada {
     uint8_t y_off;              // Start offset Y-axis
 
-    uint8_t alive_x[ARMADA_X];  // Alive in X-axis
-    uint8_t alive_y[ARMADA_Y];  // Alive in Y-axis
+    uint8_t alive_x[ArmadaWidth];  // Alive in X-axis
+    uint8_t alive_y[ArmadaHeight];  // Alive in Y-axis
 
     uint8_t lm;                 // Left most
     uint8_t rm;                 // Right most
@@ -39,13 +42,13 @@ struct Armada {
 
     uint8_t missiles_max;       // Max number of misiles
 
-    struct Bomber b[ARMADA_Y][ARMADA_X];
+    struct Bomber b[ArmadaHeight][ArmadaWidth];
 };
 
 extern struct Armada armada; // Used in missiles.c as well
 
 /// Initialize module.
-void armada_module_init(struct MLRectDim screen_dim);
+void armada_module_init(struct MLRectDim screen_dim, struct prng64_state* prng_state);
 
 /// Reset some values, called from the title screen.
 void armada_reset(void);

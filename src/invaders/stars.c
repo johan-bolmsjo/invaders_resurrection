@@ -70,23 +70,23 @@ create_star(struct Star* star)
 }
 
 void
-stars_module_init(struct MLRectDim screen_dim)
+stars_module_init(struct MLRectDim screen_dim, struct prng64_state* prng_state)
 {
     M.screen_dim = screen_dim;
 
-    // 320/256 * "max z". -20480 ... 20479
+    // 320/256 * "max z": [-20480, 20479]
     for (size_t i = 0; i < ARRAY_SIZE(M.x_random); i++) {
-        M.x_random[i] = (int)((40960.0 * random() / (RAND_MAX + 1.0)) - 20480);
+        M.x_random[i] = (int)(prng64_next_double(prng_state) * 20480 * 2) - 20480;
     }
 
-    // Above camera. -16384 ... -32767
+    // Above camera: [-16384, -32767]
     for (size_t i = 0; i < ARRAY_SIZE(M.y_random); i++) {
-        M.y_random[i] = (int)(16384.0 * random() / (RAND_MAX + 1.0)) - 32767;
+        M.y_random[i] = (int)(prng64_next_double(prng_state) * 16384) - 32767;
     }
 
-    // No divide by zero. 1 ... 16383
+    // No divide by zero: [1, 16383]
     for (size_t i = 0; i < ARRAY_SIZE(M.z_random); i++) {
-        M.z_random[i] = (int)(16383.0 * random() / (RAND_MAX + 1.0)) + 1;
+        M.z_random[i] = (int)(prng64_next_double(prng_state) * 16383) + 1;
     }
 
     // Make the first stars black to avoid the "star belt" effect when they first appear.

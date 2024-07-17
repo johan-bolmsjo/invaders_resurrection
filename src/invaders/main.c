@@ -17,6 +17,7 @@
 #include "gfx.h"
 #include "libmedia/libmedia.h"
 #include "libsynth/libsynth.h"
+#include "libutil/prng.h"
 #include "missiles.h"
 #include "mystery.h"
 #include "player.h"
@@ -88,24 +89,25 @@ main(void)
 
     struct MLInput input = {0};
 
-    srandom(time(0));
-
     if (!text_module_init(screen_dim)) {
         fatalf("Failed to initialize text module!");
     }
 
+    struct prng64_state prng_state;
+    prng64_seed(&prng_state);
+
     prim_module_init(screen_dim);
-    stars_module_init(screen_dim);
+    stars_module_init(screen_dim, &prng_state);
     ufo_module_init();
     title_module_init();
-    armada_module_init(screen_dim);
-    missiles_module_init(screen_dim);
-    player_module_init(screen_dim, &input);
-    mystery_module_init(screen_dim);
+    armada_module_init(screen_dim, &prng_state);
+    missiles_module_init(screen_dim, &prng_state);
+    player_module_init(screen_dim, &input, &prng_state);
+    mystery_module_init(screen_dim, &prng_state);
     shield_module_init(screen_dim);
     shot_module_init(screen_dim);
 
-    synth_init();
+    synth_module_init(&prng_state);
 
     if (!ml_open()) {
         fatalf("Failed to open media library!");

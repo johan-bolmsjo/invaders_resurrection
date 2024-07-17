@@ -22,8 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libutil/prng.h"
-
 // Channel envelopes
 enum {
     NumberOfRegularChannelEnvelopes = 4,
@@ -78,16 +76,17 @@ struct Channel {
 };
 
 static struct {
-    int                 bit_noise_count;
-    uint64_t            bit_noise_data;
-    struct prng64_state prng_state;
-    struct Channel      channels[NumberOfSynthChannels];
-} synth;
+    int                  bit_noise_count;
+    uint64_t             bit_noise_data;
+    struct prng64_state* prng_state;
+    struct Channel       channels[NumberOfSynthChannels];
+} synth_module;
+#define M synth_module
 
-void synth_init(void)
+void synth_module_init(struct prng64_state* prng_state)
 {
-    (void)prng64_seed(&synth.prng_state);
-    synth.bit_noise_count = 0;
+    M.prng_state = prng_state;
+    M.bit_noise_count = 0;
 }
 
 // Get samples per millisecond in 24:8 fix-point.
@@ -130,7 +129,7 @@ update_channel(int ch)
     int fm = 0, pwm = 0;
 
     for (int ei = NumberOfChannelEnvelopes - 1; ei >= 0; ei--) {
-        struct Envelope* e = &synth.channels[ch].envelopes[ei];
+        struct Envelope* e = &M.channels[ch].envelopes[ei];
         if (e->waveform == SynthWaveformNone) {
             continue;
         }
@@ -168,9 +167,9 @@ update_channel(int ch)
             int freq; // Hz (24:8 fix-point)
             if (ei < NumberOfRegularChannelEnvelopes) {
                 if (!fm_pwm_init) {
-                    struct Envelope* e2 = &synth.channels[ch].envelopes[FMModifierChannelEnvelopeIndex];
+                    struct Envelope* e2 = &M.channels[ch].envelopes[FMModifierChannelEnvelopeIndex];
                     fm = ((int64_t)e2->amplitude * e2->period.amplitude >> 24) * e2->attack_amplitude >> 24;
-                    e2 = &synth.channels[ch].envelopes[PWModifierChannelEnvelopeIndex];
+                    e2 = &M.channels[ch].envelopes[PWModifierChannelEnvelopeIndex];
                     pwm = ((int64_t)e2->amplitude * e2->period.amplitude >> 24) * e2->attack_amplitude >> 24;
                     fm_pwm_init = true;
                 }
@@ -268,13 +267,13 @@ update_channel(int ch)
 static inline uint16_t
 bit_noise(void)
 {
-    if (synth.bit_noise_count == 0) {
-        synth.bit_noise_count = 64;
-        synth.bit_noise_data = prng64_next(&synth.prng_state);
+    if (M.bit_noise_count == 0) {
+        M.bit_noise_count = 64;
+        M.bit_noise_data = prng64_next(M.prng_state);
     }
-    synth.bit_noise_count--;
-    int16_t noise = synth.bit_noise_data & 1;
-    synth.bit_noise_data >>= 1;
+    M.bit_noise_count--;
+    int16_t noise = M.bit_noise_data & 1;
+    M.bit_noise_data >>= 1;
     return noise;
 }
 
@@ -285,7 +284,7 @@ synth_mix(int16_t* buffer, int n_samples)
 
     for (int ch = 0; ch < NumberOfSynthChannels; ch++) {
         for (int ei = 0; ei < NumberOfChannelEnvelopes; ei++) {
-            if (synth.channels[ch].envelopes[ei].waveform != SynthWaveformNone) {
+            if (M.channels[ch].envelopes[ei].waveform != SynthWaveformNone) {
                 ch_on[ch] = true;
                 break;
             }
@@ -297,7 +296,7 @@ synth_mix(int16_t* buffer, int n_samples)
         for (int ch = 0; ch < NumberOfSynthChannels; ch++) {
             if (ch_on[ch]) {
                 update_channel(ch);
-                struct Envelope* e = synth.channels[ch].envelopes;
+                struct Envelope* e = M.channels[ch].envelopes;
                 int e_mix = (((int64_t)e[0].amplitude * e[0].period.amplitude >> 24) *
                              e[0].attack_amplitude >> 24);
                 e_mix += (((int64_t)e[1].amplitude * e[1].period.amplitude >> 24) *
@@ -337,12 +336,12 @@ synth_envelope(const struct SynthEnvelope* sw, int ch)
     if (ch < NumberOfSynthChannels) {
         int ei;
         for (ei = 0; ei < NumberOfRegularChannelEnvelopes; ei++) {
-            if (synth.channels[ch].envelopes[ei].waveform == SynthWaveformNone) {
+            if (M.channels[ch].envelopes[ei].waveform == SynthWaveformNone) {
                 break;
             }
         }
         if (ei < NumberOfRegularChannelEnvelopes) {
-            map_envelope(sw, &synth.channels[ch].envelopes[ei]);
+            map_envelope(sw, &M.channels[ch].envelopes[ei]);
         }
     }
 }
@@ -351,7 +350,7 @@ void
 synth_envelope_fm(const struct SynthEnvelope* sw, int ch)
 {
     if (ch < NumberOfSynthChannels) {
-        map_envelope(sw, &synth.channels[ch].envelopes[FMModifierChannelEnvelopeIndex]);
+        map_envelope(sw, &M.channels[ch].envelopes[FMModifierChannelEnvelopeIndex]);
     }
 }
 
@@ -359,7 +358,7 @@ void
 synth_envelope_pwm(const struct SynthEnvelope* sw, int ch)
 {
     if (ch < NumberOfSynthChannels) {
-        map_envelope(sw, &synth.channels[ch].envelopes[PWModifierChannelEnvelopeIndex]);
+        map_envelope(sw, &M.channels[ch].envelopes[PWModifierChannelEnvelopeIndex]);
     }
 }
 
@@ -368,8 +367,8 @@ synth_channel_kill(int ch)
 {
     if (ch < NumberOfSynthChannels) {
         for (int ei = 0; ei < NumberOfChannelEnvelopes; ei++) {
-            synth.channels[ch].envelopes[ei].waveform = SynthWaveformNone;
-            synth.channels[ch].envelopes[ei].attack_amplitude = 0;
+            M.channels[ch].envelopes[ei].waveform = SynthWaveformNone;
+            M.channels[ch].envelopes[ei].attack_amplitude = 0;
         }
     }
 }
@@ -380,7 +379,7 @@ synth_channel_envelopes(int ch)
     int count = 0;
     if (ch < NumberOfSynthChannels) {
         for (int ei = 0; ei < NumberOfRegularChannelEnvelopes; ei++) {
-            if (synth.channels[ch].envelopes[ei].waveform != SynthWaveformNone) {
+            if (M.channels[ch].envelopes[ei].waveform != SynthWaveformNone) {
                 count++;
             }
         }
