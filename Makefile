@@ -27,7 +27,7 @@ $(TARGET_CHECK_sdl2.mk):
 	$(Q)$(RM) $@.tmp
 	$(Q)echo CFLAGS_SDL := $(shell pkg-config sdl2 --cflags) >> $@.tmp
 	$(Q)echo LDFLAGS_SDL := $(shell pkg-config sdl2 --libs) >> $@.tmp
-	$(Q)pkg-config sdl --exists
+	$(Q)pkg-config sdl2 --exists
 	$(Q)mv $@.tmp $@
 
 include $(TARGET_CHECK_sdl2.mk)
