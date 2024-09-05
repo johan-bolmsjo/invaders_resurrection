@@ -39,7 +39,7 @@ static struct {
 #define MinPositionY (MaxPositionY - (11 * BomberHeight))
 
 static int
-random_speed() {
+random_speed(void) {
     return 12 * (prng64_next_double(M.prng_state) - 0.5);
 }
 
@@ -242,8 +242,6 @@ move_armada(void)
         }
     }
 }
-
-#include <stdio.h>
 
 void
 armada_module_init(struct MLRectDim screen_dim, struct prng64_state* prng_state)

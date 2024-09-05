@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 
-#include "error.h"
 #include "invaders/gids.h"
 
 static struct Collision* c_base = NULL; /* Linked list base */
