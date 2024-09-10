@@ -1,4 +1,4 @@
-$(call define-tool-srcs, gfxgen, \
+$(call define-build-srcs, gfxgen, \
 	src/gfxgen/image.c \
 	src/gfxgen/def.c \
 	src/gfxgen/main.c \
@@ -11,5 +11,5 @@ $(call define-tool-srcs, gfxgen, \
 	src/gfxgen/ff_targa.c \
 )
 
-$(call define-tool-exe, gfxgen, gfxgen libgfx)
-$(TARGET_TOOL_EXE_gfxgen): BUILD_LDFLAGS += -lz
+$(call define-build-exe, gfxgen, gfxgen libgfx)
+$(TARGET_BUILD_EXE_gfxgen): BUILD_LDFLAGS += -lz

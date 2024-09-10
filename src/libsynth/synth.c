@@ -91,7 +91,7 @@ void synth_module_init(struct prng64_state* prng_state)
 
 // Get samples per millisecond in 24:8 fix-point.
 static inline int
-samples_per_millisecond()
+samples_per_millisecond(void)
 {
     return (SynthFrequency << 8) / 1000;
 }

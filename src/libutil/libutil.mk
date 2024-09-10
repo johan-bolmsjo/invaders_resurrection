@@ -1,1 +1,1 @@
-$(call define-host-srcs, libutil, src/libutil/prng.c)
+$(call define-srcs, libutil, src/libutil/prng.c)

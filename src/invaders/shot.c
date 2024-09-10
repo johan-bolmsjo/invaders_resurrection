@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "error.h"
 #include "gids.h"
 #include "shields.h"
 #include "libmedia/libmedia.h"

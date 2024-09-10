@@ -7,9 +7,7 @@
 #   https://www.gnu.org/software/automake/manual/html_node/Cross_002dCompilation.html.
 #   Host is implied, standard variables CC, CXX etc are for the host that will
 #   run the software. Some flags variables are prefixed with BUILD_ to genereate
-#   software that will be run on the build machine. When possible the amition is
-#   to share flag variables within the makefiles. When taken from the
-#   environment the flag variables are for the host only.
+#   software that will be run on the build host.
 
 ###############################################################################
 # Variable usage:
@@ -26,8 +24,8 @@
 #   LDFLAGS   Linker flags
 #
 #   Variants of the above prefixed with BUILD_ are also read in for the
-#   compiler to compile programs and libraries executable on the build machine
-#   (such as unit tests).
+#   compiler to compile programs and libraries for the build host (such
+#   as unit tests).
 #
 # Other variables read from  env.
 #
@@ -41,52 +39,47 @@
 # Custom variable prefixes (set by makefiles).
 # Variables with the following naming are assumed to have special meaning.
 #
-#   OBJS_HOST_name
-#     Collection of object files for host machine.
+#   OBJS_name
+#     Object files for target host.
+#   OBJS_BUILD_name
+#     Object files for build host.
 #   OBJS_TEST_name
-#     Collection of object files for tests for build machine.
-#   OBJS_TOOL_name
-#     Collection of object files for build tools for build machine.
-#   TARGET_HOST_EXE_name
-#     Executable target for host machine
-#   TARGET_HOST_LIB_name
-#     Library target for host machine
+#     Object files for tests for build host.
+#   TARGET_EXE_name
+#     Program for target host.
+#   TARGET_LIB_name
+#     Library for target host.
+#   TARGET_BUILD_EXE_name
+#     Program for build host.
 #   TARGET_TEST_EXE_name
-#     Test executable target for build machine
-#   TARGET_TOOL_EXE_name
-#     Build tool executable target for build machine
+#     Test program for build host.
 #
 
 ###############################################################################
 # Convert flag variables to "simply expanded variables" to avoid surprises when
-# overriding them in target specific variables. Also "snap" standard variables
-# from the environment and reset them for internal shared "host", "build" use.
-HOST_CFLAGS    := $(CFLAGS)
+# overriding them in target specific variables.
+CFLAGS         := $(CFLAGS)
 BUILD_CFLAGS   := $(BUILD_CFLAGS)
-CFLAGS         :=
 
-HOST_CPPFLAGS  := $(CPPFLAGS)
+CPPFLAGS       := $(CPPFLAGS)
 BUILD_CPPFLAGS := $(BUILD_CPPFLAGS)
-CPPFLAGS       :=
 
-HOST_CXXFLAGS  := $(CXXFLAGS)
+CXXFLAGS       := $(CXXFLAGS)
 BUILD_CXXFLAGS := $(BUILD_CXXFLAGS)
-CXXFLAGS       :=
 
-HOST_LDFLAGS   := $(LDFLAGS)
+LDFLAGS        := $(LDFLAGS)
 BUILD_LDFLAGS  := $(BUILD_LDFLAGS)
-LDFLAGS        :=
 
-ifeq ($(HOST_CFLAGS),)
-HOST_CFLAGS := -O0 -g
+ifeq ($(CFLAGS),)
+CFLAGS := -O0 -g
 endif
 
 ifeq ($(BUILD_CFLAGS),)
 BUILD_CFLAGS := -O0 -g
 endif
 
-ifeq ($(HOST_CXXFLAGS),)
-HOST_CXXFLAGS := -O0 -g
+ifeq ($(CXXFLAGS),)
+CXXFLAGS := -O0 -g
 endif
 
 ifeq ($(BUILD_CXXFLAGS),)
@@ -121,18 +114,18 @@ OUTDIR_SRCS      := $(OUTDIR)/srcs
 # Generated data files
 OUTDIR_DATA      := $(OUTDIR)/data
 
-# Build products for the host machine (target CPU arch)
-OUTDIR_HOST_EXE  := $(OUTDIR)/host/bin
-OUTDIR_HOST_LIB  := $(OUTDIR)/host/lib
-OUTDIR_HOST_OBJS := $(OUTDIR)/host/obj
+# Build produces for the target host.
+OUTDIR_EXE  := $(OUTDIR)/host/bin
+OUTDIR_LIB  := $(OUTDIR)/host/lib
+OUTDIR_OBJS := $(OUTDIR)/host/obj
 
-# Test related build products for the build machine
+# Build products for the build host (e.g. code generators).
+OUTDIR_BUILD_EXE  := $(OUTDIR)/build/bin
+OUTDIR_BUILD_OBJS := $(OUTDIR)/build/obj
+
+# Test related build products for the build host.
 OUTDIR_TEST_EXE  := $(OUTDIR)/test/bin
 OUTDIR_TEST_OBJS := $(OUTDIR)/test/obj
-
-# Tool related build products for the build machine (such as code generators)
-OUTDIR_TOOL_EXE  := $(OUTDIR)/tool/bin
-OUTDIR_TOOL_OBJS := $(OUTDIR)/tool/obj
 
 ###############################################################################
 # Set shell to be used to avoid possibly different behavior in different
@@ -184,35 +177,35 @@ endif
 #
 # Arg1: Optional extra compilation arguments
 #
-host-cc-compile = $(Q_compile) $(strip $(CC) $(CFLAGS) $(HOST_CFLAGS) $(CPPFLAGS) \
-	$(HOST_CPPFLAGS) $1 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
+cc-compile = $(Q_compile) $(strip $(CC) $(CFLAGS) $(CPPFLAGS) $1 \
+	-MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
 
 # Function that compiles a C++ source file and generates dependency info.
 #
 # Arg1: Optional extra compilation arguments
 #
-host-cxx-compile = $(Q_compile) $(strip $(CXX) $(CXXFLAGS) $(HOST_CXXFLAGS) $(CPPFLAGS) \
-	$(HOST_CPPFLAGS) $1 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
+cxx-compile = $(Q_compile) $(strip $(CXX) $(CXXFLAGS) $(CPPFLAGS) $1 \
+	-MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
 
-# Function that links an executable or shared library using the C++ compiler.
+# Function that links a program or shared library using the C++ compiler.
 #
 # Arg1: Optional extra linker arguments
 #
-host-cxx-link = $(Q_link) $(strip $(CXX) $(filter %.o,$^) -o $@ $(LDFLAGS) $(HOST_LDFLAGS) $1)
+cxx-link = $(Q_link) $(strip $(CXX) $(filter %.o,$^) -o $@ $(LDFLAGS) $1)
 
-# Same as host-cc-compile but for compiling programs such as unit tests to be run on the build machine.
-build-cc-compile = $(Q_compile) $(strip $(BUILD_CC) $(CFLAGS) $(BUILD_CFLAGS) $(CPPFLAGS) \
-	$(BUILD_CPPFLAGS) $1 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
+# Same as cc-compile but for compiling programs such as unit tests to be run on the build host.
+build-cc-compile = $(Q_compile) $(strip $(BUILD_CC) $(BUILD_CFLAGS) $(BUILD_CPPFLAGS) $1 \
+	-MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
 
-# Same as host-cxx-compile but for compiling programs such as unit tests to be run on the build machine.
-build-cxx-compile = $(Q_compile) $(strip $(BUILD_CXX) $(CXXFLAGS) $(BUILD_CXXFLAGS) $(CPPFLAGS) \
-	$(BUILD_CPPFLAGS) $1 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
+# Same as cxx-compile but for compiling programs such as unit tests to be run on the build host.
+build-cxx-compile = $(Q_compile) $(strip $(BUILD_CXX) $(BUILD_CXXFLAGS) $(BUILD_CPPFLAGS) $1 \
+	-MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$@" -c -o $@ $<)
 
-# Same as host-cxx-link but for linking programs such as unit tests to be run on the build machine.
+# Same as cxx-link but for linking programs such as unit tests to be run on the build host.
 #
 # Arg1: Optional extra linker arguments
 #
-build-cxx-link = $(Q_link) $(strip $(BUILD_CXX) $(filter %.o,$^) -o $@ $(LDFLAGS) $(BUILD_LDFLAGS) $1)
+build-cxx-link = $(Q_link) $(strip $(BUILD_CXX) $(filter %.o,$^) -o $@ $(BUILD_LDFLAGS) $1)
 
 # Function that creates an archive (static lib):
 ar-create = $(Q_ar) $(RM) $@ && $(AR) rsc $@ $(filter %.o,$^)
@@ -220,82 +213,82 @@ ar-create = $(Q_ar) $(RM) $@ && $(AR) rsc $@ $(filter %.o,$^)
 ###############################################################################
 # Compilation rules
 
-$(OUTDIR_HOST_OBJS)/%.c.o : %.c
-	$(call host-cc-compile)
-$(OUTDIR_HOST_OBJS)/%.cpp.o : %.cpp
-	$(call host-cxx-compile)
+$(OUTDIR_OBJS)/%.c.o : %.c
+	$(call cc-compile)
+$(OUTDIR_OBJS)/%.cpp.o : %.cpp
+	$(call cxx-compile)
 $(OUTDIR_TEST_OBJS)/%.c.o : %.c
 	$(call build-cc-compile,$(GTEST_CFLAGS) $(GTEST_CPPFLAGS))
 $(OUTDIR_TEST_OBJS)/%.cpp.o : %.cpp
 	$(call build-cxx-compile,$(GTEST_CXXFLAGS) $(GTEST_CPPFLAGS))
-$(OUTDIR_TOOL_OBJS)/%.c.o : %.c
+$(OUTDIR_BUILD_OBJS)/%.c.o : %.c
 	$(call build-cc-compile)
-$(OUTDIR_TOOL_OBJS)/%.cpp.o : %.cpp
+$(OUTDIR_BUILD_OBJS)/%.cpp.o : %.cpp
 	$(call build-cxx-compile)
 
 ###############################################################################
-define define-host-srcs_
-OBJS_HOST_$(1) = $(foreach file,$2,$(OUTDIR_HOST_OBJS)/$(file).o)
+define define-srcs_
+OBJS_$(1) = $(foreach file,$2,$(OUTDIR_OBJS)/$(file).o)
+endef
+
+define define-build-srcs_
+OBJS_BUILD_$(1) = $(foreach file,$2,$(OUTDIR_BUILD_OBJS)/$(file).o)
 endef
 
 define define-test-srcs_
 OBJS_TEST_$(1) = $(foreach file,$2,$(OUTDIR_TEST_OBJS)/$(file).o)
 endef
 
-define define-tool-srcs_
-OBJS_TOOL_$(1) = $(foreach file,$2,$(OUTDIR_TOOL_OBJS)/$(file).o)
-endef
-
-# Define sources to be compiled for the host machine.
+# Define sources to be compiled for the target host.
 #
 # Arg1: Sources collection name
 # Arg2: List with source files relative project root directory
 #
-define-host-srcs = $(eval $(call define-host-srcs_,$(strip $1),$2))
+define-srcs = $(eval $(call define-srcs_,$(strip $1),$2))
 
-# Define sources to be compiled for tests.
-# Takes the same arguements as 'define-host-srcs'.
+# Define sources to be compiled for the build host (e.g. code generators).
+# Takes the same arguements as 'define-srcs'.
+define-build-srcs = $(eval $(call define-build-srcs_,$(strip $1),$2))
+
+# Define sources to be compiled for tests for the build host.
+# Takes the same arguements as 'define-srcs'.
 define-test-srcs = $(eval $(call define-test-srcs_,$(strip $1),$2))
 
-# Define sources to be compiled for tools such as code generators.
-# Takes the same arguements as 'define-host-srcs'.
-define-tool-srcs = $(eval $(call define-tool-srcs_,$(strip $1),$2))
-
 ###############################################################################
-define define-host-lib.a_
-TARGET_HOST_LIB_$(1) = $(OUTDIR_HOST_LIB)/lib$(1).a
-$(OUTDIR_HOST_LIB)/lib$(1).a: $(foreach var,$2,$$$$(OBJS_HOST_$(var)))
+define define-lib.a_
+TARGET_LIB_$(1) = $(OUTDIR_LIB)/lib$(1).a
+$(OUTDIR_LIB)/lib$(1).a: $(foreach var,$2,$$$$(OBJS_$(var)))
 	$$(call ar-create)
 
 .PHONY: lib.a/$(1)
 PHONY_TARGETS += lib.a/$(1)
-lib.a/$(1): $(OUTDIR_HOST_LIB)/lib$(1).a
+lib.a/$(1): $(OUTDIR_LIB)/lib$(1).a
 endef
 
-# Create a static library target for the host machine and the make rule to compile it.
+# Create a static library for the target host.
 #
-# Arg1: Target name
+# Arg1: Make target name
 # Arg2: List of sources collection names
 #
-define-host-lib.a = $(eval $(call define-host-lib.a_,$(strip $1),$2))
+define-lib.a = $(eval $(call define-lib.a_,$(strip $1),$2))
 
 ###############################################################################
-define define-host-exe_
-TARGET_HOST_EXE_$(1) = $(OUTDIR_HOST_EXE)/$(1)
-$(OUTDIR_HOST_EXE)/$(1): $(foreach var,$2,$$$$(OBJS_HOST_$(var)))
-	$$(call host-cxx-link)
+define define-exe_
+TARGET_EXE_$(1) = $(OUTDIR_EXE)/$(1)
+$(OUTDIR_EXE)/$(1): $(foreach var,$2,$$$$(OBJS_$(var)))
+	$$(call cxx-link)
 
 .PHONY: exe/$(1)
 PHONY_TARGETS += exe/$(1)
-exe/$(1): $(OUTDIR_HOST_EXE)/$(1)
+exe/$(1): $(OUTDIR_EXE)/$(1)
 endef
 
-# Create an executable target for the host machine and the make rule to compile it.
+# Create a program for the target host.
 #
-# Arg1: Target name
+# Arg1: Make target name
 # Arg2: List of sources collection names
 #
-define-host-exe = $(eval $(call define-host-exe_,$(strip $1),$2))
+define-exe = $(eval $(call define-exe_,$(strip $1),$2))
 
 ###############################################################################
 define define-test-exe_
@@ -313,30 +306,30 @@ runtest/$(1): $(OUTDIR_TEST_EXE)/$(1)
 	@echo "Executing $(OUTDIR_TEST_EXE)/$(1)" && $(OUTDIR_TEST_EXE)/$(1)
 endef
 
-# Create a test executable and the make rule to compile it.
+# Create a test program for the build host.
 #
-# Arg1: Target name
+# Arg1: Make target name
 # Arg2: List of sources collection names
 #
 define-test-exe = $(eval $(call define-test-exe_,$(strip $1),$2))
 
 ###############################################################################
-define define-tool-exe_
-TARGET_TOOL_EXE_$(1) = $(OUTDIR_TOOL_EXE)/$(1)
-$(OUTDIR_TOOL_EXE)/$(1): $(foreach var,$2,$$$$(OBJS_TOOL_$(var))) $3
+define define-build-exe_
+TARGET_BUILD_EXE_$(1) = $(OUTDIR_BUILD_EXE)/$(1)
+$(OUTDIR_BUILD_EXE)/$(1): $(foreach var,$2,$$$$(OBJS_BUILD_$(var))) $3
 	$$(call build-cxx-link)
 
-.PHONY: tool/$(1)
-PHONY_TARGETS += tool/$(1)
-tool/$(1): $(OUTDIR_TOOL_EXE)/$(1)
+.PHONY: build/$(1)
+PHONY_TARGETS += build/$(1)
+build/$(1): $(OUTDIR_BUILD_EXE)/$(1)
 endef
 
-# Create a build tool executable target and the make rule to compile it.
+# Create a program for the build host.
 #
 # Arg1: Target name
 # Arg2: List of sources collection names
 #
-define-tool-exe = $(eval $(call define-tool-exe_,$(strip $1),$2))
+define-build-exe = $(eval $(call define-build-exe_,$(strip $1),$2))
 
 ###############################################################################
 # Function that expand all OBJS_ prefixed variables.

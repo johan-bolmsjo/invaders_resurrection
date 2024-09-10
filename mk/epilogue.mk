@@ -10,17 +10,17 @@ help:
 	    echo "  $$target" ;                     \
 	done
 
-# Rule that compile all test executables
+# Rule that compile all test programs
 .PHONY: test
 PHONY_TARGETS += test
 test: $(call expand-targets-test)
 
-# Rule that run all test executables
+# Rule that run all test programs
 .PHONY: runtest
 PHONY_TARGETS += runtest
 runtest: $(call expand-targets-test)
 	@for test in $(call expand-targets-test); do \
-	    echo "Executing $$test" ;         \
+	    echo "Running $$test" ;           \
 	    $$test || exit 1;                 \
 	done
 
