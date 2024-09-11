@@ -124,7 +124,6 @@ static void
 animate(void)
 {
     struct Bomber* b = armada.b[0];
-
     for (int i = 0; i < ArmadaArea; i++) {
         if (b[i].collision) {
             bomber_anim(&b[i]);
@@ -372,11 +371,12 @@ armada_update(void)
                 g_next_runlevel = RUNLEVEL_PLAY0;
                 move_armada_to_start();
             } else {
+                struct Bomber* b = armada.b[0];
+
                 for (int i = 0; i < ArmadaArea; i++) {
-                    struct Bomber* b = &armada.b[0][i];
-                    if (b->collision) {
-                        collision_destroy(b->collision);
-                        b->collision = 0;
+                    if (b[i].collision) {
+                        collision_destroy(b[i].collision);
+                        b[i].collision = 0;
                     }
                 }
 

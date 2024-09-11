@@ -64,10 +64,11 @@ screenshot_create(const struct MLGraphicsBuffer* screen, const char* path)
         dst[i + 2] = pixel.r << 3;
     }
 
-    write(fd, &hdr, sizeof(hdr));
-    write(fd, dst, dst_size);
+    const bool ok =
+        write(fd, &hdr, sizeof(hdr)) == sizeof(hdr) &&
+        write(fd, dst, dst_size) == dst_size;
 
     close(fd);
     free(dst);
-    return true;
+    return ok;
 }
