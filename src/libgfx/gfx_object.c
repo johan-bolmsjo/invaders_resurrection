@@ -6,17 +6,11 @@
 
 static struct GfxObject* object_list = 0;
 
-/* For other files.
- */
-
 struct GfxObject*
 gfx_get_first_object(void)
 {
     return object_list;
 }
-
-/* Find object with name 'name'.
- */
 
 struct GfxObject*
 gfx_object_find(const char* name)
@@ -60,7 +54,9 @@ gfx_object_create(const char* name)
     obj->frames = 0;
     obj->fpp = 0;
 
+    // Add object first in list
     if (object_list) {
+        // Previous first item is now second item
         obj->next = object_list;
         obj->next->prev = obj;
     } else {
@@ -77,19 +73,23 @@ gfx_object_destroy(struct GfxObject* o)
 {
     int i;
 
-    if (o->prev)
-        o->prev->next = o->next;
-    else
+    if (o == object_list) {
         object_list = o->next;
-    if (o->next)
+    } else {
+        o->prev->next = o->next;
+    }
+    if (o->next) {
         o->next->prev = o->prev;
+    }
 
-    for (i = 0; i < o->frames; i++)
+    for (i = 0; i < o->frames; i++) {
         gfx_frame_destroy(o->fpp[i]);
+    }
 
     free(o->name);
-    if (o->fpp)
+    if (o->fpp) {
         free(o->fpp);
+    }
     free(o);
 }
 
