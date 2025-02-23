@@ -1,5 +1,6 @@
 #include "gfx_object.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -102,29 +103,33 @@ gfx_object_destroy_all(void)
 struct GfxFrame*
 gfx_frame_create(int flags, int width, int height, int x_off, int y_off)
 {
-    int c_longs, e = 0;
+    bool error = false;
+    int c_longs;
     void *g = 0, *a = 0, *c = 0;
     struct GfxFrame* f;
 
     c_longs = (width + 31) >> 5;
-    f = malloc(sizeof(struct GfxFrame));
+    if ((f = malloc(sizeof(struct GfxFrame))) == NULL)
+        error = true;
 
     if (flags & GFX_TAG_GRAPHICS) {
         if ((g = malloc(width * height * sizeof(struct rgb565))) == NULL)
-            e = 1;
+            error = true;
     }
 
     if (flags & GFX_TAG_ALPHA) {
         if ((a = malloc(width * height * sizeof(uint8_t))) == NULL)
-            e = 1;
+            error = true;
     }
 
     if (flags & GFX_TAG_COLLISION) {
         if ((c = malloc(c_longs * sizeof(uint32_t) * height)) == NULL)
-            e = 1;
+            error = true;
     }
 
-    if (e || f == NULL) {
+    if (error) {
+        if (f)
+            free(f);
         if (g)
             free(g);
         if (a)
