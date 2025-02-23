@@ -63,34 +63,12 @@ collision_update_from_sprite(struct Collision* c, struct Sprite* s)
     c->mask = f->collision;
 }
 
-// Sort all collition objects in list by x0.
-// TODO(jb): The function goes out of its sorting range by one.
-static void
-sort_list(struct Collision** list, int n)
-{
-    if (n <= 1) {
-        return;
-    }
 
-    struct Collision* t;
-    int v = list[0]->x0;
-    int i = 0;
-    int j = n;
-    for (;;) {
-        while (list[++i]->x0 < v && i < n) {}
-        while (list[--j]->x0 > v) {}
-        if (i >= j) {
-            break;
-        }
-        t = list[i];
-        list[i] = list[j];
-        list[j] = t;
-    }
-    t = list[i - 1];
-    list[i - 1] = list[0];
-    list[0] = t;
-    sort_list(list, i - 1);
-    sort_list(list + i, n - i);
+// Compare collision objects by x0 coordinate.
+static int
+collision_compare_fn(const void* lhs, const void* rhs)
+{
+    return (*(const struct Collision**)lhs)->x0 - (*(const struct Collision**)rhs)->x0;
 }
 
 void
@@ -101,17 +79,14 @@ collision_detection(void)
     }
 
     // List sorted by x0
-    struct Collision** tmp_vec = malloc(sizeof(struct Collision) * (g_collision_obj + 1));
+    struct Collision** tmp_vec = malloc(sizeof(struct Collision*) * g_collision_obj);
     struct Collision *c = c_base;
     for (int i = 0; i < g_collision_obj; i++) {
         tmp_vec[i] = c;
         c = c->next;
     }
 
-    // TODO(jb): The sort function goes out of its sorting range by one.
-    struct Collision end_marker = {0};
-    tmp_vec[g_collision_obj] = &end_marker;
-    sort_list(tmp_vec, g_collision_obj);
+    qsort(tmp_vec, g_collision_obj, sizeof(struct Collision*), collision_compare_fn);
 
     for (int i = 0; i < (g_collision_obj - 1); i++) {
         for (int j = i + 1; j < g_collision_obj; j++) {
