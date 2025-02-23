@@ -43,16 +43,14 @@ shot_destroy(struct Shot* s)
     }
 
     if (s->pend_rm == 2) {
-        if (s->prev) {
-            s->prev->next = s->next;
-        } else {
+        if (s == M.shot_list) {
             M.shot_list = s->next;
+        } else {
+            s->prev->next = s->next;
         }
-
         if (s->next) {
             s->next->prev = s->prev;
         }
-
         free(s);
         g_shot_obj--;
     } else {
@@ -138,20 +136,25 @@ shot_update(void)
     struct Shot* s = M.shot_list;
     while (s) {
         if (s->pend_rm) {
-            struct Shot* st = s;
+            struct Shot* t = s;
             s = s->next;
-            shot_destroy(st);
+            shot_destroy(t);
             continue;
         }
 
         s->x += s->x_vector;
         s->y += s->y_vector;
 
+        // Destroy shot if outside of screen coordinates.
         if (s->x < 0 || s->x > (M.screen_dim.w - 2) ||
             s->y < 0 || s->y > (M.screen_dim.h - 2)) {
-            shot_destroy(s);
-            if (s->collision)
+            // Questionable design: The collision has a back pointer to the shot and the collision
+            // callback also destroys the shot. This is why shot_destroy does not destroy the collision object it holds.
+            if (s->collision) {
                 collision_destroy(s->collision);
+                s->collision = NULL;
+            }
+            shot_destroy(s);
         } else {
             if (s->collision) {
                 s->collision->x0 = s->x;
@@ -161,6 +164,9 @@ shot_update(void)
             }
         }
 
+        // Questionable design: This looks like an obvious bug because shot was possibly destroyed
+        // above, however shot_destroy use a reference counter to delay actual destruction of the
+        // object.
         s = s->next;
     }
 }
